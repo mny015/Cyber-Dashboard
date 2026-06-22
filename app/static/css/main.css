@@ -1,0 +1,55 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #07111f;
+    color: #e8f1ff;
+}
+
+nav {
+    padding: 16px;
+    background: #0d1b2e;
+    border-bottom: 1px solid #20344f;
+}
+
+nav a {
+    color: #e8f1ff;
+    margin-right: 16px;
+    text-decoration: none;
+}
+
+main {
+    padding: 24px;
+}
+
+input,
+button {
+    display: block;
+    margin-bottom: 12px;
+    padding: 10px;
+}
+
+button {
+    cursor: pointer;
+}
+
+.alert {
+    margin: 16px;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.success {
+    background: #064e3b;
+}
+
+.danger {
+    background: #7f1d1d;
+}
+
+.warning {
+    background: #78350f;
+}
+
+.info {
+    background: #1e3a8a;
+}

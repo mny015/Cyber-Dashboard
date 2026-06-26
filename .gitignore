@@ -2,7 +2,7 @@
 venv/
 env/
 .venv/
-
+.gitignore
 # Python cache
 __pycache__/
 *.py[cod]

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Contacts - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Contacts</h1>
+        <p class="meta">Practice CRUD with a simple contact manager.</p>
+    </div>
+    <a class="button" href="{{ url_for('contacts.create') }}">New contact</a>
+</div>
+
+{% if contacts %}
+    <div class="grid">
+        {% for contact in contacts %}
+            <section class="card">
+                <h2>{{ contact.name }}</h2>
+                <p>{{ contact.email }}</p>
+                <p>{{ contact.phone }}</p>
+                <p>{{ contact.notes or "No notes." }}</p>
+                <div class="actions">
+                    <a class="button" href="{{ url_for('contacts.edit', contact_id=contact.id) }}">Edit</a>
+                    <form class="inline-form" method="post" action="{{ url_for('contacts.delete', contact_id=contact.id) }}" data-confirm="Delete this contact?">
+                        <button class="danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No contacts yet.</p>
+{% endif %}
+{% endblock %}

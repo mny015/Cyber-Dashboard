@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 
+{% block title %}Home - Cyber Dashboard{% endblock %}
+
 {% block content %}
 <h1>Cyber Dashboard</h1>
 <p>Your personal cybersecurity learning tracker.</p>
+<p>
+    <a class="button" href="{{ url_for('dashboard.dashboard') }}">Open dashboard</a>
+</p>
 {% endblock %}

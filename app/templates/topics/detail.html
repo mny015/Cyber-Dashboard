@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title }} - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ topic.title }}</h1>
+        <p class="meta">
+            {{ topic.status|title }} · {{ topic.priority|title }}
+            {% if topic.category %} · {{ topic.category.name }}{% endif %}
+        </p>
+    </div>
+    <div class="actions">
+        <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
+        <form class="inline-form" method="post" action="{{ url_for('topics.delete', topic_id=topic.id) }}" data-confirm="Delete this topic?">
+            <button class="danger" type="submit">Delete</button>
+        </form>
+    </div>
+</div>
+
+<section class="card">
+    <h2>Description</h2>
+    <p>{{ topic.description or "No description yet." }}</p>
+    <h2>Notes</h2>
+    <p>{{ topic.notes or "No notes yet." }}</p>
+    <p class="meta">Created {{ topic.created_at|format_date }} · Updated {{ topic.updated_at|format_date }}</p>
+</section>
+
+<p><a href="{{ url_for('topics.index') }}">Back to topics</a></p>
+{% endblock %}

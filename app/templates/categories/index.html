@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Categories</h1>
+        <p class="meta">Group topics by learning area, certification path, or practice focus.</p>
+    </div>
+    <a class="button" href="{{ url_for('categories.create') }}">New category</a>
+</div>
+
+{% if categories %}
+    <div class="grid">
+        {% for category in categories %}
+            <section class="card">
+                <h2>{{ category.name }}</h2>
+                <p>{{ category.description or "No description yet." }}</p>
+                <p class="meta">Color: <span style="color: {{ category.color }}">{{ category.color }}</span></p>
+                <div class="actions">
+                    <a class="button" href="{{ url_for('categories.edit', category_id=category.id) }}">Edit</a>
+                    <form class="inline-form" method="post" action="{{ url_for('categories.delete', category_id=category.id) }}" data-confirm="Delete this category? Topics will keep their records.">
+                        <button class="danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No categories yet. Create your first category to organize topics.</p>
+{% endif %}
+{% endblock %}

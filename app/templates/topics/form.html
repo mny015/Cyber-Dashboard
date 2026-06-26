@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% set editing = topic and topic.id %}
+{% block title %}{{ "Edit" if editing else "New" }} Topic - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ "Edit" if editing else "New" }} Topic</h1>
+
+<form method="post">
+    <label for="title">Title</label>
+    <input id="title" type="text" name="title" value="{{ topic.title if topic else '' }}" required>
+
+    <label for="category_id">Category</label>
+    <select id="category_id" name="category_id">
+        <option value="">No category</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}" {% if topic and topic.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="status">Status</label>
+    <select id="status" name="status">
+        {% for status in ["planned", "learning", "practicing", "complete"] %}
+            <option value="{{ status }}" {% if topic and topic.status == status %}selected{% endif %}>{{ status|title }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="priority">Priority</label>
+    <select id="priority" name="priority">
+        {% for priority in ["low", "medium", "high"] %}
+            <option value="{{ priority }}" {% if topic and topic.priority == priority %}selected{% endif %}>{{ priority|title }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description">{{ topic.description if topic else '' }}</textarea>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes">{{ topic.notes if topic else '' }}</textarea>
+
+    <button type="submit">Save topic</button>
+</form>
+
+<a href="{{ url_for('topics.index') }}">Back to topics</a>
+{% endblock %}

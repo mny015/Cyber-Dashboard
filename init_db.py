@@ -23,20 +23,30 @@ def ensure_database_exists():
         connection.close()
 
 
-def add_column_if_missing(cursor, table_name, column_name, column_sql):
+USER_COLUMN_ALTERS = {
+    "display_name": "ALTER TABLE users ADD COLUMN display_name VARCHAR(120) NOT NULL DEFAULT ''",
+    "role": "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'user'",
+    "is_banned": "ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE",
+    "mfa_secret": "ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) NULL",
+    "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+    "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+}
+
+
+def add_user_column_if_missing(cursor, column_name):
     cursor.execute(
         """
         SELECT COUNT(*)
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = %s
+          AND TABLE_NAME = 'users'
           AND COLUMN_NAME = %s
         """,
-        (table_name, column_name),
+        (column_name,),
     )
     exists = cursor.fetchone()[0] > 0
     if not exists:
-        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_sql}")
+        cursor.execute(USER_COLUMN_ALTERS[column_name])
 
 
 def ensure_existing_user_columns():
@@ -54,12 +64,8 @@ def ensure_existing_user_columns():
             if not cursor.fetchone():
                 return
 
-            add_column_if_missing(cursor, "users", "display_name", "display_name VARCHAR(120) NOT NULL DEFAULT ''")
-            add_column_if_missing(cursor, "users", "role", "role VARCHAR(20) NOT NULL DEFAULT 'user'")
-            add_column_if_missing(cursor, "users", "is_banned", "is_banned BOOLEAN NOT NULL DEFAULT FALSE")
-            add_column_if_missing(cursor, "users", "mfa_secret", "mfa_secret VARCHAR(64) NULL")
-            add_column_if_missing(cursor, "users", "mfa_enabled", "mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE")
-            add_column_if_missing(cursor, "users", "updated_at", "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP")
+            for column_name in USER_COLUMN_ALTERS:
+                add_user_column_if_missing(cursor, column_name)
     finally:
         connection.close()
 

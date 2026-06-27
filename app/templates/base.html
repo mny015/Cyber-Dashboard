@@ -18,6 +18,10 @@
                 <a href="{{ url_for('topics.index') }}">Topics</a>
                 <a href="{{ url_for('categories.index') }}">Categories</a>
                 <a href="{{ url_for('contacts.index') }}">Contacts</a>
+                <a href="{{ url_for('auth.setup_mfa') }}">MFA</a>
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.users') }}">Admin</a>
+                {% endif %}
                 <a href="{{ url_for('auth.logout') }}">Logout</a>
             {% else %}
                 <a href="{{ url_for('auth.login') }}">Login</a>
@@ -35,6 +39,16 @@
             </div>
         {% endif %}
     {% endwith %}
+
+    {% if form and form.errors %}
+        <div>
+            {% for field_errors in form.errors.values() %}
+                {% for error in field_errors %}
+                    <p class="alert danger">{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
 
     <main>
         {% block content %}{% endblock %}

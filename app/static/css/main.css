@@ -55,6 +55,12 @@ button {
     width: min(100%, 520px);
 }
 
+label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: 700;
+}
+
 textarea {
     min-height: 120px;
 }
@@ -141,6 +147,37 @@ button.danger {
 .inline-form button {
     display: inline-block;
     margin: 0;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0d1b2e;
+    border: 1px solid #20344f;
+    border-radius: 8px;
+}
+
+th,
+td {
+    padding: 12px;
+    border-bottom: 1px solid #20344f;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    color: #9fb3ce;
+}
+
+.qr-code {
+    max-width: 220px;
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
 }
 
 @media (max-width: 720px) {

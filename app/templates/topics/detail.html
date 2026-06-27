@@ -14,6 +14,7 @@
     <div class="actions">
         <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
         <form class="inline-form" method="post" action="{{ url_for('topics.delete', topic_id=topic.id) }}" data-confirm="Delete this topic?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="danger" type="submit">Delete</button>
         </form>
     </div>

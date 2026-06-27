@@ -15,6 +15,7 @@ class User(db.Model, UserMixin):
 
     display_name = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="user")
+    is_banned = db.Column(db.Boolean, nullable=False, default=False)
 
     mfa_secret = db.Column(db.String(64), nullable=True)
     mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)

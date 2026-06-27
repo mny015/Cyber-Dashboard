@@ -23,6 +23,7 @@ def upgrade():
         sa.Column("password_hash", sa.String(length=255), nullable=False),
         sa.Column("display_name", sa.String(length=120), nullable=False),
         sa.Column("role", sa.String(length=20), nullable=False),
+        sa.Column("is_banned", sa.Boolean(), nullable=False),
         sa.Column("mfa_secret", sa.String(length=64), nullable=True),
         sa.Column("mfa_enabled", sa.Boolean(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),

@@ -21,6 +21,7 @@
                 <div class="actions">
                     <a class="button" href="{{ url_for('categories.edit', category_id=category.id) }}">Edit</a>
                     <form class="inline-form" method="post" action="{{ url_for('categories.delete', category_id=category.id) }}" data-confirm="Delete this category? Topics will keep their records.">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button class="danger" type="submit">Delete</button>
                     </form>
                 </div>

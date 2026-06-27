@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Setup MFA - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>Setup MFA</h1>
+<p>Scan the QR code in your authenticator app, then enter the 6-digit code.</p>
+
+<section class="card">
+    <img class="qr-code" src="{{ url_for('auth.mfa_qr') }}" alt="MFA QR code">
+    <p class="meta">Manual setup URI: {{ provisioning_uri }}</p>
+</section>
+
+<form method="post">
+    {{ form.hidden_tag() }}
+    {{ form.token.label }}
+    {{ form.token(placeholder="123456") }}
+    {{ form.submit() }}
+</form>
+{% endblock %}

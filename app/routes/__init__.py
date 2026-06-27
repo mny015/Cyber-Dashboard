@@ -1,4 +1,5 @@
 def register_blueprints(app):
+    from app.routes.admin import admin_bp
     from app.routes.api import api_bp
     from app.routes.auth import auth_bp
     from app.routes.categories import categories_bp
@@ -6,6 +7,7 @@ def register_blueprints(app):
     from app.routes.dashboard import dashboard_bp
     from app.routes.topics import topics_bp
 
+    app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(api_bp)

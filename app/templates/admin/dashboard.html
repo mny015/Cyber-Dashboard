@@ -12,5 +12,15 @@
         <p>Review the same topic, category, and contact modules as a signed-in user.</p>
         <a class="button" href="{{ url_for('topics.index') }}">Open topics</a>
     </section>
+    <section class="card">
+        <h2>User Management</h2>
+        <p>Assign roles, ban or unban accounts, and reset passwords.</p>
+        <a class="button" href="{{ url_for('admin.users') }}">Manage users</a>
+    </section>
+    <section class="card">
+        <h2>Audit Logs</h2>
+        <p>Review login, logout, admin, and security actions.</p>
+        <a class="button" href="{{ url_for('admin.audit_logs') }}">View audit logs</a>
+    </section>
 </div>
 {% endblock %}

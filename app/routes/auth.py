@@ -6,11 +6,17 @@ from flask import Blueprint, flash, redirect, render_template, send_file, sessio
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.forms.auth import LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
-from app.models import db, limiter
 from app.models.user import User
 from utils.audit import log_audit
+from utils.db import execute, fetch_one
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
+try:
+    from app.models import limiter
+except ImportError:
+    limiter = None
+
 login_rate_limit = limiter.limit("5 per minute") if limiter else (lambda view: view)
 
 
@@ -21,7 +27,7 @@ def register():
     if form.validate_on_submit():
         email = form.email.data.lower().strip()
 
-        existing_user = User.query.filter(User.email == email).first()
+        existing_user = User.from_row(fetch_one("SELECT * FROM users WHERE email = %s", (email,)))
         if existing_user:
             flash("Email already exists.", "danger")
             return render_template("auth/register.html", form=form)
@@ -29,9 +35,22 @@ def register():
         user = User(display_name=form.display_name.data.strip(), email=email)
         user.set_password(form.password.data)
 
-        db.session.add(user)
+        execute(
+            """
+            INSERT INTO users (email, password_hash, display_name, role, is_banned, mfa_secret, mfa_enabled, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+            """,
+            (
+                user.email,
+                user.password_hash,
+                user.display_name,
+                user.role,
+                int(user.is_banned),
+                user.mfa_secret,
+                int(user.mfa_enabled),
+            ),
+        )
         log_audit("register", f"New account registered for {email}", user=user)
-        db.session.commit()
 
         flash("Account created successfully. Please log in.", "success")
         return redirect(url_for("auth.login"))
@@ -46,17 +65,15 @@ def login():
     if form.validate_on_submit():
         email = form.email.data.lower().strip()
 
-        user = User.query.filter_by(email=email).first()
+        user = User.from_row(fetch_one("SELECT * FROM users WHERE email = %s", (email,)))
 
         if not user or not user.check_password(form.password.data):
             log_audit("login_failed", f"Failed login for {email}")
-            db.session.commit()
             flash("Invalid email or password.", "danger")
             return render_template("auth/login.html", form=form)
 
         if user.is_banned:
             log_audit("login_blocked", f"Banned user tried to log in: {email}", user=user)
-            db.session.commit()
             flash("This account is banned. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
 
@@ -68,7 +85,6 @@ def login():
         login_user(user)
         session.permanent = True
         log_audit("login", "User logged in", user=user)
-        db.session.commit()
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
 
@@ -82,13 +98,14 @@ def verify_mfa():
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    user = User.query.get_or_404(user_id)
+    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
+    if not user:
+        return redirect(url_for("auth.login"))
     form = MfaTokenForm()
     if form.validate_on_submit():
         totp = pyotp.TOTP(user.mfa_secret)
         if not totp.verify(form.token.data.strip(), valid_window=1):
             log_audit("mfa_failed", "Invalid MFA token", user=user)
-            db.session.commit()
             flash("Invalid MFA code.", "danger")
             return render_template("auth/verify_mfa.html", form=form)
 
@@ -96,7 +113,6 @@ def verify_mfa():
         session.permanent = True
         login_user(user)
         log_audit("login", "User logged in with MFA", user=user)
-        db.session.commit()
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
 
@@ -107,7 +123,6 @@ def verify_mfa():
 @login_required
 def logout():
     log_audit("logout", "User logged out")
-    db.session.commit()
     logout_user()
     session.clear()
     flash("Logged out successfully.", "info")
@@ -120,7 +135,7 @@ def setup_mfa():
     form = MfaSetupForm()
     if not current_user.mfa_secret:
         current_user.mfa_secret = pyotp.random_base32()
-        db.session.commit()
+        execute("UPDATE users SET mfa_secret = %s, updated_at = NOW() WHERE id = %s", (current_user.mfa_secret, current_user.id))
 
     totp = pyotp.TOTP(current_user.mfa_secret)
     provisioning_uri = totp.provisioning_uri(
@@ -134,8 +149,8 @@ def setup_mfa():
             return render_template("auth/setup_mfa.html", form=form, provisioning_uri=provisioning_uri)
 
         current_user.mfa_enabled = True
+        execute("UPDATE users SET mfa_enabled = 1, updated_at = NOW() WHERE id = %s", (current_user.id,))
         log_audit("mfa_enabled", "User enabled MFA")
-        db.session.commit()
         flash("MFA enabled successfully.", "success")
         return redirect(url_for("dashboard.dashboard"))
 

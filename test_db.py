@@ -1,10 +1,7 @@
-from sqlalchemy import text
-
 from app import create_app
-from app.models import db
+from utils.db import fetch_scalar
 
 app = create_app()
 
 with app.app_context():
-    result = db.session.execute(text("SELECT 1"))
-    print("Database connected successfully:", result.scalar())
+    print("Database connected successfully:", fetch_scalar("SELECT 1", default=0))

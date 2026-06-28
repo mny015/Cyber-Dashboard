@@ -1,27 +1,40 @@
-from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from app.models import db, login_manager
+from app.models import login_manager
+from utils.db import fetch_one
 
 
-class User(db.Model, UserMixin):
-    __tablename__ = "users"
+class User(UserMixin):
+    def __init__(
+        self,
+        id=None,
+        email="",
+        password_hash="",
+        display_name="",
+        role="user",
+        is_banned=False,
+        mfa_secret=None,
+        mfa_enabled=False,
+        created_at=None,
+        updated_at=None,
+    ):
+        self.id = id
+        self.email = email
+        self.password_hash = password_hash
+        self.display_name = display_name
+        self.role = role
+        self.is_banned = bool(is_banned)
+        self.mfa_secret = mfa_secret
+        self.mfa_enabled = bool(mfa_enabled)
+        self.created_at = created_at
+        self.updated_at = updated_at
 
-    id = db.Column(db.Integer, primary_key=True)
-
-    email = db.Column(db.String(255), nullable=False, unique=True)
-    password_hash = db.Column(db.String(255), nullable=False)
-
-    display_name = db.Column(db.String(120), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default="user")
-    is_banned = db.Column(db.Boolean, nullable=False, default=False)
-
-    mfa_secret = db.Column(db.String(64), nullable=True)
-    mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)
-
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    @classmethod
+    def from_row(cls, row):
+        if not row:
+            return None
+        return cls(**row)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -36,4 +49,5 @@ class User(db.Model, UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    row = fetch_one("SELECT * FROM users WHERE id = %s", (int(user_id),))
+    return User.from_row(row)

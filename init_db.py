@@ -1,8 +1,7 @@
-from sqlalchemy import text
 import pymysql
 
 from app import create_app
-from app.models import db
+from utils.db import fetch_one, get_connection
 
 
 def ensure_database_exists():
@@ -31,6 +30,91 @@ USER_COLUMN_ALTERS = {
     "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
     "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
 }
+
+DDL_STATEMENTS = [
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INT NOT NULL AUTO_INCREMENT,
+        email VARCHAR(255) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        display_name VARCHAR(120) NOT NULL,
+        role VARCHAR(20) NOT NULL DEFAULT 'user',
+        is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+        mfa_secret VARCHAR(64) NULL,
+        mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_users_email (email)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS categories (
+        id INT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(120) NOT NULL,
+        description TEXT NOT NULL,
+        color VARCHAR(32) NOT NULL DEFAULT '#2563eb',
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        owner_id INT NOT NULL,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_category_owner_name (owner_id, name),
+        KEY ix_categories_owner_id (owner_id),
+        CONSTRAINT fk_categories_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS contacts (
+        id INT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(120) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(40) NOT NULL,
+        notes TEXT NOT NULL,
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        owner_id INT NOT NULL,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_contacts_owner_id (owner_id),
+        CONSTRAINT fk_contacts_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS topics (
+        id INT NOT NULL AUTO_INCREMENT,
+        title VARCHAR(200) NOT NULL,
+        slug VARCHAR(220) NOT NULL,
+        description TEXT NOT NULL,
+        status VARCHAR(40) NOT NULL DEFAULT 'planned',
+        priority VARCHAR(40) NOT NULL DEFAULT 'medium',
+        notes TEXT NOT NULL,
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        category_id INT NULL,
+        owner_id INT NOT NULL,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_topic_owner_slug (owner_id, slug),
+        KEY ix_topics_owner_id (owner_id),
+        CONSTRAINT fk_topics_category FOREIGN KEY (category_id) REFERENCES categories(id),
+        CONSTRAINT fk_topics_owner FOREIGN KEY (owner_id) REFERENCES users(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INT NOT NULL AUTO_INCREMENT,
+        action VARCHAR(120) NOT NULL,
+        details TEXT NOT NULL,
+        ip_address VARCHAR(45) NOT NULL,
+        user_id INT NULL,
+        created_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_audit_logs_user_id (user_id),
+        CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """,
+]
 
 
 def add_user_column_if_missing(cursor, column_name):
@@ -73,9 +157,14 @@ def ensure_existing_user_columns():
 def create_tables():
     app = create_app()
     with app.app_context():
-        db.create_all()
-        db.session.execute(text("SELECT 1"))
-        db.session.commit()
+        connection = get_connection()
+        try:
+            with connection.cursor() as cursor:
+                for statement in DDL_STATEMENTS:
+                    cursor.execute(statement)
+            connection.commit()
+        finally:
+            connection.close()
         print("Database connected and tables are ready.")
 
 

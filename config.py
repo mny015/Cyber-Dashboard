@@ -9,12 +9,12 @@ load_dotenv()
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "mysql+pymysql://root:root@127.0.0.1:3306/cyber_dashboard"
-    )
-
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+    DB_PORT = int(os.getenv("DB_PORT", "3306"))
+    DB_USER = os.getenv("DB_USER", "root")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
+    DB_NAME = os.getenv("DB_NAME", "cyber_dashboard")
+    DB_CHARSET = os.getenv("DB_CHARSET", "utf8mb4")
 
     WTF_CSRF_ENABLED = True
 

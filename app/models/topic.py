@@ -1,26 +1,30 @@
-from datetime import datetime
-
-from app.models import db
+from types import SimpleNamespace
 
 
-class Topic(db.Model):
-    __tablename__ = "topics"
+class Topic:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get("id")
+        self.title = kwargs.get("title", "")
+        self.slug = kwargs.get("slug", "")
+        self.description = kwargs.get("description", "")
+        self.status = kwargs.get("status", "planned")
+        self.priority = kwargs.get("priority", "medium")
+        self.notes = kwargs.get("notes", "")
+        self.is_deleted = bool(kwargs.get("is_deleted", False))
+        self.category_id = kwargs.get("category_id")
+        self.category_name = kwargs.get("category_name")
+        self.owner_id = kwargs.get("owner_id")
+        self.created_at = kwargs.get("created_at")
+        self.updated_at = kwargs.get("updated_at")
 
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    slug = db.Column(db.String(220), nullable=False)
-    description = db.Column(db.Text, nullable=False, default="")
-    status = db.Column(db.String(40), nullable=False, default="planned")
-    priority = db.Column(db.String(40), nullable=False, default="medium")
-    notes = db.Column(db.Text, nullable=False, default="")
-    is_deleted = db.Column(db.Boolean, nullable=False, default=False)
-    category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    @property
+    def category(self):
+        if not self.category_id:
+            return None
+        return SimpleNamespace(id=self.category_id, name=self.category_name)
 
-    category = db.relationship("Category", back_populates="topics", lazy=True)
-
-    __table_args__ = (
-        db.UniqueConstraint("owner_id", "slug", name="uq_topic_owner_slug"),
-    )
+    @classmethod
+    def from_row(cls, row):
+        if not row:
+            return None
+        return cls(**row)

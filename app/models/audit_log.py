@@ -1,16 +1,24 @@
-from datetime import datetime
-
-from app.models import db
+from types import SimpleNamespace
 
 
-class AuditLog(db.Model):
-    __tablename__ = "audit_logs"
+class AuditLog:
+    def __init__(self, **kwargs):
+        self.id = kwargs.get("id")
+        self.action = kwargs.get("action", "")
+        self.details = kwargs.get("details", "")
+        self.ip_address = kwargs.get("ip_address", "")
+        self.user_id = kwargs.get("user_id")
+        self.user_email = kwargs.get("user_email")
+        self.created_at = kwargs.get("created_at")
 
-    id = db.Column(db.Integer, primary_key=True)
-    action = db.Column(db.String(120), nullable=False)
-    details = db.Column(db.Text, nullable=False, default="")
-    ip_address = db.Column(db.String(45), nullable=False, default="")
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    @property
+    def user(self):
+        if not self.user_email:
+            return None
+        return SimpleNamespace(email=self.user_email)
 
-    user = db.relationship("User", backref="audit_logs", lazy=True)
+    @classmethod
+    def from_row(cls, row):
+        if not row:
+            return None
+        return cls(**row)

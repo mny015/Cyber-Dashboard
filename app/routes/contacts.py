@@ -1,19 +1,20 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.models import db
 from app.models.contact import Contact
+from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text, is_valid_email, is_valid_phone
 
 contacts_bp = Blueprint("contacts", __name__, url_prefix="/contacts")
 
 
 def get_contact_or_404(contact_id):
-    contact = Contact.query.filter_by(
-        id=contact_id,
-        owner_id=current_user.id,
-        is_deleted=False,
-    ).first()
+    contact = Contact.from_row(
+        fetch_one(
+            "SELECT * FROM contacts WHERE id = %s AND owner_id = %s AND is_deleted = 0",
+            (contact_id, current_user.id),
+        )
+    )
     if not contact:
         abort(404)
     return contact
@@ -22,10 +23,13 @@ def get_contact_or_404(contact_id):
 @contacts_bp.route("/")
 @login_required
 def index():
-    contacts = Contact.query.filter_by(
-        owner_id=current_user.id,
-        is_deleted=False,
-    ).order_by(Contact.name.asc()).all()
+    contacts = [
+        Contact.from_row(row)
+        for row in fetch_all(
+            "SELECT * FROM contacts WHERE owner_id = %s AND is_deleted = 0 ORDER BY name ASC",
+            (current_user.id,),
+        )
+    ]
     return render_template("contacts/index.html", contacts=contacts)
 
 
@@ -38,8 +42,13 @@ def create():
         if not validate_contact(contact):
             return render_template("contacts/form.html", contact=contact)
 
-        db.session.add(contact)
-        db.session.commit()
+        _, contact.id = execute(
+            """
+            INSERT INTO contacts (name, email, phone, notes, is_deleted, owner_id, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, 0, %s, NOW(), NOW())
+            """,
+            (contact.name, contact.email, contact.phone, contact.notes, contact.owner_id),
+        )
         flash("Contact created successfully.", "success")
         return redirect(url_for("contacts.index"))
 
@@ -55,7 +64,14 @@ def edit(contact_id):
         if not validate_contact(contact):
             return render_template("contacts/form.html", contact=contact)
 
-        db.session.commit()
+        execute(
+            """
+            UPDATE contacts
+            SET name = %s, email = %s, phone = %s, notes = %s, updated_at = NOW()
+            WHERE id = %s AND owner_id = %s AND is_deleted = 0
+            """,
+            (contact.name, contact.email, contact.phone, contact.notes, contact.id, current_user.id),
+        )
         flash("Contact updated successfully.", "success")
         return redirect(url_for("contacts.index"))
 
@@ -66,8 +82,10 @@ def edit(contact_id):
 @login_required
 def delete(contact_id):
     contact = get_contact_or_404(contact_id)
-    contact.is_deleted = True
-    db.session.commit()
+    execute(
+        "UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
+        (contact.id, current_user.id),
+    )
     flash("Contact deleted successfully.", "info")
     return redirect(url_for("contacts.index"))
 

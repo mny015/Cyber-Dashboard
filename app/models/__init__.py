@@ -1,5 +1,3 @@
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
 
@@ -12,8 +10,6 @@ except ImportError:
     def get_remote_address():
         return "127.0.0.1"
 
-db = SQLAlchemy()
-migrate = Migrate()
 login_manager = LoginManager()
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address) if Limiter else None

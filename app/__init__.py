@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template
 
 from config import Config
-from app.models import csrf, db, limiter, login_manager, migrate
+from app.models import csrf, limiter, login_manager
 from app.routes import register_blueprints
 from utils.helpers import format_date
 
@@ -19,8 +19,6 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    db.init_app(app)
-    migrate.init_app(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
     if limiter:

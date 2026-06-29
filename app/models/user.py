@@ -18,6 +18,9 @@ class User(UserMixin):
         mfa_enabled=False,
         profile_bio="",
         profile_image="",
+        profile_image_data=None,
+        profile_image_mime="",
+        profile_image_size=0,
         created_at=None,
         updated_at=None,
         **extra,
@@ -32,6 +35,9 @@ class User(UserMixin):
         self.mfa_enabled = bool(mfa_enabled)
         self.profile_bio = profile_bio or ""
         self.profile_image = profile_image or ""
+        self.profile_image_data = profile_image_data
+        self.profile_image_mime = profile_image_mime or ""
+        self.profile_image_size = profile_image_size or 0
         self.created_at = created_at
         self.updated_at = updated_at
 

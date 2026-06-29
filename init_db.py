@@ -1,7 +1,18 @@
+import hashlib
+import os
+
 import pymysql
 
 from app import create_app
-from utils.db import fetch_one, get_connection
+from utils.db import get_connection
+
+
+IMAGE_MIME_BY_TYPE = {
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "webp": "image/webp",
+}
 
 
 def ensure_database_exists():
@@ -30,6 +41,9 @@ USER_COLUMN_ALTERS = {
     "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
     "profile_bio": "ALTER TABLE users ADD COLUMN profile_bio TEXT NULL",
     "profile_image": "ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) NULL",
+    "profile_image_data": "ALTER TABLE users ADD COLUMN profile_image_data LONGBLOB NULL",
+    "profile_image_mime": "ALTER TABLE users ADD COLUMN profile_image_mime VARCHAR(80) NULL",
+    "profile_image_size": "ALTER TABLE users ADD COLUMN profile_image_size INT NOT NULL DEFAULT 0",
     "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
 }
 
@@ -56,6 +70,9 @@ DDL_STATEMENTS = [
         mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
         profile_bio TEXT NULL,
         profile_image VARCHAR(255) NULL,
+        profile_image_data LONGBLOB NULL,
+        profile_image_mime VARCHAR(80) NULL,
+        profile_image_size INT NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
         PRIMARY KEY (id),
@@ -208,8 +225,73 @@ def create_tables():
         print("Database connected and tables are ready.")
 
 
+def migrate_static_profile_images_to_db():
+    app = create_app()
+    with app.app_context():
+        connection = get_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, profile_image
+                    FROM users
+                    WHERE profile_image IS NOT NULL
+                      AND profile_image <> ''
+                      AND profile_image_data IS NULL
+                    """
+                )
+                users = cursor.fetchall()
+                for user in users:
+                    old_path = user["profile_image"]
+                    if not old_path.startswith("uploads/profiles/"):
+                        continue
+
+                    disk_path = os.path.join(app.root_path, "static", old_path)
+                    if not os.path.exists(disk_path):
+                        continue
+
+                    with open(disk_path, "rb") as image_file:
+                        image_bytes = image_file.read()
+
+                    image_type = detect_image_type_from_bytes(image_bytes)
+                    if image_type not in IMAGE_MIME_BY_TYPE:
+                        continue
+
+                    digest = hashlib.sha256(image_bytes).hexdigest()
+                    cursor.execute(
+                        """
+                        UPDATE users
+                        SET profile_image = %s,
+                            profile_image_data = %s,
+                            profile_image_mime = %s,
+                            profile_image_size = %s,
+                            updated_at = NOW()
+                        WHERE id = %s
+                        """,
+                        (digest, image_bytes, IMAGE_MIME_BY_TYPE[image_type], len(image_bytes), user["id"]),
+                    )
+                    os.remove(disk_path)
+            connection.commit()
+        finally:
+            connection.close()
+
+
+def detect_image_type_from_bytes(file_bytes):
+    header = file_bytes[:512]
+    if header.startswith(b"\xff\xd8\xff"):
+        return "jpeg"
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "gif"
+    if header.startswith(b"RIFF") and header[8:12] == b"WEBP":
+        return "webp"
+    return None
+
+
 if __name__ == "__main__":
     ensure_database_exists()
     ensure_existing_user_columns()
     ensure_existing_learning_columns()
     create_tables()
+    migrate_static_profile_images_to_db()

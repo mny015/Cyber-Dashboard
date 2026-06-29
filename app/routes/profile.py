@@ -1,7 +1,7 @@
 import hashlib
 import os
 
-from flask import Blueprint, current_app, flash, redirect, render_template, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
@@ -40,28 +40,15 @@ def edit():
             flash("That email is already used by another account.", "danger")
             return render_template("profile/edit.html", form=form)
 
-        profile_image = current_user.profile_image
+        image_update = None
         if form.profile_image.data and form.profile_image.data.filename:
             is_valid, message = validate_profile_image(form.profile_image.data)
             if not is_valid:
                 flash(message, "danger")
                 return render_template("profile/edit.html", form=form)
-            profile_image = save_profile_image(form.profile_image.data)
+            image_update = build_profile_image_record(form.profile_image.data)
 
-        execute(
-            """
-            UPDATE users
-            SET display_name = %s, email = %s, profile_bio = %s, profile_image = %s, updated_at = NOW()
-            WHERE id = %s
-            """,
-            (
-                form.display_name.data.strip(),
-                email,
-                form.profile_bio.data.strip() if form.profile_bio.data else "",
-                profile_image,
-                current_user.id,
-            ),
-        )
+        update_profile(form, email, image_update)
         log_audit("profile_updated", "User updated profile information")
         flash("Profile updated successfully.", "success")
         return redirect(url_for("profile.edit"))
@@ -69,18 +56,82 @@ def edit():
     return render_template("profile/edit.html", form=form)
 
 
-def save_profile_image(file_storage):
-    upload_folder = os.path.join(current_app.root_path, "static", "uploads", "profiles")
-    os.makedirs(upload_folder, exist_ok=True)
+@profile_bp.route("/picture/<image_hash>")
+@login_required
+def picture(image_hash):
+    if image_hash != current_user.profile_image:
+        abort(404)
 
+    row = fetch_one(
+        """
+        SELECT profile_image_data, profile_image_mime, profile_image_size
+        FROM users
+        WHERE id = %s AND profile_image = %s
+        """,
+        (current_user.id, image_hash),
+    )
+    if not row or not row["profile_image_data"]:
+        abort(404)
+
+    return Response(
+        row["profile_image_data"],
+        mimetype=row["profile_image_mime"],
+        headers={
+            "Content-Length": str(row["profile_image_size"] or len(row["profile_image_data"])),
+            "Content-Disposition": "inline",
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, max-age=300",
+        },
+    )
+
+
+def update_profile(form, email, image_update):
+    params = [
+        form.display_name.data.strip(),
+        email,
+        form.profile_bio.data.strip() if form.profile_bio.data else "",
+    ]
+
+    if image_update:
+        execute(
+            """
+            UPDATE users
+            SET display_name = %s, email = %s, profile_bio = %s,
+                profile_image = %s, profile_image_data = %s, profile_image_mime = %s,
+                profile_image_size = %s, updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                *params,
+                image_update["hash"],
+                image_update["data"],
+                image_update["mime"],
+                image_update["size"],
+                current_user.id,
+            ),
+        )
+        return
+
+    execute(
+        """
+        UPDATE users
+        SET display_name = %s, email = %s, profile_bio = %s, updated_at = NOW()
+        WHERE id = %s
+        """,
+        (*params, current_user.id),
+    )
+
+
+def build_profile_image_record(file_storage):
     image_bytes = read_file_bytes(file_storage)
     image_type = detect_image_type_from_bytes(image_bytes)
-    extension = EXTENSION_BY_TYPE[image_type]
     digest = hashlib.sha256(image_bytes).hexdigest()
-    filename = f"{digest}{extension}"
-    with open(os.path.join(upload_folder, filename), "wb") as image_file:
-        image_file.write(image_bytes)
-    return f"uploads/profiles/{filename}"
+    return {
+        "hash": digest,
+        "data": image_bytes,
+        "mime": next(iter(ALLOWED_IMAGE_TYPES[image_type]["mimes"])),
+        "size": len(image_bytes),
+    }
 
 
 def validate_profile_image(file_storage):

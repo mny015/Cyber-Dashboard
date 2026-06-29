@@ -28,7 +28,19 @@ USER_COLUMN_ALTERS = {
     "is_banned": "ALTER TABLE users ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE",
     "mfa_secret": "ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) NULL",
     "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+    "profile_bio": "ALTER TABLE users ADD COLUMN profile_bio TEXT NULL",
+    "profile_image": "ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) NULL",
     "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+}
+
+TABLE_COLUMN_ALTERS = {
+    "categories": {
+        "is_deleted": "ALTER TABLE categories ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+    },
+    "topics": {
+        "slug": "ALTER TABLE topics ADD COLUMN slug VARCHAR(220) NOT NULL DEFAULT '' AFTER title",
+        "is_deleted": "ALTER TABLE topics ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+    },
 }
 
 DDL_STATEMENTS = [
@@ -42,6 +54,8 @@ DDL_STATEMENTS = [
         is_banned BOOLEAN NOT NULL DEFAULT FALSE,
         mfa_secret VARCHAR(64) NULL,
         mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+        profile_bio TEXT NULL,
+        profile_image VARCHAR(255) NULL,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
         PRIMARY KEY (id),
@@ -118,19 +132,23 @@ DDL_STATEMENTS = [
 
 
 def add_user_column_if_missing(cursor, column_name):
+    add_column_if_missing(cursor, "users", column_name, USER_COLUMN_ALTERS[column_name])
+
+
+def add_column_if_missing(cursor, table_name, column_name, alter_statement):
     cursor.execute(
         """
         SELECT COUNT(*)
         FROM INFORMATION_SCHEMA.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'users'
+          AND TABLE_NAME = %s
           AND COLUMN_NAME = %s
         """,
-        (column_name,),
+        (table_name, column_name),
     )
     exists = cursor.fetchone()[0] > 0
     if not exists:
-        cursor.execute(USER_COLUMN_ALTERS[column_name])
+        cursor.execute(alter_statement)
 
 
 def ensure_existing_user_columns():
@@ -154,6 +172,28 @@ def ensure_existing_user_columns():
         connection.close()
 
 
+def ensure_existing_learning_columns():
+    connection = pymysql.connect(
+        host="127.0.0.1",
+        user="root",
+        password="root",
+        database="cyber_dashboard",
+        charset="utf8mb4",
+        autocommit=True,
+    )
+    try:
+        with connection.cursor() as cursor:
+            for table_name, columns in TABLE_COLUMN_ALTERS.items():
+                cursor.execute("SHOW TABLES LIKE %s", (table_name,))
+                if not cursor.fetchone():
+                    continue
+                for column_name, alter_statement in columns.items():
+                    add_column_if_missing(cursor, table_name, column_name, alter_statement)
+            cursor.execute("UPDATE topics SET slug = LOWER(REPLACE(title, ' ', '-')) WHERE slug = ''")
+    finally:
+        connection.close()
+
+
 def create_tables():
     app = create_app()
     with app.app_context():
@@ -171,4 +211,5 @@ def create_tables():
 if __name__ == "__main__":
     ensure_database_exists()
     ensure_existing_user_columns()
+    ensure_existing_learning_columns()
     create_tables()

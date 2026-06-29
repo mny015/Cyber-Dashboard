@@ -7,3 +7,13 @@
 2026-06-02 09:51:19,909 INFO: login user_id=5 ip=127.0.0.1 User logged in
 2026-06-02 09:54:31,480 INFO: password_reset user_id=5 ip=127.0.0.1 Password reset for Aakash@cyberdb.com
 2026-06-02 09:54:34,102 INFO: password_reset user_id=5 ip=127.0.0.1 Password reset for Mahendra@gmail.com
+2026-06-09 01:28:53,616 INFO: login user_id=6 ip=127.0.0.1 User logged in
+2026-06-09 01:36:43,603 INFO: login user_id=7 ip=127.0.0.1 User logged in
+2026-06-09 01:37:00,267 INFO: login user_id=8 ip=127.0.0.1 User logged in
+2026-06-09 01:38:08,315 INFO: login user_id=10 ip=127.0.0.1 User logged in
+2026-06-09 01:47:25,812 INFO: profile_updated user_id=6 ip=127.0.0.1 User updated profile information
+2026-06-09 01:47:50,582 INFO: login user_id=11 ip=127.0.0.1 User logged in
+2026-06-09 01:47:50,705 INFO: profile_updated user_id=11 ip=127.0.0.1 User updated profile information
+2026-06-09 01:48:48,803 INFO: logout user_id=6 ip=127.0.0.1 User logged out
+2026-06-09 01:49:19,750 INFO: login user_id=12 ip=127.0.0.1 User logged in
+2026-06-09 01:49:19,892 INFO: profile_updated user_id=12 ip=127.0.0.1 User updated profile information

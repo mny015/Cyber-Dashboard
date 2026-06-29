@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Topic Summaries - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Topic Summaries</h1>
+        <p class="meta">Admin overview without private descriptions or notes.</p>
+    </div>
+    <a class="button" href="{{ url_for('admin.category_summaries') }}">Category summaries</a>
+</div>
+
+{% if topics %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Owner</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for topic in topics %}
+                    <tr>
+                        <td>{{ topic.title }}</td>
+                        <td>{{ topic.owner_name }}<br><span class="meta">{{ topic.owner_email }}</span></td>
+                        <td>{{ topic.category_name or "None" }}</td>
+                        <td>{{ topic.status|title }}</td>
+                        <td>{{ topic.priority|title }}</td>
+                        <td>{{ topic.updated_at|format_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No active topics found.</p>
+{% endif %}
+{% endblock %}

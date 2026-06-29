@@ -18,6 +18,16 @@
         <a class="button" href="{{ url_for('admin.users') }}">Manage users</a>
     </section>
     <section class="card">
+        <h2>Topic Summaries</h2>
+        <p>See who is tracking what without opening private notes or descriptions.</p>
+        <a class="button" href="{{ url_for('admin.topic_summaries') }}">View summaries</a>
+    </section>
+    <section class="card">
+        <h2>Category Summaries</h2>
+        <p>Review category ownership and topic counts across users.</p>
+        <a class="button" href="{{ url_for('admin.category_summaries') }}">View categories</a>
+    </section>
+    <section class="card">
         <h2>Audit Logs</h2>
         <p>Review login, logout, admin, and security actions.</p>
         <a class="button" href="{{ url_for('admin.audit_logs') }}">View audit logs</a>

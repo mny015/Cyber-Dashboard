@@ -28,8 +28,8 @@
                 <h2><a href="{{ url_for('topics.detail', topic_id=topic.id) }}">{{ topic.title }}</a></h2>
                 <p>{{ topic.description or "No description yet." }}</p>
                 <p class="meta">
-                    {{ topic.status|title }} · {{ topic.priority|title }}
-                    {% if topic.category %} · {{ topic.category.name }}{% endif %}
+                    {{ topic.status|title }} &middot; {{ topic.priority|title }}
+                    {% if topic.category %} &middot; {{ topic.category.name }}{% endif %}
                 </p>
                 <div class="actions">
                     <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>

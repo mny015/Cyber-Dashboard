@@ -80,7 +80,7 @@ def create():
             return render_template("topics/form.html", topic=topic, categories=get_categories())
 
         flash("Topic created successfully.", "success")
-        return redirect(url_for("topics.detail", topic_id=topic.id))
+        return redirect(url_for("topics.detail", topic_id=request._topic_id))
 
     return render_template("topics/form.html", topic=None, categories=get_categories())
 

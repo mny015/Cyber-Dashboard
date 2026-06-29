@@ -26,3 +26,5 @@ class Config:
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
 
     LOG_FILE = os.getenv("LOG_FILE", "instance/cyber_dashboard.log")
+    UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "app/static/uploads")
+    MAX_CONTENT_LENGTH = 2 * 1024 * 1024

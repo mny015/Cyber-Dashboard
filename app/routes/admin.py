@@ -18,6 +18,48 @@ def users():
     return render_template("admin/users.html", users=users_list)
 
 
+@admin_bp.route("/topics")
+@login_required
+@admin_required
+def topic_summaries():
+    rows = fetch_all(
+        """
+        SELECT topics.id, topics.title, topics.status, topics.priority, topics.updated_at,
+               categories.name AS category_name,
+               users.display_name AS owner_name,
+               users.email AS owner_email
+        FROM topics
+        JOIN users ON users.id = topics.owner_id
+        LEFT JOIN categories ON categories.id = topics.category_id
+        WHERE topics.is_deleted = 0
+        ORDER BY topics.updated_at DESC
+        """
+    )
+    return render_template("admin/topic_summaries.html", topics=rows)
+
+
+@admin_bp.route("/categories")
+@login_required
+@admin_required
+def category_summaries():
+    rows = fetch_all(
+        """
+        SELECT categories.id, categories.name, categories.color, categories.updated_at,
+               users.display_name AS owner_name,
+               users.email AS owner_email,
+               COUNT(topics.id) AS topic_count
+        FROM categories
+        JOIN users ON users.id = categories.owner_id
+        LEFT JOIN topics ON topics.category_id = categories.id AND topics.is_deleted = 0
+        WHERE categories.is_deleted = 0
+        GROUP BY categories.id, categories.name, categories.color, categories.updated_at,
+                 users.display_name, users.email
+        ORDER BY categories.updated_at DESC
+        """
+    )
+    return render_template("admin/category_summaries.html", categories=rows)
+
+
 @admin_bp.route("/users/<int:user_id>/role", methods=["POST"])
 @login_required
 @admin_required

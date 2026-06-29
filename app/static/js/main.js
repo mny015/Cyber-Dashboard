@@ -5,3 +5,14 @@ document.addEventListener("submit", (event) => {
         event.preventDefault();
     }
 });
+
+document.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-profile-picture-toggle]");
+    if (!toggle) {
+        return;
+    }
+
+    const wrapper = toggle.closest("[data-profile-picture]");
+    const menu = wrapper.querySelector("[data-profile-picture-menu]");
+    menu.hidden = !menu.hidden;
+});

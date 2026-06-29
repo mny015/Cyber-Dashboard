@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Category Summaries - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Category Summaries</h1>
+        <p class="meta">Admin overview of category ownership and topic counts.</p>
+    </div>
+    <a class="button" href="{{ url_for('admin.topic_summaries') }}">Topic summaries</a>
+</div>
+
+{% if categories %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Owner</th>
+                    <th>Topics</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                    <tr>
+                        <td>{{ category.name }}<br><span class="meta">{{ category.color }}</span></td>
+                        <td>{{ category.owner_name }}<br><span class="meta">{{ category.owner_email }}</span></td>
+                        <td>{{ category.topic_count }}</td>
+                        <td>{{ category.updated_at|format_date }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No active categories found.</p>
+{% endif %}
+{% endblock %}

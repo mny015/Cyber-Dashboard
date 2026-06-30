@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard - Cyber Dashboard{% endblock %}
+
 {% block content %}
 <h1>Dashboard</h1>
 <p>Welcome to your learning dashboard.</p>
+
+<div class="grid">
+    <section class="card">
+        <h2>Topics</h2>
+        <p>Plan and track cybersecurity learning topics.</p>
+        <a class="button" href="{{ url_for('topics.index') }}">Manage topics</a>
+    </section>
+    <section class="card">
+        <h2>Categories</h2>
+        <p>Group topics by domain, course, or certification path.</p>
+        <a class="button" href="{{ url_for('categories.index') }}">Manage categories</a>
+    </section>
+    <section class="card">
+        <h2>Contacts</h2>
+        <p>Practice CRUD with a small contact manager.</p>
+        <a class="button" href="{{ url_for('contacts.index') }}">Manage contacts</a>
+    </section>
+</div>
 {% endblock %}

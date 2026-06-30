@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 
+{% block title %}Login - Cyber Dashboard{% endblock %}
+
 {% block content %}
 <h1>Login</h1>
 
 <form method="POST">
-    <input type="email" name="email" placeholder="Email" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <button type="submit">Login</button>
+    {{ form.hidden_tag() }}
+
+    {{ form.email.label }}
+    {{ form.email(placeholder="name@example.com") }}
+
+    {{ form.password.label }}
+    {{ form.password(placeholder="Password") }}
+
+    {{ form.submit() }}
 </form>
 {% endblock %}

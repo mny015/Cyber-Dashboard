@@ -2,17 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cyber Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cyber Dashboard{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
 
     <nav>
-        <a href="{{ url_for('dashboard.index') }}">Home</a>
-        <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('auth.login') }}">Login</a>
-        <a href="{{ url_for('auth.register') }}">Register</a>
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        <div class="nav-brand">
+            <a href="{{ url_for('dashboard.index') }}">Cyber Dashboard</a>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('topics.index') }}">Topics</a>
+                <a href="{{ url_for('categories.index') }}">Categories</a>
+                <a href="{{ url_for('contacts.index') }}">Contacts</a>
+                <a href="{{ url_for('profile.edit') }}">Profile</a>
+                <a href="{{ url_for('auth.setup_mfa') }}">MFA</a>
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.users') }}">Admin</a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}">Login</a>
+                <a href="{{ url_for('auth.register') }}">Register</a>
+            {% endif %}
+        </div>
     </nav>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -25,9 +41,20 @@
         {% endif %}
     {% endwith %}
 
+    {% if form and form.errors %}
+        <div>
+            {% for field_errors in form.errors.values() %}
+                {% for error in field_errors %}
+                    <p class="alert danger">{{ error }}</p>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <main>
         {% block content %}{% endblock %}
     </main>
 
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

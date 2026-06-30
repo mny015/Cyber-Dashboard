@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% set editing = category and category.id %}
+{% block title %}{{ "Edit" if editing else "New" }} Category - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ "Edit" if editing else "New" }} Category</h1>
+
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="name">Name</label>
+    <input id="name" type="text" name="name" value="{{ category.name if category else '' }}" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" name="description">{{ category.description if category else '' }}</textarea>
+
+    <label for="color">Color</label>
+    <input id="color" type="text" name="color" value="{{ category.color if category else '#2563eb' }}">
+
+    <button type="submit">Save category</button>
+</form>
+
+<a href="{{ url_for('categories.index') }}">Back to categories</a>
+{% endblock %}

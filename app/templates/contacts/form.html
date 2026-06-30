@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% set editing = contact and contact.id %}
+{% block title %}{{ "Edit" if editing else "New" }} Contact - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ "Edit" if editing else "New" }} Contact</h1>
+
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="name">Name</label>
+    <input id="name" type="text" name="name" value="{{ contact.name if contact else '' }}" required>
+
+    <label for="email">Email</label>
+    <input id="email" type="email" name="email" value="{{ contact.email if contact else '' }}" required>
+
+    <label for="phone">Phone</label>
+    <input id="phone" type="text" name="phone" value="{{ contact.phone if contact else '' }}" required>
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes">{{ contact.notes if contact else '' }}</textarea>
+
+    <button type="submit">Save contact</button>
+</form>
+
+<a href="{{ url_for('contacts.index') }}">Back to contacts</a>
+{% endblock %}

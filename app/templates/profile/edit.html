@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Profile</h1>
+        <p class="meta">Update your account details and profile picture.</p>
+    </div>
+</div>
+
+<div class="profile-layout">
+    <section class="card profile-preview" data-profile-picture>
+        <button class="avatar-button" type="button" data-profile-picture-toggle aria-label="Open profile picture options">
+            {% if current_user.profile_image %}
+                <img class="avatar" src="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" alt="Profile picture">
+            {% else %}
+                <span class="avatar avatar-placeholder">{{ current_user.display_name[:1]|upper }}</span>
+            {% endif %}
+        </button>
+        <div class="picture-actions" data-profile-picture-menu hidden>
+            {% if current_user.profile_image %}
+                <a class="button" href="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" target="_blank" rel="noopener">View picture</a>
+            {% endif %}
+            <label class="button" for="profile_image">Change picture</label>
+            <p class="meta">Allowed: JPG, PNG, GIF, or WEBP.</p>
+        </div>
+        <h2>{{ current_user.display_name }}</h2>
+        <p class="meta">{{ current_user.email }}</p>
+        <p>{{ current_user.profile_bio or "No profile details yet." }}</p>
+    </section>
+
+    <form method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+
+        {{ form.display_name.label }}
+        {{ form.display_name() }}
+
+        {{ form.email.label }}
+        {{ form.email() }}
+
+        {{ form.profile_bio.label }}
+        {{ form.profile_bio() }}
+
+        <div class="visually-hidden">
+            {{ form.profile_image.label }}
+            {{ form.profile_image() }}
+        </div>
+
+        {{ form.submit() }}
+    </form>
+</div>
+{% endblock %}

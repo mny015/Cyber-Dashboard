@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Audit Logs</h1>
+        <p class="meta">Security and admin actions recorded by the app.</p>
+    </div>
+    <a class="button" href="{{ url_for('admin.users') }}">Users</a>
+</div>
+
+{% if logs.items %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>IP</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs.items %}
+                    <tr>
+                        <td>{{ log.created_at|format_date }}</td>
+                        <td>{{ log.action }}</td>
+                        <td>{{ log.user.email if log.user else "System" }}</td>
+                        <td>{{ log.ip_address }}</td>
+                        <td>{{ log.details }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions">
+        {% if logs.has_prev %}
+            <a class="button" href="{{ url_for('admin.audit_logs', page=logs.prev_num) }}">Previous</a>
+        {% endif %}
+        <span class="meta">Page {{ logs.page }} of {{ logs.pages }}</span>
+        {% if logs.has_next %}
+            <a class="button" href="{{ url_for('admin.audit_logs', page=logs.next_num) }}">Next</a>
+        {% endif %}
+    </div>
+{% else %}
+    <p>No audit logs yet.</p>
+{% endif %}
+{% endblock %}

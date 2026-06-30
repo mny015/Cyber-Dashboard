@@ -1,0 +1,50 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual environments
+.venv/
+.venv313/
+venv/
+env/
+ENV/
+
+# Flask / app runtime files
+instance/*.log
+instance/*.sqlite3
+instance/*.db
+instance/.env
+instance/config.py
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Packaging / build outputs
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Tooling / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Migration / database scratch files
+migrations/__pycache__/
+*.sqlite3
+*.db

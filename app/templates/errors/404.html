@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Not Found - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>404 - Page not found</h1>
+<p>The page you requested could not be found.</p>
+<a class="button" href="{{ url_for('dashboard.index') }}">Go home</a>
+{% endblock %}

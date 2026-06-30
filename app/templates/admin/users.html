@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Users - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Users</h1>
+        <p class="meta">Manage account access and roles.</p>
+    </div>
+    <a class="button" href="{{ url_for('admin.audit_logs') }}">Audit logs</a>
+</div>
+
+{% if users %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.display_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin.update_role', user_id=user.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="role">
+                                    <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
+                                    <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
+                                </select>
+                                <button type="submit">Save</button>
+                            </form>
+                        </td>
+                        <td>{{ "Banned" if user.is_banned else "Active" }}</td>
+                        <td>
+                            {% if user.is_banned %}
+                                <form class="inline-form" method="post" action="{{ url_for('admin.unban_user', user_id=user.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit">Unban</button>
+                                </form>
+                            {% else %}
+                                <form class="inline-form" method="post" action="{{ url_for('admin.ban_user', user_id=user.id) }}" data-confirm="Ban this user?">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="danger" type="submit">Ban</button>
+                                </form>
+                            {% endif %}
+
+                            <form method="post" action="{{ url_for('admin.reset_password', user_id=user.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="password" name="password" placeholder="New password">
+                                <button type="submit">Reset password</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No users found.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Topics - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Topics</h1>
+        <p class="meta">Track the cyber topics you are learning, practicing, and reviewing.</p>
+    </div>
+    <a class="button" href="{{ url_for('topics.create') }}">New topic</a>
+</div>
+
+<form class="filters" method="get">
+    <select name="category_id">
+        <option value="">All categories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+{% if topics %}
+    <div class="grid">
+        {% for topic in topics %}
+            <section class="card">
+                <h2><a href="{{ url_for('topics.detail', topic_id=topic.id) }}">{{ topic.title }}</a></h2>
+                <p>{{ topic.description or "No description yet." }}</p>
+                <p class="meta">
+                    {{ topic.status|title }} &middot; {{ topic.priority|title }}
+                    {% if topic.category %} &middot; {{ topic.category.name }}{% endif %}
+                </p>
+                <div class="actions">
+                    <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
+                    <form class="inline-form" method="post" action="{{ url_for('topics.delete', topic_id=topic.id) }}" data-confirm="Delete this topic?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No topics found. Add a topic to begin tracking your learning.</p>
+{% endif %}
+{% endblock %}

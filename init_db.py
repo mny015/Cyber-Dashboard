@@ -55,6 +55,9 @@ TABLE_COLUMN_ALTERS = {
         "slug": "ALTER TABLE topics ADD COLUMN slug VARCHAR(220) NOT NULL DEFAULT '' AFTER title",
         "is_deleted": "ALTER TABLE topics ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
     },
+    "notes": {
+        "is_deleted": "ALTER TABLE notes ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+    },
 }
 
 DDL_STATEMENTS = [
@@ -143,6 +146,44 @@ DDL_STATEMENTS = [
         PRIMARY KEY (id),
         KEY ix_audit_logs_user_id (user_id),
         CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS notes (
+        id INT NOT NULL AUTO_INCREMENT,
+        title VARCHAR(200) NOT NULL,
+        body TEXT NOT NULL,
+        topic_id INT NULL,
+        owner_id INT NOT NULL,
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_notes_owner_id (owner_id),
+        KEY ix_notes_topic_id (topic_id),
+        CONSTRAINT fk_notes_owner FOREIGN KEY (owner_id) REFERENCES users(id),
+        CONSTRAINT fk_notes_topic FOREIGN KEY (topic_id) REFERENCES topics(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS note_access_requests (
+        id INT NOT NULL AUTO_INCREMENT,
+        topic_id INT NOT NULL,
+        note_id INT NULL,
+        owner_id INT NOT NULL,
+        requester_admin_id INT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        requested_at DATETIME NOT NULL,
+        responded_at DATETIME NULL,
+        PRIMARY KEY (id),
+        KEY ix_note_access_owner_id (owner_id),
+        KEY ix_note_access_admin_id (requester_admin_id),
+        KEY ix_note_access_topic_id (topic_id),
+        KEY ix_note_access_note_id (note_id),
+        CONSTRAINT fk_note_access_owner FOREIGN KEY (owner_id) REFERENCES users(id),
+        CONSTRAINT fk_note_access_admin FOREIGN KEY (requester_admin_id) REFERENCES users(id),
+        CONSTRAINT fk_note_access_topic FOREIGN KEY (topic_id) REFERENCES topics(id),
+        CONSTRAINT fk_note_access_note FOREIGN KEY (note_id) REFERENCES notes(id)
     )
     """,
 ]

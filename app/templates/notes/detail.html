@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ note.title }} - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ note.title }}</h1>
+        <p class="meta">
+            {% if note.topic_title %}Topic: {{ note.topic_title }}{% else %}No topic{% endif %}
+            &middot; Updated {{ note.updated_at|format_date }}
+        </p>
+    </div>
+    <div class="actions">
+        <a class="button" href="{{ url_for('notes.edit', note_id=note.id) }}">Edit</a>
+        <form class="inline-form" method="post" action="{{ url_for('notes.delete', note_id=note.id) }}" data-confirm="Delete this note?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="danger" type="submit">Delete</button>
+        </form>
+    </div>
+</div>
+
+<section class="card">
+    <p class="pre-wrap">{{ note.body }}</p>
+</section>
+
+<p><a href="{{ url_for('notes.index') }}">Back to notes</a></p>
+{% endblock %}

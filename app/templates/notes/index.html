@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Notes - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Notes</h1>
+        <p class="meta">Private notes linked to your topics.</p>
+    </div>
+    <a class="button" href="{{ url_for('notes.create') }}">New note</a>
+</div>
+
+<form class="filters" method="get">
+    <select name="topic_id">
+        <option value="">All topics</option>
+        {% for topic in topics %}
+            <option value="{{ topic.id }}" {% if selected_topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+{% if notes %}
+    <div class="grid">
+        {% for note in notes %}
+            <section class="card">
+                <h2><a href="{{ url_for('notes.detail', note_id=note.id) }}">{{ note.title }}</a></h2>
+                <p class="meta">
+                    {% if note.topic_title %}Topic: {{ note.topic_title }}{% else %}No topic{% endif %}
+                    &middot; Updated {{ note.updated_at|format_date }}
+                </p>
+                <p>{{ note.body[:160] }}{% if note.body|length > 160 %}...{% endif %}</p>
+                <div class="actions">
+                    <a class="button" href="{{ url_for('notes.edit', note_id=note.id) }}">Edit</a>
+                    <form class="inline-form" method="post" action="{{ url_for('notes.delete', note_id=note.id) }}" data-confirm="Delete this note?">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No notes yet. Create one from here or from a topic page.</p>
+{% endif %}
+{% endblock %}

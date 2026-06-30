@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Note Requests - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Note Requests</h1>
+        <p class="meta">Admins can view notes only after the owner approves a specific note.</p>
+    </div>
+    <a class="button" href="{{ url_for('admin.topic_summaries') }}">Request from topics</a>
+</div>
+
+{% if requests %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Topic</th>
+                    <th>Owner</th>
+                    <th>Status</th>
+                    <th>Requested</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in requests %}
+                    <tr>
+                        <td>{{ item.topic_title }}</td>
+                        <td>{{ item.owner_name }}<br><span class="meta">{{ item.owner_email }}</span></td>
+                        <td>{{ item.status|title }}</td>
+                        <td>{{ item.requested_at|format_date }}</td>
+                        <td>
+                            {% if item.status == "approved" %}
+                                <a class="button" href="{{ url_for('admin.approved_note', request_id=item.id) }}">View approved note</a>
+                            {% elif item.status == "pending" %}
+                                Waiting for user approval
+                            {% else %}
+                                Denied
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p>No note requests yet.</p>
+{% endif %}
+{% endblock %}

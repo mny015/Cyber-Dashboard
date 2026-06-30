@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app.forms.admin import ResetPasswordForm, RoleForm
@@ -36,6 +36,99 @@ def topic_summaries():
         """
     )
     return render_template("admin/topic_summaries.html", topics=rows)
+
+
+@admin_bp.route("/topics/<int:topic_id>/request-notes", methods=["POST"])
+@login_required
+@admin_required
+def request_topic_notes(topic_id):
+    topic = fetch_one(
+        """
+        SELECT id, owner_id, title
+        FROM topics
+        WHERE id = %s AND is_deleted = 0
+        """,
+        (topic_id,),
+    )
+    if not topic:
+        abort(404)
+    if topic["owner_id"] == current_user.id:
+        flash("You already own this topic.", "info")
+        return redirect(url_for("admin.topic_summaries"))
+
+    existing = fetch_one(
+        """
+        SELECT id, status
+        FROM note_access_requests
+        WHERE topic_id = %s AND requester_admin_id = %s AND owner_id = %s
+          AND status IN ('pending', 'approved')
+        ORDER BY requested_at DESC
+        LIMIT 1
+        """,
+        (topic_id, current_user.id, topic["owner_id"]),
+    )
+    if existing:
+        flash(f"A {existing['status']} request already exists for this topic.", "warning")
+        return redirect(url_for("admin.note_requests"))
+
+    execute(
+        """
+        INSERT INTO note_access_requests
+            (topic_id, note_id, owner_id, requester_admin_id, status, requested_at, responded_at)
+        VALUES (%s, NULL, %s, %s, 'pending', NOW(), NULL)
+        """,
+        (topic_id, topic["owner_id"], current_user.id),
+    )
+    log_audit("note_access_requested", f"Requested notes for topic {topic['title']}")
+    flash("Note access request sent to the user.", "success")
+    return redirect(url_for("admin.note_requests"))
+
+
+@admin_bp.route("/note-requests")
+@login_required
+@admin_required
+def note_requests():
+    requests = fetch_all(
+        """
+        SELECT note_access_requests.*, topics.title AS topic_title,
+               owners.display_name AS owner_name, owners.email AS owner_email,
+               notes.title AS note_title
+        FROM note_access_requests
+        JOIN topics ON topics.id = note_access_requests.topic_id
+        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        LEFT JOIN notes ON notes.id = note_access_requests.note_id
+        WHERE note_access_requests.requester_admin_id = %s
+        ORDER BY note_access_requests.requested_at DESC
+        """,
+        (current_user.id,),
+    )
+    return render_template("admin/note_requests.html", requests=requests)
+
+
+@admin_bp.route("/note-requests/<int:request_id>/note")
+@login_required
+@admin_required
+def approved_note(request_id):
+    note = fetch_one(
+        """
+        SELECT note_access_requests.id AS request_id,
+               notes.title, notes.body, notes.updated_at,
+               topics.title AS topic_title,
+               owners.display_name AS owner_name, owners.email AS owner_email
+        FROM note_access_requests
+        JOIN notes ON notes.id = note_access_requests.note_id
+        JOIN topics ON topics.id = note_access_requests.topic_id
+        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        WHERE note_access_requests.id = %s
+          AND note_access_requests.requester_admin_id = %s
+          AND note_access_requests.status = 'approved'
+          AND notes.is_deleted = 0
+        """,
+        (request_id, current_user.id),
+    )
+    if not note:
+        abort(404)
+    return render_template("admin/approved_note.html", note=note)
 
 
 @admin_bp.route("/categories")

@@ -58,6 +58,10 @@ TABLE_COLUMN_ALTERS = {
     "notes": {
         "is_deleted": "ALTER TABLE notes ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
     },
+    "lab_references": {
+        "visibility": "ALTER TABLE lab_references ADD COLUMN visibility VARCHAR(20) NOT NULL DEFAULT 'personal'",
+        "is_deleted": "ALTER TABLE lab_references ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE",
+    },
 }
 
 DDL_STATEMENTS = [
@@ -184,6 +188,39 @@ DDL_STATEMENTS = [
         CONSTRAINT fk_note_access_admin FOREIGN KEY (requester_admin_id) REFERENCES users(id),
         CONSTRAINT fk_note_access_topic FOREIGN KEY (topic_id) REFERENCES topics(id),
         CONSTRAINT fk_note_access_note FOREIGN KEY (note_id) REFERENCES notes(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS lab_references (
+        id INT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(200) NOT NULL,
+        vendor VARCHAR(120) NOT NULL,
+        url VARCHAR(255) NOT NULL,
+        notes TEXT NOT NULL,
+        topic_id INT NULL,
+        owner_id INT NOT NULL,
+        visibility VARCHAR(20) NOT NULL DEFAULT 'personal',
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_lab_references_owner_id (owner_id),
+        KEY ix_lab_references_topic_id (topic_id),
+        CONSTRAINT fk_lab_references_owner FOREIGN KEY (owner_id) REFERENCES users(id),
+        CONSTRAINT fk_lab_references_topic FOREIGN KEY (topic_id) REFERENCES topics(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS lab_completions (
+        id INT NOT NULL AUTO_INCREMENT,
+        lab_id INT NOT NULL,
+        user_id INT NOT NULL,
+        completed_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_lab_completion_user (lab_id, user_id),
+        KEY ix_lab_completions_user_id (user_id),
+        CONSTRAINT fk_lab_completions_lab FOREIGN KEY (lab_id) REFERENCES lab_references(id),
+        CONSTRAINT fk_lab_completions_user FOREIGN KEY (user_id) REFERENCES users(id)
     )
     """,
 ]

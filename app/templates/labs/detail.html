@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lab.name }} - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ lab.name }}</h1>
+        <p class="meta">
+            {{ lab.vendor }}
+            &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}
+            {% if lab.topic_title %}&middot; Topic: {{ lab.topic_title }}{% endif %}
+        </p>
+    </div>
+    <div class="actions">
+        <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer">Open lab</a>
+        {% if lab.owner_id == current_user.id %}
+            <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}">Edit</a>
+            <form class="inline-form" method="post" action="{{ url_for('labs.delete', lab_id=lab.id) }}" data-confirm="Delete this lab?">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="danger" type="submit">Delete</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<section class="card">
+    <h2>Notes</h2>
+    <p class="pre-wrap">{{ lab.notes or "No notes yet." }}</p>
+    <p class="meta">Added by {{ lab.owner_name }} &middot; Updated {{ lab.updated_at|format_date }}</p>
+
+    {% if lab.is_completed %}
+        <form method="post" action="{{ url_for('labs.incomplete', lab_id=lab.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Mark incomplete</button>
+        </form>
+    {% else %}
+        <form method="post" action="{{ url_for('labs.complete', lab_id=lab.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Mark complete</button>
+        </form>
+    {% endif %}
+</section>
+{% endblock %}

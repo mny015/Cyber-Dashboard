@@ -37,5 +37,10 @@
         <p>Track note access requests and view only approved notes.</p>
         <a class="button" href="{{ url_for('admin.note_requests') }}">View requests</a>
     </section>
+    <section class="card">
+        <h2>Labs</h2>
+        <p>Add personal labs or share public labs with every user.</p>
+        <a class="button" href="{{ url_for('labs.index') }}">Manage labs</a>
+    </section>
 </div>
 {% endblock %}

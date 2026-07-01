@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Labs - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Labs</h1>
+        <p class="meta">Track practice labs from picoCTF, TryHackMe, Hack The Box, and more.</p>
+    </div>
+    <a class="button" href="{{ url_for('labs.create') }}">Add lab</a>
+</div>
+
+<form class="filters" method="get">
+    <select name="platform">
+        <option value="">All platforms</option>
+        {% for platform in platforms %}
+            <option value="{{ platform }}" {% if selected_platform == platform %}selected{% endif %}>{{ platform }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+</form>
+
+{% if labs %}
+    <div class="grid">
+        {% for lab in labs %}
+            <section class="card">
+                <div class="page-header">
+                    <h2><a href="{{ url_for('labs.detail', lab_id=lab.id) }}">{{ lab.name }}</a></h2>
+                    <span class="status-badge">{{ "Complete" if lab.is_completed else "Open" }}</span>
+                </div>
+                <p class="meta">
+                    {{ lab.vendor }}
+                    &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}
+                    {% if lab.topic_title %}&middot; {{ lab.topic_title }}{% endif %}
+                </p>
+                <p>{{ lab.notes[:140] }}{% if lab.notes|length > 140 %}...{% endif %}</p>
+                <div class="actions">
+                    <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer">Open lab</a>
+                    {% if lab.is_completed %}
+                        <form class="inline-form" method="post" action="{{ url_for('labs.incomplete', lab_id=lab.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit">Mark incomplete</button>
+                        </form>
+                    {% else %}
+                        <form class="inline-form" method="post" action="{{ url_for('labs.complete', lab_id=lab.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit">Mark complete</button>
+                        </form>
+                    {% endif %}
+                    {% if lab.owner_id == current_user.id %}
+                        <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}">Edit</a>
+                    {% endif %}
+                </div>
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No labs found. Add a personal lab or wait for an admin to share one.</p>
+{% endif %}
+{% endblock %}

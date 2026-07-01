@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Approved Note - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{{ note.title }}</h1>
+        <p class="meta">
+            Approved note from {{ note.owner_name }} for topic {{ note.topic_title }}
+            &middot; Updated {{ note.updated_at|format_date }}
+        </p>
+    </div>
+    <a class="button" href="{{ url_for('admin.note_requests') }}">Back to requests</a>
+</div>
+
+<section class="card">
+    <p class="pre-wrap">{{ note.body }}</p>
+</section>
+{% endblock %}

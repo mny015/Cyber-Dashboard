@@ -22,6 +22,7 @@
                     <th>Status</th>
                     <th>Priority</th>
                     <th>Updated</th>
+                    <th>Note access</th>
                 </tr>
             </thead>
             <tbody>
@@ -33,6 +34,12 @@
                         <td>{{ topic.status|title }}</td>
                         <td>{{ topic.priority|title }}</td>
                         <td>{{ topic.updated_at|format_date }}</td>
+                        <td>
+                            <form method="post" action="{{ url_for('admin.request_topic_notes', topic_id=topic.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit">Request notes</button>
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

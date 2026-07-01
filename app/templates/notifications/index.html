@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Notifications</h1>
+        <p class="meta">Approve or deny admin requests for specific note access.</p>
+    </div>
+</div>
+
+{% if requests %}
+    <div class="grid">
+        {% for item in requests %}
+            <section class="card">
+                <h2>{{ item.status|title }} request</h2>
+                <p>
+                    {{ item.admin_name }} requested note access for topic
+                    <strong>{{ item.topic_title }}</strong>.
+                </p>
+                <p class="meta">
+                    Requested {{ item.requested_at|format_date }}
+                    {% if item.responded_at %}&middot; Responded {{ item.responded_at|format_date }}{% endif %}
+                </p>
+
+                {% if item.status == "pending" %}
+                    {% set available_notes = notes_by_topic.get(item.topic_id, []) %}
+                    {% if available_notes %}
+                        <form method="post" action="{{ url_for('notifications.approve', request_id=item.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <label for="note_id_{{ item.id }}">Choose note to share</label>
+                            <select id="note_id_{{ item.id }}" name="note_id" required>
+                                {% for note in available_notes %}
+                                    <option value="{{ note.id }}">{{ note.title }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit">Approve selected note</button>
+                        </form>
+                    {% else %}
+                        <p>No notes exist for this topic yet.</p>
+                    {% endif %}
+                    <form class="inline-form" method="post" action="{{ url_for('notifications.deny', request_id=item.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="danger" type="submit">Deny</button>
+                    </form>
+                {% elif item.status == "approved" %}
+                    <p class="success-inline">You approved one specific note for this request.</p>
+                {% else %}
+                    <p class="meta">You denied this request.</p>
+                {% endif %}
+            </section>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No notifications yet.</p>
+{% endif %}
+{% endblock %}

@@ -17,7 +17,9 @@
             {% if current_user.is_authenticated %}
                 <a href="{{ url_for('topics.index') }}">Topics</a>
                 <a href="{{ url_for('categories.index') }}">Categories</a>
+                <a href="{{ url_for('notes.index') }}">Notes</a>
                 <a href="{{ url_for('contacts.index') }}">Contacts</a>
+                <a href="{{ url_for('notifications.index') }}">Notifications</a>
                 <a href="{{ url_for('profile.edit') }}">Profile</a>
                 <a href="{{ url_for('auth.setup_mfa') }}">MFA</a>
                 {% if current_user.is_admin %}

@@ -32,5 +32,10 @@
         <p>Review login, logout, admin, and security actions.</p>
         <a class="button" href="{{ url_for('admin.audit_logs') }}">View audit logs</a>
     </section>
+    <section class="card">
+        <h2>Note Requests</h2>
+        <p>Track note access requests and view only approved notes.</p>
+        <a class="button" href="{{ url_for('admin.note_requests') }}">View requests</a>
+    </section>
 </div>
 {% endblock %}

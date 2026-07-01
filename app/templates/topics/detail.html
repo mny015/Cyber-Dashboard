@@ -7,12 +7,13 @@
     <div>
         <h1>{{ topic.title }}</h1>
         <p class="meta">
-            {{ topic.status|title }} · {{ topic.priority|title }}
-            {% if topic.category %} · {{ topic.category.name }}{% endif %}
+            {{ topic.status|title }} &middot; {{ topic.priority|title }}
+            {% if topic.category %} &middot; {{ topic.category.name }}{% endif %}
         </p>
     </div>
     <div class="actions">
         <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
+        <a class="button" href="{{ url_for('notes.create', topic_id=topic.id) }}">Add note</a>
         <form class="inline-form" method="post" action="{{ url_for('topics.delete', topic_id=topic.id) }}" data-confirm="Delete this topic?">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button class="danger" type="submit">Delete</button>
@@ -23,9 +24,12 @@
 <section class="card">
     <h2>Description</h2>
     <p>{{ topic.description or "No description yet." }}</p>
-    <h2>Notes</h2>
-    <p>{{ topic.notes or "No notes yet." }}</p>
-    <p class="meta">Created {{ topic.created_at|format_date }} · Updated {{ topic.updated_at|format_date }}</p>
+    <h2>Topic summary notes</h2>
+    <p>{{ topic.notes or "No topic summary notes yet." }}</p>
+    <p>
+        <a class="button" href="{{ url_for('notes.index', topic_id=topic.id) }}">View dedicated notes</a>
+    </p>
+    <p class="meta">Created {{ topic.created_at|format_date }} &middot; Updated {{ topic.updated_at|format_date }}</p>
 </section>
 
 <p><a href="{{ url_for('topics.index') }}">Back to topics</a></p>

@@ -140,6 +140,10 @@ button.danger {
     font-size: 0.92rem;
 }
 
+.pre-wrap {
+    white-space: pre-wrap;
+}
+
 .inline-form {
     display: inline;
 }

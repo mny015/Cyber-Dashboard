@@ -17,7 +17,7 @@ def index():
         FROM note_access_requests
         JOIN topics ON topics.id = note_access_requests.topic_id
         JOIN users ON users.id = note_access_requests.requester_admin_id
-        WHERE note_access_requests.owner_id = %s
+        WHERE topics.owner_id = %s
         ORDER BY note_access_requests.requested_at DESC
         """,
         (current_user.id,),
@@ -59,9 +59,9 @@ def approve(request_id):
         """
         UPDATE note_access_requests
         SET status = 'approved', note_id = %s, responded_at = NOW()
-        WHERE id = %s AND owner_id = %s AND status = 'pending'
+        WHERE id = %s AND status = 'pending'
         """,
-        (note_id, request_id, current_user.id),
+        (note_id, request_id),
     )
     log_audit("note_access_approved", f"Approved note access request {request_id}")
     flash("Note access approved.", "success")
@@ -76,9 +76,9 @@ def deny(request_id):
         """
         UPDATE note_access_requests
         SET status = 'denied', responded_at = NOW()
-        WHERE id = %s AND owner_id = %s AND status = 'pending'
+        WHERE id = %s AND status = 'pending'
         """,
-        (access_request["id"], current_user.id),
+        (access_request["id"],),
     )
     log_audit("note_access_denied", f"Denied note access request {request_id}")
     flash("Note access denied.", "info")
@@ -88,9 +88,12 @@ def deny(request_id):
 def get_pending_request_or_404(request_id):
     access_request = fetch_one(
         """
-        SELECT *
+        SELECT note_access_requests.*
         FROM note_access_requests
-        WHERE id = %s AND owner_id = %s AND status = 'pending'
+        JOIN topics ON topics.id = note_access_requests.topic_id
+        WHERE note_access_requests.id = %s
+          AND topics.owner_id = %s
+          AND note_access_requests.status = 'pending'
         """,
         (request_id, current_user.id),
     )

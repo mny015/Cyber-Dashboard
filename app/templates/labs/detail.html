@@ -7,7 +7,7 @@
     <div>
         <h1>{{ lab.name }}</h1>
         <p class="meta">
-            {{ lab.vendor }}
+            {{ lab.platform_name }}
             &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}
             {% if lab.topic_title %}&middot; Topic: {{ lab.topic_title }}{% endif %}
         </p>

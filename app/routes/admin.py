@@ -60,12 +60,12 @@ def request_topic_notes(topic_id):
         """
         SELECT id, status
         FROM note_access_requests
-        WHERE topic_id = %s AND requester_admin_id = %s AND owner_id = %s
+        WHERE topic_id = %s AND requester_admin_id = %s
           AND status IN ('pending', 'approved')
         ORDER BY requested_at DESC
         LIMIT 1
         """,
-        (topic_id, current_user.id, topic["owner_id"]),
+        (topic_id, current_user.id),
     )
     if existing:
         flash(f"A {existing['status']} request already exists for this topic.", "warning")
@@ -74,10 +74,10 @@ def request_topic_notes(topic_id):
     execute(
         """
         INSERT INTO note_access_requests
-            (topic_id, note_id, owner_id, requester_admin_id, status, requested_at, responded_at)
-        VALUES (%s, NULL, %s, %s, 'pending', NOW(), NULL)
+            (topic_id, note_id, requester_admin_id, status, requested_at, responded_at)
+        VALUES (%s, NULL, %s, 'pending', NOW(), NULL)
         """,
-        (topic_id, topic["owner_id"], current_user.id),
+        (topic_id, current_user.id),
     )
     log_audit("note_access_requested", f"Requested notes for topic {topic['title']}")
     flash("Note access request sent to the user.", "success")
@@ -95,7 +95,7 @@ def note_requests():
                notes.title AS note_title
         FROM note_access_requests
         JOIN topics ON topics.id = note_access_requests.topic_id
-        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        JOIN users AS owners ON owners.id = topics.owner_id
         LEFT JOIN notes ON notes.id = note_access_requests.note_id
         WHERE note_access_requests.requester_admin_id = %s
         ORDER BY note_access_requests.requested_at DESC
@@ -118,7 +118,7 @@ def approved_note(request_id):
         FROM note_access_requests
         JOIN notes ON notes.id = note_access_requests.note_id
         JOIN topics ON topics.id = note_access_requests.topic_id
-        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        JOIN users AS owners ON owners.id = topics.owner_id
         WHERE note_access_requests.id = %s
           AND note_access_requests.requester_admin_id = %s
           AND note_access_requests.status = 'approved'

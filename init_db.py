@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 
 import pymysql
 
@@ -40,10 +41,7 @@ USER_COLUMN_ALTERS = {
     "mfa_secret": "ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) NULL",
     "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
     "profile_bio": "ALTER TABLE users ADD COLUMN profile_bio TEXT NULL",
-    "profile_image": "ALTER TABLE users ADD COLUMN profile_image VARCHAR(255) NULL",
-    "profile_image_data": "ALTER TABLE users ADD COLUMN profile_image_data LONGBLOB NULL",
-    "profile_image_mime": "ALTER TABLE users ADD COLUMN profile_image_mime VARCHAR(80) NULL",
-    "profile_image_size": "ALTER TABLE users ADD COLUMN profile_image_size INT NOT NULL DEFAULT 0",
+    "profile_image": "ALTER TABLE users ADD COLUMN profile_image CHAR(64) NULL",
     "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
 }
 
@@ -66,6 +64,26 @@ TABLE_COLUMN_ALTERS = {
 
 DDL_STATEMENTS = [
     """
+    CREATE TABLE IF NOT EXISTS profile_images (
+        image_hash CHAR(64) NOT NULL,
+        image_data LONGBLOB NOT NULL,
+        mime_type VARCHAR(80) NOT NULL,
+        byte_size INT NOT NULL,
+        created_at DATETIME NOT NULL,
+        PRIMARY KEY (image_hash)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS lab_platforms (
+        id INT NOT NULL AUTO_INCREMENT,
+        name VARCHAR(120) NOT NULL,
+        slug VARCHAR(120) NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_lab_platform_name (name),
+        UNIQUE KEY uq_lab_platform_slug (slug)
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS users (
         id INT NOT NULL AUTO_INCREMENT,
         email VARCHAR(255) NOT NULL,
@@ -76,14 +94,12 @@ DDL_STATEMENTS = [
         mfa_secret VARCHAR(64) NULL,
         mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
         profile_bio TEXT NULL,
-        profile_image VARCHAR(255) NULL,
-        profile_image_data LONGBLOB NULL,
-        profile_image_mime VARCHAR(80) NULL,
-        profile_image_size INT NOT NULL DEFAULT 0,
+        profile_image CHAR(64) NULL,
         created_at DATETIME NOT NULL,
         updated_at DATETIME NOT NULL,
         PRIMARY KEY (id),
-        UNIQUE KEY uq_users_email (email)
+        UNIQUE KEY uq_users_email (email),
+        CONSTRAINT fk_users_profile_image FOREIGN KEY (profile_image) REFERENCES profile_images(image_hash)
     )
     """,
     """
@@ -174,17 +190,14 @@ DDL_STATEMENTS = [
         id INT NOT NULL AUTO_INCREMENT,
         topic_id INT NOT NULL,
         note_id INT NULL,
-        owner_id INT NOT NULL,
         requester_admin_id INT NOT NULL,
         status VARCHAR(20) NOT NULL DEFAULT 'pending',
         requested_at DATETIME NOT NULL,
         responded_at DATETIME NULL,
         PRIMARY KEY (id),
-        KEY ix_note_access_owner_id (owner_id),
         KEY ix_note_access_admin_id (requester_admin_id),
         KEY ix_note_access_topic_id (topic_id),
         KEY ix_note_access_note_id (note_id),
-        CONSTRAINT fk_note_access_owner FOREIGN KEY (owner_id) REFERENCES users(id),
         CONSTRAINT fk_note_access_admin FOREIGN KEY (requester_admin_id) REFERENCES users(id),
         CONSTRAINT fk_note_access_topic FOREIGN KEY (topic_id) REFERENCES topics(id),
         CONSTRAINT fk_note_access_note FOREIGN KEY (note_id) REFERENCES notes(id)
@@ -194,7 +207,7 @@ DDL_STATEMENTS = [
     CREATE TABLE IF NOT EXISTS lab_references (
         id INT NOT NULL AUTO_INCREMENT,
         name VARCHAR(200) NOT NULL,
-        vendor VARCHAR(120) NOT NULL,
+        platform_id INT NOT NULL,
         url VARCHAR(255) NOT NULL,
         notes TEXT NOT NULL,
         topic_id INT NULL,
@@ -206,8 +219,10 @@ DDL_STATEMENTS = [
         PRIMARY KEY (id),
         KEY ix_lab_references_owner_id (owner_id),
         KEY ix_lab_references_topic_id (topic_id),
+        KEY ix_lab_references_platform_id (platform_id),
         CONSTRAINT fk_lab_references_owner FOREIGN KEY (owner_id) REFERENCES users(id),
-        CONSTRAINT fk_lab_references_topic FOREIGN KEY (topic_id) REFERENCES topics(id)
+        CONSTRAINT fk_lab_references_topic FOREIGN KEY (topic_id) REFERENCES topics(id),
+        CONSTRAINT fk_lab_references_platform FOREIGN KEY (platform_id) REFERENCES lab_platforms(id)
     )
     """,
     """
@@ -303,55 +318,206 @@ def create_tables():
         print("Database connected and tables are ready.")
 
 
-def migrate_static_profile_images_to_db():
+def normalize_profile_images():
     app = create_app()
     with app.app_context():
         connection = get_connection()
         try:
             with connection.cursor() as cursor:
+                has_blob_columns = column_exists(cursor, "users", "profile_image_data")
+                if has_blob_columns:
+                    cursor.execute(
+                        """
+                        SELECT id, profile_image, profile_image_data, profile_image_mime, profile_image_size
+                        FROM users
+                        WHERE profile_image_data IS NOT NULL
+                        """
+                    )
+                    for user in cursor.fetchall():
+                        image_bytes = user["profile_image_data"]
+                        image_type = detect_image_type_from_bytes(image_bytes)
+                        if image_type not in IMAGE_MIME_BY_TYPE:
+                            continue
+                        digest = hashlib.sha256(image_bytes).hexdigest()
+                        cursor.execute(
+                            """
+                            INSERT INTO profile_images (image_hash, image_data, mime_type, byte_size, created_at)
+                            VALUES (%s, %s, %s, %s, NOW())
+                            ON DUPLICATE KEY UPDATE image_hash = VALUES(image_hash)
+                            """,
+                            (digest, image_bytes, IMAGE_MIME_BY_TYPE[image_type], len(image_bytes)),
+                        )
+                        cursor.execute("UPDATE users SET profile_image = %s WHERE id = %s", (digest, user["id"]))
+
                 cursor.execute(
-                    """
-                    SELECT id, profile_image
-                    FROM users
-                    WHERE profile_image IS NOT NULL
-                      AND profile_image <> ''
-                      AND profile_image_data IS NULL
-                    """
+                    "SELECT id, profile_image FROM users WHERE profile_image IS NOT NULL AND profile_image <> ''"
                 )
-                users = cursor.fetchall()
-                for user in users:
+                for user in cursor.fetchall():
                     old_path = user["profile_image"]
                     if not old_path.startswith("uploads/profiles/"):
                         continue
-
                     disk_path = os.path.join(app.root_path, "static", old_path)
                     if not os.path.exists(disk_path):
                         continue
-
                     with open(disk_path, "rb") as image_file:
                         image_bytes = image_file.read()
-
                     image_type = detect_image_type_from_bytes(image_bytes)
                     if image_type not in IMAGE_MIME_BY_TYPE:
                         continue
-
                     digest = hashlib.sha256(image_bytes).hexdigest()
                     cursor.execute(
                         """
-                        UPDATE users
-                        SET profile_image = %s,
-                            profile_image_data = %s,
-                            profile_image_mime = %s,
-                            profile_image_size = %s,
-                            updated_at = NOW()
-                        WHERE id = %s
+                        INSERT INTO profile_images (image_hash, image_data, mime_type, byte_size, created_at)
+                        VALUES (%s, %s, %s, %s, NOW())
+                        ON DUPLICATE KEY UPDATE image_hash = VALUES(image_hash)
                         """,
-                        (digest, image_bytes, IMAGE_MIME_BY_TYPE[image_type], len(image_bytes), user["id"]),
+                        (digest, image_bytes, IMAGE_MIME_BY_TYPE[image_type], len(image_bytes)),
                     )
+                    cursor.execute("UPDATE users SET profile_image = %s WHERE id = %s", (digest, user["id"]))
                     os.remove(disk_path)
+
+                cursor.execute(
+                    """
+                    UPDATE users
+                    SET profile_image = NULL
+                    WHERE profile_image IS NOT NULL AND CHAR_LENGTH(profile_image) <> 64
+                    """
+                )
+                cursor.execute("ALTER TABLE users MODIFY profile_image CHAR(64) NULL")
+
+                profile_column_drops = {
+                    "profile_image_data": "ALTER TABLE users DROP COLUMN profile_image_data",
+                    "profile_image_mime": "ALTER TABLE users DROP COLUMN profile_image_mime",
+                    "profile_image_size": "ALTER TABLE users DROP COLUMN profile_image_size",
+                }
+                for column_name, statement in profile_column_drops.items():
+                    if column_exists(cursor, "users", column_name):
+                        cursor.execute(statement)
+
+                if not foreign_key_exists(cursor, "users", "profile_image"):
+                    cursor.execute(
+                        """
+                        ALTER TABLE users
+                        ADD CONSTRAINT fk_users_profile_image
+                        FOREIGN KEY (profile_image) REFERENCES profile_images(image_hash)
+                        """
+                    )
             connection.commit()
         finally:
             connection.close()
+
+
+def normalize_lab_platforms():
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            for name in ("picoCTF", "TryHackMe", "Hack The Box", "PortSwigger", "Other"):
+                cursor.execute(
+                    "INSERT IGNORE INTO lab_platforms (name, slug) VALUES (%s, %s)",
+                    (name, platform_slug(name)),
+                )
+
+            if not column_exists(cursor, "lab_references", "platform_id"):
+                cursor.execute("ALTER TABLE lab_references ADD COLUMN platform_id INT NULL AFTER name")
+
+            if column_exists(cursor, "lab_references", "vendor"):
+                cursor.execute("SELECT DISTINCT vendor FROM lab_references WHERE vendor <> ''")
+                for row in cursor.fetchall():
+                    name = row["vendor"]
+                    cursor.execute(
+                        "INSERT IGNORE INTO lab_platforms (name, slug) VALUES (%s, %s)",
+                        (name, platform_slug(name)),
+                    )
+                cursor.execute(
+                    """
+                    UPDATE lab_references AS labs
+                    JOIN lab_platforms AS platforms ON platforms.name = labs.vendor
+                    SET labs.platform_id = platforms.id
+                    WHERE labs.platform_id IS NULL
+                    """
+                )
+
+            cursor.execute(
+                """
+                UPDATE lab_references
+                SET platform_id = (SELECT id FROM lab_platforms WHERE slug = 'other')
+                WHERE platform_id IS NULL
+                """
+            )
+            cursor.execute("ALTER TABLE lab_references MODIFY platform_id INT NOT NULL")
+
+            if not foreign_key_exists(cursor, "lab_references", "platform_id"):
+                cursor.execute(
+                    """
+                    ALTER TABLE lab_references
+                    ADD CONSTRAINT fk_lab_references_platform
+                    FOREIGN KEY (platform_id) REFERENCES lab_platforms(id)
+                    """
+                )
+            if column_exists(cursor, "lab_references", "vendor"):
+                cursor.execute("ALTER TABLE lab_references DROP COLUMN vendor")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def normalize_note_access_requests():
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            if not column_exists(cursor, "note_access_requests", "owner_id"):
+                return
+            if constraint_exists(cursor, "note_access_requests", "fk_note_access_owner"):
+                cursor.execute("ALTER TABLE note_access_requests DROP FOREIGN KEY fk_note_access_owner")
+            cursor.execute("ALTER TABLE note_access_requests DROP COLUMN owner_id")
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def column_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s
+        """,
+        (table_name, column_name),
+    )
+    return cursor.fetchone()["total"] > 0
+
+
+def foreign_key_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND COLUMN_NAME = %s
+          AND REFERENCED_TABLE_NAME IS NOT NULL
+        """,
+        (table_name, column_name),
+    )
+    return cursor.fetchone()["total"] > 0
+
+
+def constraint_exists(cursor, table_name, constraint_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND CONSTRAINT_NAME = %s
+        """,
+        (table_name, constraint_name),
+    )
+    return cursor.fetchone()["total"] > 0
+
+
+def platform_slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
 def detect_image_type_from_bytes(file_bytes):
@@ -372,4 +538,6 @@ if __name__ == "__main__":
     ensure_existing_user_columns()
     ensure_existing_learning_columns()
     create_tables()
-    migrate_static_profile_images_to_db()
+    normalize_profile_images()
+    normalize_lab_platforms()
+    normalize_note_access_requests()

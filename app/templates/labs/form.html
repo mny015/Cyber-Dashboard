@@ -12,10 +12,10 @@
     <label for="name">Lab or box name</label>
     <input id="name" type="text" name="name" value="{{ lab.name if lab else '' }}" required>
 
-    <label for="vendor">Platform</label>
-    <select id="vendor" name="vendor" required>
+    <label for="platform_id">Platform</label>
+    <select id="platform_id" name="platform_id" required>
         {% for platform in platforms %}
-            <option value="{{ platform }}" {% if lab and lab.vendor == platform %}selected{% endif %}>{{ platform }}</option>
+            <option value="{{ platform.id }}" {% if lab and lab.platform_id == platform.id %}selected{% endif %}>{{ platform.name }}</option>
         {% endfor %}
     </select>
 

@@ -9,38 +9,38 @@ from utils.helpers import clean_text
 
 labs_bp = Blueprint("labs", __name__, url_prefix="/labs")
 
-PLATFORMS = ["picoCTF", "TryHackMe", "Hack The Box", "PortSwigger", "Other"]
-
 
 @labs_bp.route("/")
 @login_required
 def index():
-    platform = clean_text(request.args.get("platform"))
-    if platform:
+    platform_id = request.args.get("platform_id", type=int)
+    if platform_id:
         labs = fetch_all(
             """
-            SELECT labs.*, topics.title AS topic_title,
+            SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                    owners.display_name AS owner_name, owners.role AS owner_role,
                    CASE WHEN completions.id IS NULL THEN 0 ELSE 1 END AS is_completed
             FROM lab_references AS labs
+            JOIN lab_platforms AS platforms ON platforms.id = labs.platform_id
             JOIN users AS owners ON owners.id = labs.owner_id
             LEFT JOIN topics ON topics.id = labs.topic_id
             LEFT JOIN lab_completions AS completions
                    ON completions.lab_id = labs.id AND completions.user_id = %s
             WHERE labs.is_deleted = 0
               AND (labs.owner_id = %s OR (labs.visibility = 'public' AND owners.role = 'admin'))
-              AND labs.vendor = %s
+              AND labs.platform_id = %s
             ORDER BY is_completed ASC, labs.updated_at DESC
             """,
-            (current_user.id, current_user.id, platform),
+            (current_user.id, current_user.id, platform_id),
         )
     else:
         labs = fetch_all(
             """
-            SELECT labs.*, topics.title AS topic_title,
+            SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                    owners.display_name AS owner_name, owners.role AS owner_role,
                    CASE WHEN completions.id IS NULL THEN 0 ELSE 1 END AS is_completed
             FROM lab_references AS labs
+            JOIN lab_platforms AS platforms ON platforms.id = labs.platform_id
             JOIN users AS owners ON owners.id = labs.owner_id
             LEFT JOIN topics ON topics.id = labs.topic_id
             LEFT JOIN lab_completions AS completions
@@ -51,7 +51,12 @@ def index():
             """,
             (current_user.id, current_user.id),
         )
-    return render_template("labs/index.html", labs=labs, platforms=PLATFORMS, selected_platform=platform)
+    return render_template(
+        "labs/index.html",
+        labs=labs,
+        platforms=get_platforms(),
+        selected_platform_id=platform_id,
+    )
 
 
 @labs_bp.route("/new", methods=["GET", "POST"])
@@ -62,17 +67,17 @@ def create():
         error = validate_lab(lab)
         if error:
             flash(error, "danger")
-            return render_template("labs/form.html", lab=lab, topics=get_user_topics(), platforms=PLATFORMS)
+            return render_template("labs/form.html", lab=lab, topics=get_user_topics(), platforms=get_platforms())
 
         _, lab_id = execute(
             """
             INSERT INTO lab_references
-                (name, vendor, url, notes, topic_id, owner_id, visibility, is_deleted, created_at, updated_at)
+                (name, platform_id, url, notes, topic_id, owner_id, visibility, is_deleted, created_at, updated_at)
             VALUES (%s, %s, %s, %s, %s, %s, %s, 0, NOW(), NOW())
             """,
             (
                 lab["name"],
-                lab["vendor"],
+                lab["platform_id"],
                 lab["url"],
                 lab["notes"],
                 lab["topic_id"],
@@ -84,7 +89,7 @@ def create():
         flash("Lab added successfully.", "success")
         return redirect(url_for("labs.detail", lab_id=lab_id))
 
-    return render_template("labs/form.html", lab=None, topics=get_user_topics(), platforms=PLATFORMS)
+    return render_template("labs/form.html", lab=None, topics=get_user_topics(), platforms=get_platforms())
 
 
 @labs_bp.route("/<int:lab_id>")
@@ -104,18 +109,18 @@ def edit(lab_id):
         error = validate_lab(lab)
         if error:
             flash(error, "danger")
-            return render_template("labs/form.html", lab=lab, topics=get_user_topics(), platforms=PLATFORMS)
+            return render_template("labs/form.html", lab=lab, topics=get_user_topics(), platforms=get_platforms())
 
         execute(
             """
             UPDATE lab_references
-            SET name = %s, vendor = %s, url = %s, notes = %s,
+            SET name = %s, platform_id = %s, url = %s, notes = %s,
                 topic_id = %s, visibility = %s, updated_at = NOW()
             WHERE id = %s AND owner_id = %s AND is_deleted = 0
             """,
             (
                 lab["name"],
-                lab["vendor"],
+                lab["platform_id"],
                 lab["url"],
                 lab["notes"],
                 lab["topic_id"],
@@ -128,7 +133,7 @@ def edit(lab_id):
         flash("Lab updated successfully.", "success")
         return redirect(url_for("labs.detail", lab_id=lab_id))
 
-    return render_template("labs/form.html", lab=existing, topics=get_user_topics(), platforms=PLATFORMS)
+    return render_template("labs/form.html", lab=existing, topics=get_user_topics(), platforms=get_platforms())
 
 
 @labs_bp.route("/<int:lab_id>/delete", methods=["POST"])
@@ -176,10 +181,11 @@ def incomplete(lab_id):
 def get_visible_lab_or_404(lab_id):
     lab = fetch_one(
         """
-        SELECT labs.*, topics.title AS topic_title,
+        SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                owners.display_name AS owner_name, owners.role AS owner_role,
                CASE WHEN completions.id IS NULL THEN 0 ELSE 1 END AS is_completed
         FROM lab_references AS labs
+        JOIN lab_platforms AS platforms ON platforms.id = labs.platform_id
         JOIN users AS owners ON owners.id = labs.owner_id
         LEFT JOIN topics ON topics.id = labs.topic_id
         LEFT JOIN lab_completions AS completions
@@ -215,13 +221,17 @@ def get_user_topics():
     )
 
 
+def get_platforms():
+    return fetch_all("SELECT id, name FROM lab_platforms ORDER BY name")
+
+
 def read_lab_form():
     visibility = clean_text(request.form.get("visibility"))
     if not current_user.is_admin or visibility not in {"personal", "public"}:
         visibility = "personal"
     return {
         "name": clean_text(request.form.get("name")),
-        "vendor": clean_text(request.form.get("vendor")),
+        "platform_id": request.form.get("platform_id", type=int),
         "url": clean_text(request.form.get("url")),
         "notes": clean_text(request.form.get("notes")),
         "topic_id": request.form.get("topic_id", type=int) or None,
@@ -232,7 +242,7 @@ def read_lab_form():
 def validate_lab(lab):
     if not lab["name"]:
         return "Lab name is required."
-    if lab["vendor"] not in PLATFORMS:
+    if not fetch_one("SELECT id FROM lab_platforms WHERE id = %s", (lab["platform_id"],)):
         return "Choose a valid lab platform."
     parsed_url = urlparse(lab["url"])
     if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:

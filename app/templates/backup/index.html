@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Backup and Export{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <h1>Backup and Export</h1>
+        <p class="meta">Download a portable copy of data you are allowed to access.</p>
+    </div>
+</div>
+
+<div class="grid">
+    <section class="card">
+        <h2>Personal Data</h2>
+        <p>Your account details, categories, topics, notes, contacts, labs, completions, and note-access requests.</p>
+        <div class="actions">
+            <a class="button" href="{{ url_for('backup.personal_json') }}">Download JSON</a>
+            <a class="button" href="{{ url_for('backup.personal_csv') }}">Download CSV ZIP</a>
+        </div>
+    </section>
+
+    {% if current_user.is_admin %}
+    <section class="card">
+        <h2>Admin Data</h2>
+        <p>System users, topic and category summaries, shared labs, audit events, and notes with approved access.</p>
+        <div class="actions">
+            <a class="button" href="{{ url_for('backup.admin_json') }}">Download JSON</a>
+            <a class="button" href="{{ url_for('backup.admin_csv') }}">Download CSV ZIP</a>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<p class="meta">
+    Exports exclude passwords, MFA secrets, profile-image data, and recorded IP addresses.
+</p>
+{% endblock %}

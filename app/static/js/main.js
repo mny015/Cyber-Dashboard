@@ -16,3 +16,14 @@ document.addEventListener("click", (event) => {
     const menu = wrapper.querySelector("[data-profile-picture-menu]");
     menu.hidden = !menu.hidden;
 });
+
+const navToggle = document.querySelector(".nav-toggle");
+const navigation = document.querySelector(".nav-links");
+
+if (navToggle && navigation) {
+    navToggle.addEventListener("click", () => {
+        const isOpen = navToggle.getAttribute("aria-expanded") === "true";
+        navToggle.setAttribute("aria-expanded", String(!isOpen));
+        navigation.classList.toggle("is-open", !isOpen);
+    });
+}

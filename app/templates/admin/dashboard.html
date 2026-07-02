@@ -1,46 +1,103 @@
 {% extends "base.html" %}
 
-{% block title %}Admin - Cyber Dashboard{% endblock %}
+{% block title %}Admin Dashboard | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
-<p>Welcome, admin. Use this dashboard to manage the site.</p>
-
-<div class="grid">
-    <section class="card">
-        <h2>Learning Data</h2>
-        <p>Review the same topic, category, and contact modules as a signed-in user.</p>
-        <a class="button" href="{{ url_for('topics.index') }}">Open topics</a>
-    </section>
-    <section class="card">
-        <h2>User Management</h2>
-        <p>Assign roles, ban or unban accounts, and reset passwords.</p>
+<section class="dashboard-heading">
+    <div>
+        <p class="eyebrow">Administration</p>
+        <h1>System overview</h1>
+        <p class="heading-copy">Monitor account activity, shared resources, and access requests.</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-secondary" href="{{ url_for('admin.audit_logs') }}">Audit logs</a>
         <a class="button" href="{{ url_for('admin.users') }}">Manage users</a>
+    </div>
+</section>
+
+<section class="metric-grid" aria-label="System overview">
+    <a class="metric-card" href="{{ url_for('admin.users') }}">
+        <span class="metric-label">Active users</span>
+        <strong>{{ stats.active_users }}</strong>
+        <span class="metric-link">Manage accounts</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('admin.topic_summaries') }}">
+        <span class="metric-label">Tracked topics</span>
+        <strong>{{ stats.topics }}</strong>
+        <span class="metric-link">Review summaries</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('labs.index') }}">
+        <span class="metric-label">Shared labs</span>
+        <strong>{{ stats.shared_labs }}</strong>
+        <span class="metric-link">Manage lab library</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('admin.note_requests') }}">
+        <span class="metric-label">Pending requests</span>
+        <strong>{{ stats.pending_requests }}</strong>
+        <span class="metric-link">Review note access</span>
+    </a>
+</section>
+
+<div class="dashboard-grid">
+    <section class="panel panel-wide">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Security trail</p>
+                <h2>Recent activity</h2>
+            </div>
+            <a class="text-link" href="{{ url_for('admin.audit_logs') }}">View all</a>
+        </div>
+        {% if recent_activity %}
+            <div class="activity-list">
+                {% for item in recent_activity %}
+                    <div class="activity-row">
+                        <span class="activity-main">
+                            <strong>{{ item.action|replace("_", " ")|title }}</strong>
+                            <span>{{ item.user_name or "System" }} · {{ item.created_at|format_date }}</span>
+                        </span>
+                        <span class="activity-detail">{{ item.details|truncate(54) }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="meta">No activity has been recorded yet.</p>
+        {% endif %}
     </section>
-    <section class="card">
-        <h2>Topic Summaries</h2>
-        <p>See who is tracking what without opening private notes or descriptions.</p>
-        <a class="button" href="{{ url_for('admin.topic_summaries') }}">View summaries</a>
-    </section>
-    <section class="card">
-        <h2>Category Summaries</h2>
-        <p>Review category ownership and topic counts across users.</p>
-        <a class="button" href="{{ url_for('admin.category_summaries') }}">View categories</a>
-    </section>
-    <section class="card">
-        <h2>Audit Logs</h2>
-        <p>Review login, logout, admin, and security actions.</p>
-        <a class="button" href="{{ url_for('admin.audit_logs') }}">View audit logs</a>
-    </section>
-    <section class="card">
-        <h2>Note Requests</h2>
-        <p>Track note access requests and view only approved notes.</p>
-        <a class="button" href="{{ url_for('admin.note_requests') }}">View requests</a>
-    </section>
-    <section class="card">
-        <h2>Labs</h2>
-        <p>Add personal labs or share public labs with every user.</p>
-        <a class="button" href="{{ url_for('labs.index') }}">Manage labs</a>
+
+    <aside class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Portfolio health</p>
+                <h2>Topic status</h2>
+            </div>
+        </div>
+        {% if topic_statuses %}
+            <div class="status-breakdown">
+                {% for item in topic_statuses %}
+                    <div>
+                        <span>{{ item.status|title }}</span>
+                        <strong>{{ item.total }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="meta">No active topics in the system.</p>
+        {% endif %}
+    </aside>
+
+    <section class="panel quick-panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Administration</p>
+                <h2>Management tools</h2>
+            </div>
+        </div>
+        <div class="quick-grid">
+            <a href="{{ url_for('admin.category_summaries') }}"><strong>Categories</strong><span>Review ownership</span></a>
+            <a href="{{ url_for('admin.topic_summaries') }}"><strong>Topic summaries</strong><span>View user progress</span></a>
+            <a href="{{ url_for('labs.create') }}"><strong>Share a lab</strong><span>Add team practice</span></a>
+            <a href="{{ url_for('backup.index') }}"><strong>System export</strong><span>Download admin data</span></a>
+        </div>
     </section>
 </div>
 {% endblock %}

@@ -1,0 +1,141 @@
+from pathlib import Path
+
+import pytest
+from flask import Blueprint, redirect, render_template, url_for
+from werkzeug.security import generate_password_hash
+
+from app.models import limiter, login_manager
+from app.routes.auth import auth_bp
+
+
+@pytest.fixture()
+def fake_auth_app():
+    from flask import Flask
+
+    template_dir = Path(__file__).resolve().parents[1] / "app" / "templates"
+    app = Flask(__name__, template_folder=str(template_dir))
+    app.config.update(
+        SECRET_KEY="test-secret-key",
+        TESTING=True,
+        WTF_CSRF_ENABLED=False,
+        RATELIMIT_ENABLED=False,
+    )
+
+    login_manager.init_app(app)
+    if limiter:
+        limiter.init_app(app)
+
+    dashboard_bp = Blueprint("dashboard", __name__)
+
+    @dashboard_bp.route("/")
+    def index():
+        return render_template("index.html")
+
+    @dashboard_bp.route("/dashboard")
+    def dashboard():
+        return "dashboard"
+
+    @dashboard_bp.route("/user/dashboard")
+    def user_dashboard():
+        return "user dashboard"
+
+    @dashboard_bp.route("/admin/dashboard")
+    def admin_dashboard():
+        return "admin dashboard"
+
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(auth_bp)
+
+    @app.route("/login")
+    def login_page():
+        return redirect(url_for("auth.login"))
+
+    return app
+
+
+@pytest.fixture()
+def fake_auth_client(fake_auth_app):
+    return fake_auth_app.test_client()
+
+
+def make_user_row(
+    email="student@example.com",
+    password="CorrectPassword123!",
+    role="user",
+    is_banned=False,
+    mfa_enabled=False,
+):
+    return {
+        "id": 42,
+        "email": email,
+        "password_hash": generate_password_hash(password),
+        "display_name": "Test Student",
+        "role": role,
+        "is_banned": int(is_banned),
+        "mfa_secret": None,
+        "mfa_enabled": int(mfa_enabled),
+        "auth_version": 0,
+    }
+
+
+def test_home_page_renders_without_database(fake_auth_client):
+    response = fake_auth_client.get("/")
+
+    assert response.status_code == 200
+    assert b"Cyber Dashboard" in response.data
+
+
+def test_login_page_renders_without_database(fake_auth_client):
+    response = fake_auth_client.get("/login", follow_redirects=True)
+
+    assert response.status_code == 200
+    assert b"Login" in response.data
+    assert b"name@example.com" in response.data
+
+
+def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
+    user_row = make_user_row()
+    fetch_calls = []
+    audit_calls = []
+
+    def fake_fetch_one(query, params=None):
+        fetch_calls.append((query, params))
+        return user_row
+
+    monkeypatch.setattr("app.routes.auth.fetch_one", fake_fetch_one)
+    monkeypatch.setattr(
+        "app.routes.auth.log_audit",
+        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+    )
+
+    response = fake_auth_client.post(
+        "/auth/login",
+        data={"email": "student@example.com", "password": "CorrectPassword123!"},
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/user/dashboard")
+    assert fetch_calls == [("SELECT * FROM users WHERE email = %s", ("student@example.com",))]
+    assert audit_calls[0][0] == "login"
+
+    with fake_auth_client.session_transaction() as session:
+        assert session["_user_id"] == "42"
+        assert session["auth_version"] == 0
+
+
+def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
+    user_row = make_user_row()
+
+    monkeypatch.setattr("app.routes.auth.fetch_one", lambda query, params=None: user_row)
+    monkeypatch.setattr("app.routes.auth.log_audit", lambda *args, **kwargs: None)
+
+    response = fake_auth_client.post(
+        "/auth/login",
+        data={"email": "student@example.com", "password": "WrongPassword123!"},
+    )
+
+    assert response.status_code == 200
+    assert b"Invalid email or password." in response.data
+
+    with fake_auth_client.session_transaction() as session:
+        assert "_user_id" not in session

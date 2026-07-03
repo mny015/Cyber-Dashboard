@@ -523,6 +523,41 @@ a.activity-row:hover strong {
     color: var(--muted);
 }
 
+.security-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+}
+
+.security-status {
+    display: inline-flex;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 750;
+}
+
+.security-status-enabled {
+    border-color: rgba(53, 199, 139, 0.4);
+    background: rgba(53, 199, 139, 0.1);
+    color: var(--success);
+}
+
+.manual-secret {
+    margin: 14px 0;
+}
+
+.manual-secret summary {
+    color: var(--accent);
+    cursor: pointer;
+}
+
+.secret-value {
+    overflow-wrap: anywhere;
+}
+
 .empty-state {
     display: grid;
     min-height: 220px;
@@ -746,7 +781,8 @@ tr:last-child td {
     }
 
     .dashboard-grid,
-    .profile-layout {
+    .profile-layout,
+    .security-grid {
         grid-template-columns: 1fr;
     }
 

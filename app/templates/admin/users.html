@@ -51,12 +51,6 @@
                                     <button class="danger" type="submit">Ban</button>
                                 </form>
                             {% endif %}
-
-                            <form method="post" action="{{ url_for('admin.reset_password', user_id=user.id) }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="password" name="password" placeholder="New password">
-                                <button type="submit">Reset password</button>
-                            </form>
                         </td>
                     </tr>
                 {% endfor %}

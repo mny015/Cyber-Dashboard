@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.forms.admin import ResetPasswordForm, RoleForm
+from app.forms.admin import RoleForm
 from app.models.user import User
 from utils.audit import log_audit
 from utils.decorators import admin_required
@@ -200,24 +200,6 @@ def unban_user(user_id):
     execute("UPDATE users SET is_banned = 0, updated_at = NOW() WHERE id = %s", (user.id,))
     log_audit("user_unbanned", f"{user.email} was unbanned")
     flash("User unbanned.", "success")
-    return redirect(url_for("admin.users"))
-
-
-@admin_bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
-@login_required
-@admin_required
-def reset_password(user_id):
-    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
-    if not user:
-        return redirect(url_for("admin.users"))
-    form = ResetPasswordForm()
-    if form.validate_on_submit() and form.password.data:
-        user.set_password(form.password.data)
-        execute("UPDATE users SET password_hash = %s, updated_at = NOW() WHERE id = %s", (user.password_hash, user.id))
-        log_audit("password_reset", f"Password reset for {user.email}")
-        flash("Password reset successfully.", "success")
-    else:
-        flash("Password must be at least 8 characters.", "danger")
     return redirect(url_for("admin.users"))
 
 

@@ -2,10 +2,10 @@ from io import BytesIO
 
 import pyotp
 import qrcode
-from flask import Blueprint, flash, redirect, render_template, send_file, session, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app.forms.auth import LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
+from app.forms.auth import ChangePasswordForm, LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
 from app.models.user import User
 from utils.audit import log_audit
 from utils.db import execute, fetch_one
@@ -18,6 +18,7 @@ except ImportError:
     limiter = None
 
 login_rate_limit = limiter.limit("5 per minute") if limiter else (lambda view: view)
+password_rate_limit = limiter.limit("5 per 15 minutes") if limiter else (lambda view: view)
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -84,6 +85,7 @@ def login():
 
         login_user(user)
         session.permanent = True
+        session["auth_version"] = user.auth_version
         log_audit("login", "User logged in", user=user)
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
@@ -112,6 +114,7 @@ def verify_mfa():
         session.pop("pending_mfa_user_id", None)
         session.permanent = True
         login_user(user)
+        session["auth_version"] = user.auth_version
         log_audit("login", "User logged in with MFA", user=user)
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
@@ -133,6 +136,15 @@ def logout():
 @login_required
 def setup_mfa():
     form = MfaSetupForm()
+    password_form = ChangePasswordForm()
+    if current_user.mfa_enabled:
+        return render_template(
+            "auth/setup_mfa.html",
+            form=form,
+            password_form=password_form,
+            provisioning_uri=None,
+        )
+
     if not current_user.mfa_secret:
         current_user.mfa_secret = pyotp.random_base32()
         execute("UPDATE users SET mfa_secret = %s, updated_at = NOW() WHERE id = %s", (current_user.mfa_secret, current_user.id))
@@ -146,7 +158,12 @@ def setup_mfa():
     if form.validate_on_submit():
         if not totp.verify(form.token.data.strip(), valid_window=1):
             flash("Invalid MFA code.", "danger")
-            return render_template("auth/setup_mfa.html", form=form, provisioning_uri=provisioning_uri)
+            return render_template(
+                "auth/setup_mfa.html",
+                form=form,
+                password_form=password_form,
+                provisioning_uri=provisioning_uri,
+            )
 
         current_user.mfa_enabled = True
         execute("UPDATE users SET mfa_enabled = 1, updated_at = NOW() WHERE id = %s", (current_user.id,))
@@ -154,12 +171,19 @@ def setup_mfa():
         flash("MFA enabled successfully.", "success")
         return redirect(url_for("dashboard.dashboard"))
 
-    return render_template("auth/setup_mfa.html", form=form, provisioning_uri=provisioning_uri)
+    return render_template(
+        "auth/setup_mfa.html",
+        form=form,
+        password_form=password_form,
+        provisioning_uri=provisioning_uri,
+    )
 
 
 @auth_bp.route("/profile/mfa/qr")
 @login_required
 def mfa_qr():
+    if current_user.mfa_enabled:
+        abort(404)
     if not current_user.mfa_secret:
         flash("Start MFA setup first.", "warning")
         return redirect(url_for("auth.setup_mfa"))
@@ -173,6 +197,43 @@ def mfa_qr():
     image.save(buffer, format="PNG")
     buffer.seek(0)
     return send_file(buffer, mimetype="image/png")
+
+
+@auth_bp.route("/profile/password", methods=["POST"])
+@login_required
+@password_rate_limit
+def change_password():
+    form = ChangePasswordForm()
+    if not form.validate_on_submit():
+        for errors in form.errors.values():
+            for error in errors:
+                flash(error, "danger")
+        return redirect(url_for("auth.setup_mfa"))
+
+    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (current_user.id,)))
+    if not user or not user.check_password(form.current_password.data):
+        log_audit("password_change_failed", "Current password verification failed")
+        flash("Current password is incorrect.", "danger")
+        return redirect(url_for("auth.setup_mfa"))
+
+    if user.check_password(form.new_password.data):
+        flash("Your new password must be different from your current password.", "danger")
+        return redirect(url_for("auth.setup_mfa"))
+
+    user.set_password(form.new_password.data)
+    execute(
+        """
+        UPDATE users
+        SET password_hash = %s, auth_version = auth_version + 1, updated_at = NOW()
+        WHERE id = %s
+        """,
+        (user.password_hash, current_user.id),
+    )
+    log_audit("password_changed", "User changed their own password")
+    logout_user()
+    session.clear()
+    flash("Password changed. Please log in again on this device.", "success")
+    return redirect(url_for("auth.login"))
 
 
 def redirect_after_login(user):

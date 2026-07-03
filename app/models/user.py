@@ -16,6 +16,7 @@ class User(UserMixin):
         is_banned=False,
         mfa_secret=None,
         mfa_enabled=False,
+        auth_version=0,
         profile_bio="",
         profile_image="",
         created_at=None,
@@ -30,6 +31,7 @@ class User(UserMixin):
         self.is_banned = bool(is_banned)
         self.mfa_secret = mfa_secret
         self.mfa_enabled = bool(mfa_enabled)
+        self.auth_version = int(auth_version or 0)
         self.profile_bio = profile_bio or ""
         self.profile_image = profile_image or ""
         self.created_at = created_at

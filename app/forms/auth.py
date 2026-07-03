@@ -6,7 +6,7 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length
 class RegisterForm(FlaskForm):
     display_name = StringField("Display name", validators=[DataRequired(), Length(min=2, max=120)])
     email = EmailField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired(), Length(min=8, max=128)])
+    password = PasswordField("Password", validators=[DataRequired(), Length(min=12, max=128)])
     confirm_password = PasswordField(
         "Confirm password",
         validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
@@ -28,3 +28,16 @@ class MfaTokenForm(FlaskForm):
 class MfaSetupForm(FlaskForm):
     token = StringField("MFA code", validators=[DataRequired(), Length(min=6, max=6)])
     submit = SubmitField("Enable MFA")
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField("Current password", validators=[DataRequired()])
+    new_password = PasswordField(
+        "New password",
+        validators=[DataRequired(), Length(min=12, max=128)],
+    )
+    confirm_password = PasswordField(
+        "Confirm new password",
+        validators=[DataRequired(), EqualTo("new_password", message="New passwords must match.")],
+    )
+    submit = SubmitField("Change password")

@@ -2,7 +2,8 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, render_template
+from flask import Flask, render_template, session
+from flask_login import current_user, logout_user
 
 from config import Config
 from app.models import csrf, limiter, login_manager
@@ -28,12 +29,24 @@ def create_app():
     configure_logging(app)
 
     register_blueprints(app)
+    register_session_checks(app)
 
     app.jinja_env.filters["format_date"] = format_date
 
     register_error_handlers(app)
 
     return app
+
+
+def register_session_checks(app):
+    @app.before_request
+    def reject_stale_session():
+        if not current_user.is_authenticated:
+            return
+        session_version = session.get("auth_version")
+        if session_version != current_user.auth_version:
+            logout_user()
+            session.clear()
 
 
 def configure_security_headers(app):

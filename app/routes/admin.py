@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.forms.admin import ResetPasswordForm, RoleForm
+from app.forms.admin import RoleForm
 from app.models.user import User
 from utils.audit import log_audit
 from utils.decorators import admin_required
@@ -60,12 +60,12 @@ def request_topic_notes(topic_id):
         """
         SELECT id, status
         FROM note_access_requests
-        WHERE topic_id = %s AND requester_admin_id = %s AND owner_id = %s
+        WHERE topic_id = %s AND requester_admin_id = %s
           AND status IN ('pending', 'approved')
         ORDER BY requested_at DESC
         LIMIT 1
         """,
-        (topic_id, current_user.id, topic["owner_id"]),
+        (topic_id, current_user.id),
     )
     if existing:
         flash(f"A {existing['status']} request already exists for this topic.", "warning")
@@ -74,10 +74,10 @@ def request_topic_notes(topic_id):
     execute(
         """
         INSERT INTO note_access_requests
-            (topic_id, note_id, owner_id, requester_admin_id, status, requested_at, responded_at)
-        VALUES (%s, NULL, %s, %s, 'pending', NOW(), NULL)
+            (topic_id, note_id, requester_admin_id, status, requested_at, responded_at)
+        VALUES (%s, NULL, %s, 'pending', NOW(), NULL)
         """,
-        (topic_id, topic["owner_id"], current_user.id),
+        (topic_id, current_user.id),
     )
     log_audit("note_access_requested", f"Requested notes for topic {topic['title']}")
     flash("Note access request sent to the user.", "success")
@@ -95,7 +95,7 @@ def note_requests():
                notes.title AS note_title
         FROM note_access_requests
         JOIN topics ON topics.id = note_access_requests.topic_id
-        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        JOIN users AS owners ON owners.id = topics.owner_id
         LEFT JOIN notes ON notes.id = note_access_requests.note_id
         WHERE note_access_requests.requester_admin_id = %s
         ORDER BY note_access_requests.requested_at DESC
@@ -118,7 +118,7 @@ def approved_note(request_id):
         FROM note_access_requests
         JOIN notes ON notes.id = note_access_requests.note_id
         JOIN topics ON topics.id = note_access_requests.topic_id
-        JOIN users AS owners ON owners.id = note_access_requests.owner_id
+        JOIN users AS owners ON owners.id = topics.owner_id
         WHERE note_access_requests.id = %s
           AND note_access_requests.requester_admin_id = %s
           AND note_access_requests.status = 'approved'
@@ -200,24 +200,6 @@ def unban_user(user_id):
     execute("UPDATE users SET is_banned = 0, updated_at = NOW() WHERE id = %s", (user.id,))
     log_audit("user_unbanned", f"{user.email} was unbanned")
     flash("User unbanned.", "success")
-    return redirect(url_for("admin.users"))
-
-
-@admin_bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
-@login_required
-@admin_required
-def reset_password(user_id):
-    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
-    if not user:
-        return redirect(url_for("admin.users"))
-    form = ResetPasswordForm()
-    if form.validate_on_submit() and form.password.data:
-        user.set_password(form.password.data)
-        execute("UPDATE users SET password_hash = %s, updated_at = NOW() WHERE id = %s", (user.password_hash, user.id))
-        log_audit("password_reset", f"Password reset for {user.email}")
-        flash("Password reset successfully.", "success")
-    else:
-        flash("Password must be at least 8 characters.", "danger")
     return redirect(url_for("admin.users"))
 
 

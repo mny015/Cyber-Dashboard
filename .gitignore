@@ -10,6 +10,15 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+.env
+*.pyc
+.gitignore
+
 
 # Virtual environments
 .venv/
@@ -48,3 +57,7 @@ Thumbs.db
 migrations/__pycache__/
 *.sqlite3
 *.db
+
+
+
+pytest.ini

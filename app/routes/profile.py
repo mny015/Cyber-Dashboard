@@ -64,20 +64,21 @@ def picture(image_hash):
 
     row = fetch_one(
         """
-        SELECT profile_image_data, profile_image_mime, profile_image_size
+        SELECT images.image_data, images.mime_type, images.byte_size
         FROM users
-        WHERE id = %s AND profile_image = %s
+        JOIN profile_images AS images ON images.image_hash = users.profile_image
+        WHERE users.id = %s AND users.profile_image = %s
         """,
         (current_user.id, image_hash),
     )
-    if not row or not row["profile_image_data"]:
+    if not row or not row["image_data"]:
         abort(404)
 
     return Response(
-        row["profile_image_data"],
-        mimetype=row["profile_image_mime"],
+        row["image_data"],
+        mimetype=row["mime_type"],
         headers={
-            "Content-Length": str(row["profile_image_size"] or len(row["profile_image_data"])),
+            "Content-Length": str(row["byte_size"] or len(row["image_data"])),
             "Content-Disposition": "inline",
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, max-age=300",
@@ -95,18 +96,27 @@ def update_profile(form, email, image_update):
     if image_update:
         execute(
             """
+            INSERT INTO profile_images (image_hash, image_data, mime_type, byte_size, created_at)
+            VALUES (%s, %s, %s, %s, NOW())
+            ON DUPLICATE KEY UPDATE image_hash = VALUES(image_hash)
+            """,
+            (
+                image_update["hash"],
+                image_update["data"],
+                image_update["mime"],
+                image_update["size"],
+            ),
+        )
+        execute(
+            """
             UPDATE users
             SET display_name = %s, email = %s, profile_bio = %s,
-                profile_image = %s, profile_image_data = %s, profile_image_mime = %s,
-                profile_image_size = %s, updated_at = NOW()
+                profile_image = %s, updated_at = NOW()
             WHERE id = %s
             """,
             (
                 *params,
                 image_update["hash"],
-                image_update["data"],
-                image_update["mime"],
-                image_update["size"],
                 current_user.id,
             ),
         )

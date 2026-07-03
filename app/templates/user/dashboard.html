@@ -1,26 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Cyber Dashboard{% endblock %}
+{% block title %}Dashboard | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Dashboard</h1>
-<p>Welcome to your learning dashboard.</p>
+<section class="dashboard-heading">
+    <div>
+        <p class="eyebrow">Personal workspace</p>
+        <h1>Welcome back, {{ current_user.display_name }}</h1>
+        <p class="heading-copy">Keep your learning plan moving and pick up where you left off.</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-secondary" href="{{ url_for('notes.create') }}">New note</a>
+        <a class="button" href="{{ url_for('topics.create') }}">Add topic</a>
+    </div>
+</section>
 
-<div class="grid">
-    <section class="card">
-        <h2>Topics</h2>
-        <p>Plan and track cybersecurity learning topics.</p>
-        <a class="button" href="{{ url_for('topics.index') }}">Manage topics</a>
+<section class="metric-grid" aria-label="Learning overview">
+    <a class="metric-card" href="{{ url_for('topics.index') }}">
+        <span class="metric-label">Active topics</span>
+        <strong>{{ stats.topics }}</strong>
+        <span class="metric-link">View learning plan</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('notes.index') }}">
+        <span class="metric-label">Notes</span>
+        <strong>{{ stats.notes }}</strong>
+        <span class="metric-link">Open knowledge base</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('labs.index') }}">
+        <span class="metric-label">Labs completed</span>
+        <strong>{{ stats.completed_labs }}</strong>
+        <span class="metric-link">Continue practicing</span>
+    </a>
+    <a class="metric-card" href="{{ url_for('notifications.index') }}">
+        <span class="metric-label">Pending alerts</span>
+        <strong>{{ stats.notifications }}</strong>
+        <span class="metric-link">Review requests</span>
+    </a>
+</section>
+
+<div class="dashboard-grid">
+    <section class="panel panel-wide">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Recently updated</p>
+                <h2>Your topics</h2>
+            </div>
+            <a class="text-link" href="{{ url_for('topics.index') }}">View all</a>
+        </div>
+        {% if recent_topics %}
+            <div class="activity-list">
+                {% for topic in recent_topics %}
+                    <a class="activity-row" href="{{ url_for('topics.detail', topic_id=topic.id) }}">
+                        <span class="activity-main">
+                            <strong>{{ topic.title }}</strong>
+                            <span>{{ topic.category_name or "Uncategorized" }} · Updated {{ topic.updated_at|format_date }}</span>
+                        </span>
+                        <span class="status status-{{ topic.status }}">{{ topic.status|title }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>Build your learning plan</h3>
+                <p>Add your first topic to start tracking progress.</p>
+                <a class="button" href="{{ url_for('topics.create') }}">Add first topic</a>
+            </div>
+        {% endif %}
     </section>
-    <section class="card">
-        <h2>Categories</h2>
-        <p>Group topics by domain, course, or certification path.</p>
-        <a class="button" href="{{ url_for('categories.index') }}">Manage categories</a>
-    </section>
-    <section class="card">
-        <h2>Contacts</h2>
-        <p>Practice CRUD with a small contact manager.</p>
-        <a class="button" href="{{ url_for('contacts.index') }}">Manage contacts</a>
+
+    <aside class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Practice queue</p>
+                <h2>Labs to complete</h2>
+            </div>
+        </div>
+        {% if available_labs %}
+            <div class="compact-list">
+                {% for lab in available_labs %}
+                    <a href="{{ url_for('labs.index') }}">
+                        <strong>{{ lab.name }}</strong>
+                        <span>{{ lab.platform }}{% if lab.visibility == "everyone" %} · Shared{% endif %}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="meta">You are caught up. Add another lab when you are ready.</p>
+        {% endif %}
+    </aside>
+
+    <section class="panel quick-panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Shortcuts</p>
+                <h2>Quick actions</h2>
+            </div>
+        </div>
+        <div class="quick-grid">
+            <a href="{{ url_for('categories.create') }}"><strong>New category</strong><span>Organize your plan</span></a>
+            <a href="{{ url_for('labs.create') }}"><strong>Add a lab</strong><span>Queue practical work</span></a>
+            <a href="{{ url_for('backup.index') }}"><strong>Export data</strong><span>Download a backup</span></a>
+            <a href="{{ url_for('profile.edit') }}"><strong>Update profile</strong><span>Manage your account</span></a>
+        </div>
     </section>
 </div>
 {% endblock %}

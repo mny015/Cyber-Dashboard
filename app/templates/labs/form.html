@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% set editing = lab and lab.id %}
+{% block title %}{{ "Edit" if editing else "Add" }} Lab - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<h1>{{ "Edit" if editing else "Add" }} Lab</h1>
+
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="name">Lab or box name</label>
+    <input id="name" type="text" name="name" value="{{ lab.name if lab else '' }}" required>
+
+    <label for="platform_id">Platform</label>
+    <select id="platform_id" name="platform_id" required>
+        {% for platform in platforms %}
+            <option value="{{ platform.id }}" {% if lab and lab.platform_id == platform.id %}selected{% endif %}>{{ platform.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="url">Lab URL</label>
+    <input id="url" type="url" name="url" value="{{ lab.url if lab else '' }}" placeholder="https://..." required>
+
+    <label for="topic_id">Related topic</label>
+    <select id="topic_id" name="topic_id">
+        <option value="">No topic</option>
+        {% for topic in topics %}
+            <option value="{{ topic.id }}" {% if lab and lab.topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
+        {% endfor %}
+    </select>
+
+    {% if current_user.is_admin %}
+        <label for="visibility">Visibility</label>
+        <select id="visibility" name="visibility">
+            <option value="personal" {% if not lab or lab.visibility == "personal" %}selected{% endif %}>Personal</option>
+            <option value="public" {% if lab and lab.visibility == "public" %}selected{% endif %}>Everyone</option>
+        </select>
+    {% endif %}
+
+    <label for="notes">Notes</label>
+    <textarea id="notes" name="notes">{{ lab.notes if lab else '' }}</textarea>
+
+    <button type="submit">Save lab</button>
+</form>
+
+<a href="{{ url_for('labs.index') }}">Back to labs</a>
+{% endblock %}

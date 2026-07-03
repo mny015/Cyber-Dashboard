@@ -1,20 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Setup MFA - Cyber Dashboard{% endblock %}
+{% block title %}Privacy and Security | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Setup MFA</h1>
-<p>Scan the QR code in your authenticator app, then enter the 6-digit code.</p>
+<div class="page-header">
+    <div>
+        <p class="eyebrow">Account settings</p>
+        <h1>Privacy and Security</h1>
+        <p class="meta">Manage your password and multi-factor authentication.</p>
+    </div>
+</div>
 
-<section class="card">
-    <img class="qr-code" src="{{ url_for('auth.mfa_qr') }}" alt="MFA QR code">
-    <p class="meta">Manual setup URI: {{ provisioning_uri }}</p>
-</section>
+<div class="security-grid">
+    <section class="card">
+        <h2>Change password</h2>
+        <p class="meta">Changing your password signs this account out on every device.</p>
+        <form method="post" action="{{ url_for('auth.change_password') }}">
+            {{ password_form.hidden_tag() }}
+            {{ password_form.current_password.label }}
+            {{ password_form.current_password(autocomplete="current-password") }}
+            {{ password_form.new_password.label }}
+            {{ password_form.new_password(
+                autocomplete="new-password",
+                placeholder="At least 12 characters"
+            ) }}
+            {{ password_form.confirm_password.label }}
+            {{ password_form.confirm_password(autocomplete="new-password") }}
+            {{ password_form.submit() }}
+        </form>
+    </section>
 
-<form method="post">
-    {{ form.hidden_tag() }}
-    {{ form.token.label }}
-    {{ form.token(placeholder="123456") }}
-    {{ form.submit() }}
-</form>
+    <section class="card">
+        <h2>Multi-factor authentication</h2>
+        {% if current_user.mfa_enabled %}
+            <p class="security-status security-status-enabled">MFA is enabled</p>
+            <p class="meta">Your authenticator secret is hidden after activation.</p>
+        {% else %}
+            <p>Scan this QR code in your authenticator app, then enter the 6-digit code.</p>
+            <img class="qr-code" src="{{ url_for('auth.mfa_qr') }}" alt="MFA QR code">
+            <details class="manual-secret">
+                <summary>Show manual setup URI</summary>
+                <p class="meta secret-value">{{ provisioning_uri }}</p>
+            </details>
+            <form method="post">
+                {{ form.hidden_tag() }}
+                {{ form.token.label }}
+                {{ form.token(placeholder="123456", inputmode="numeric", autocomplete="one-time-code") }}
+                {{ form.submit() }}
+            </form>
+        {% endif %}
+    </section>
+</div>
 {% endblock %}

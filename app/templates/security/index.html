@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Security Findings | Cyber Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-heading">
+    <div>
+        <p class="eyebrow">VAPT and threat tracking</p>
+        <h1>Security findings</h1>
+        <p class="heading-copy">Track vulnerabilities found, tests performed, and threats managed.</p>
+    </div>
+    <div class="heading-actions">
+        <a class="button button-secondary" href="#suggest-vulnerability">Suggest vulnerability</a>
+        <a class="button" href="{{ url_for('security.create') }}">Log finding</a>
+    </div>
+</section>
+
+<section class="metric-grid" aria-label="Security finding metrics">
+    <div class="metric-card">
+        <span class="metric-label">Total findings</span>
+        <strong>{{ metrics.total or 0 }}</strong>
+        <span class="metric-link">All recorded work</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Vulnerabilities found</span>
+        <strong>{{ metrics.found_count or 0 }}</strong>
+        <span class="metric-link">Confirmed discoveries</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Tests performed</span>
+        <strong>{{ metrics.tested_count or 0 }}</strong>
+        <span class="metric-link">Validation activity</span>
+    </div>
+    <div class="metric-card">
+        <span class="metric-label">Threats managed</span>
+        <strong>{{ metrics.managed_count or 0 }}</strong>
+        <span class="metric-link">Operational response</span>
+    </div>
+</section>
+
+<div class="dashboard-grid">
+    <section class="panel panel-wide">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Activity log</p>
+                <h2>Findings and managed threats</h2>
+            </div>
+            <a class="text-link" href="{{ url_for('security.create') }}">Add entry</a>
+        </div>
+        {% if findings %}
+            <div class="finding-list">
+                {% for finding in findings %}
+                    <article class="finding-row">
+                        <div>
+                            <span class="status severity-{{ finding.severity }}">{{ finding.severity|title }}</span>
+                            <h3>{{ finding.title }}</h3>
+                            <p class="meta">
+                                {{ finding.activity_type|replace("_", " ")|title }}
+                                {% if finding.vulnerability_name %} &middot; {{ finding.vulnerability_code }} {{ finding.vulnerability_name }}{% endif %}
+                                {% if finding.threat_name %} &middot; {{ finding.threat_code }} {{ finding.threat_name }}{% endif %}
+                            </p>
+                            {% if finding.target %}<p class="meta">Target: {{ finding.target }}</p>{% endif %}
+                        </div>
+                        <div class="finding-actions">
+                            <span class="status-badge">{{ finding.status|title }}</span>
+                            <a class="text-link" href="{{ url_for('security.edit', finding_id=finding.id) }}">Edit</a>
+                            <form class="inline-form" method="post" action="{{ url_for('security.delete', finding_id=finding.id) }}" data-confirm="Delete this finding?">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="link-danger" type="submit">Delete</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No findings yet</h3>
+                <p>Log a tested vulnerability or managed threat to start building your performance profile.</p>
+                <a class="button" href="{{ url_for('security.create') }}">Log first finding</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <aside class="panel" id="suggest-vulnerability">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Catalog request</p>
+                <h2>Suggest a vulnerability</h2>
+            </div>
+        </div>
+        <form method="post" action="{{ url_for('security.suggest_vulnerability') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="suggest_name">Name</label>
+            <input id="suggest_name" name="name" required>
+            <label for="suggest_category">Category</label>
+            <input id="suggest_category" name="category" placeholder="Example: Cloud, Mobile, Web">
+            <label for="suggest_severity">Default severity</label>
+            <select id="suggest_severity" name="default_severity">
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+                <option value="low">Low</option>
+                <option value="info">Info</option>
+            </select>
+            <label for="suggest_description">Notes</label>
+            <textarea id="suggest_description" name="description" placeholder="Why should this be in the shared catalog?"></textarea>
+            <button type="submit">Submit for review</button>
+        </form>
+        {% if pending_suggestions %}
+            <h3>Pending suggestions</h3>
+            <div class="compact-list">
+                {% for item in pending_suggestions %}
+                    <span><strong>{{ item.name }}</strong><br><span class="meta">{{ item.default_severity|title }} &middot; {{ item.category }}</span></span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}

@@ -21,6 +21,7 @@
                 <a href="{{ url_for('topics.index') }}" {% if request.blueprint == 'topics' %}aria-current="page"{% endif %}>Topics</a>
                 <a href="{{ url_for('notes.index') }}" {% if request.blueprint == 'notes' %}aria-current="page"{% endif %}>Notes</a>
                 <a href="{{ url_for('labs.index') }}" {% if request.blueprint == 'labs' %}aria-current="page"{% endif %}>Labs</a>
+                <a href="{{ url_for('security.index') }}" {% if request.blueprint == 'security' %}aria-current="page"{% endif %}>Findings</a>
                 <a href="{{ url_for('categories.index') }}" {% if request.blueprint == 'categories' %}aria-current="page"{% endif %}>Categories</a>
                 {% if current_user.is_admin %}
                     <a href="{{ url_for('admin.users') }}" {% if request.blueprint == 'admin' %}aria-current="page"{% endif %}>Admin</a>
@@ -32,6 +33,9 @@
                         <a href="{{ url_for('profile.edit') }}">Profile</a>
                         <a href="{{ url_for('contacts.index') }}">Contacts</a>
                         <a href="{{ url_for('backup.index') }}">Backup</a>
+                        {% if current_user.is_admin %}
+                            <a href="{{ url_for('security.admin_vulnerabilities') }}">Vulnerability catalog</a>
+                        {% endif %}
                         <a href="{{ url_for('auth.setup_mfa') }}">Security</a>
                         <a href="{{ url_for('auth.logout') }}">Logout</a>
                     </div>

@@ -104,6 +104,25 @@ def admin_client(client, admin_user, login_as):
 
 def cleanup_user_records(user_id):
     execute("DELETE FROM audit_logs WHERE user_id = %s", (user_id,))
+    execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
+    execute(
+        """
+        DELETE FROM security_findings
+        WHERE vulnerability_id IN (
+            SELECT id
+            FROM vulnerability_catalog
+            WHERE created_by_user_id = %s OR reviewed_by_user_id = %s
+        )
+        """,
+        (user_id, user_id),
+    )
+    execute(
+        """
+        DELETE FROM vulnerability_catalog
+        WHERE created_by_user_id = %s OR reviewed_by_user_id = %s
+        """,
+        (user_id, user_id),
+    )
     execute(
         """
         DELETE FROM note_access_requests

@@ -6,6 +6,7 @@ import pymysql
 
 from app import create_app
 from utils.db import get_connection
+from utils.security_catalog import APP_VULNERABILITIES, THREAT_TACTICS
 
 
 IMAGE_MIME_BY_TYPE = {
@@ -102,6 +103,70 @@ DDL_STATEMENTS = [
         PRIMARY KEY (id),
         UNIQUE KEY uq_users_email (email),
         CONSTRAINT fk_users_profile_image FOREIGN KEY (profile_image) REFERENCES profile_images(image_hash)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS vulnerability_catalog (
+        id INT NOT NULL AUTO_INCREMENT,
+        code VARCHAR(40) NOT NULL,
+        name VARCHAR(200) NOT NULL,
+        category VARCHAR(120) NOT NULL,
+        default_severity VARCHAR(20) NOT NULL DEFAULT 'medium',
+        description TEXT NOT NULL,
+        source VARCHAR(160) NOT NULL,
+        approval_status VARCHAR(20) NOT NULL DEFAULT 'approved',
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_by_user_id INT NULL,
+        reviewed_by_user_id INT NULL,
+        reviewed_at DATETIME NULL,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_vulnerability_code (code),
+        KEY ix_vulnerability_status (approval_status),
+        CONSTRAINT fk_vulnerability_created_by FOREIGN KEY (created_by_user_id) REFERENCES users(id),
+        CONSTRAINT fk_vulnerability_reviewed_by FOREIGN KEY (reviewed_by_user_id) REFERENCES users(id)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS threat_catalog (
+        id INT NOT NULL AUTO_INCREMENT,
+        code VARCHAR(40) NOT NULL,
+        name VARCHAR(200) NOT NULL,
+        default_level VARCHAR(20) NOT NULL DEFAULT 'medium',
+        description TEXT NOT NULL,
+        source VARCHAR(160) NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY uq_threat_code (code)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS security_findings (
+        id INT NOT NULL AUTO_INCREMENT,
+        owner_id INT NOT NULL,
+        vulnerability_id INT NULL,
+        threat_id INT NULL,
+        activity_type VARCHAR(40) NOT NULL,
+        title VARCHAR(200) NOT NULL,
+        target VARCHAR(255) NOT NULL,
+        severity VARCHAR(20) NOT NULL DEFAULT 'medium',
+        status VARCHAR(20) NOT NULL DEFAULT 'open',
+        evidence TEXT NOT NULL,
+        notes TEXT NOT NULL,
+        detected_at DATETIME NOT NULL,
+        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        KEY ix_security_findings_owner_id (owner_id),
+        KEY ix_security_findings_vulnerability_id (vulnerability_id),
+        KEY ix_security_findings_threat_id (threat_id),
+        CONSTRAINT fk_security_findings_owner FOREIGN KEY (owner_id) REFERENCES users(id),
+        CONSTRAINT fk_security_findings_vulnerability FOREIGN KEY (vulnerability_id) REFERENCES vulnerability_catalog(id),
+        CONSTRAINT fk_security_findings_threat FOREIGN KEY (threat_id) REFERENCES threat_catalog(id)
     )
     """,
     """
@@ -318,6 +383,55 @@ def create_tables():
         finally:
             connection.close()
         print("Database connected and tables are ready.")
+
+
+def seed_security_catalog():
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            for code, name, category, severity, source in APP_VULNERABILITIES:
+                cursor.execute(
+                    """
+                    INSERT INTO vulnerability_catalog
+                        (code, name, category, default_severity, description, source,
+                         approval_status, is_active, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'approved', 1, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        category = VALUES(category),
+                        default_severity = VALUES(default_severity),
+                        source = VALUES(source),
+                        approval_status = 'approved',
+                        is_active = 1,
+                        updated_at = NOW()
+                    """,
+                    (
+                        code,
+                        name,
+                        category,
+                        severity,
+                        f"Curated catalog entry from {source}.",
+                        source,
+                    ),
+                )
+            for code, name, level in THREAT_TACTICS:
+                cursor.execute(
+                    """
+                    INSERT INTO threat_catalog
+                        (code, name, default_level, description, source, is_active, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, 'MITRE ATT&CK Enterprise tactics', 1, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        default_level = VALUES(default_level),
+                        source = VALUES(source),
+                        is_active = 1,
+                        updated_at = NOW()
+                    """,
+                    (code, name, level, f"MITRE ATT&CK Enterprise tactic {code}."),
+                )
+        connection.commit()
+    finally:
+        connection.close()
 
 
 def normalize_profile_images():
@@ -540,6 +654,7 @@ if __name__ == "__main__":
     ensure_existing_user_columns()
     ensure_existing_learning_columns()
     create_tables()
+    seed_security_catalog()
     normalize_profile_images()
     normalize_lab_platforms()
     normalize_note_access_requests()

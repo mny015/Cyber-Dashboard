@@ -3,6 +3,11 @@ from flask_login import current_user, login_required
 
 from utils.decorators import admin_required
 from utils.db import fetch_all, fetch_one
+from utils.performance import (
+    get_admin_security_summary,
+    get_user_performance,
+    get_user_security_summary,
+)
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -39,11 +44,13 @@ def user_dashboard():
              WHERE owner_id = %s AND is_deleted = 0) AS categories,
             (SELECT COUNT(*) FROM lab_completions
              WHERE user_id = %s) AS completed_labs,
+            (SELECT COUNT(*) FROM security_findings
+             WHERE owner_id = %s AND is_deleted = 0) AS security_findings,
             (SELECT COUNT(*) FROM note_access_requests AS requests
              JOIN topics ON topics.id = requests.topic_id
              WHERE topics.owner_id = %s AND requests.status = 'pending') AS notifications
         """,
-        (user_id, user_id, user_id, user_id, user_id),
+        (user_id, user_id, user_id, user_id, user_id, user_id),
     )
     recent_topics = fetch_all(
         """
@@ -79,6 +86,8 @@ def user_dashboard():
         stats=stats,
         recent_topics=recent_topics,
         available_labs=available_labs,
+        performance=get_user_performance(user_id),
+        security_summary=get_user_security_summary(user_id),
     )
 
 
@@ -94,6 +103,8 @@ def admin_dashboard():
             (SELECT COUNT(*) FROM topics WHERE is_deleted = 0) AS topics,
             (SELECT COUNT(*) FROM lab_references
              WHERE is_deleted = 0 AND visibility = 'everyone') AS shared_labs,
+            (SELECT COUNT(*) FROM security_findings
+             WHERE is_deleted = 0) AS security_findings,
             (SELECT COUNT(*) FROM note_access_requests
              WHERE requester_admin_id = %s AND status = 'pending') AS pending_requests
         """,
@@ -123,4 +134,5 @@ def admin_dashboard():
         stats=stats,
         recent_activity=recent_activity,
         topic_statuses=topic_statuses,
+        security_summary=get_admin_security_summary(),
     )

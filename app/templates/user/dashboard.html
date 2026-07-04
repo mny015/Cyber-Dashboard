@@ -31,10 +31,10 @@
         <strong>{{ stats.completed_labs }}</strong>
         <span class="metric-link">Continue practicing</span>
     </a>
-    <a class="metric-card" href="{{ url_for('notifications.index') }}">
-        <span class="metric-label">Pending alerts</span>
-        <strong>{{ stats.notifications }}</strong>
-        <span class="metric-link">Review requests</span>
+    <a class="metric-card" href="{{ url_for('security.index') }}">
+        <span class="metric-label">Performance score</span>
+        <strong>{{ performance.score }}</strong>
+        <span class="metric-link">Rank #{{ performance.rank or "-" }} of {{ performance.total_users }}</span>
     </a>
 </section>
 
@@ -53,7 +53,7 @@
                     <a class="activity-row" href="{{ url_for('topics.detail', topic_id=topic.id) }}">
                         <span class="activity-main">
                             <strong>{{ topic.title }}</strong>
-                            <span>{{ topic.category_name or "Uncategorized" }} · Updated {{ topic.updated_at|format_date }}</span>
+                            <span>{{ topic.category_name or "Uncategorized" }} &middot; Updated {{ topic.updated_at|format_date }}</span>
                         </span>
                         <span class="status status-{{ topic.status }}">{{ topic.status|title }}</span>
                     </a>
@@ -80,7 +80,7 @@
                 {% for lab in available_labs %}
                     <a href="{{ url_for('labs.index') }}">
                         <strong>{{ lab.name }}</strong>
-                        <span>{{ lab.platform }}{% if lab.visibility == "everyone" %} · Shared{% endif %}</span>
+                        <span>{{ lab.platform }}{% if lab.visibility == "everyone" %} &middot; Shared{% endif %}</span>
                     </a>
                 {% endfor %}
             </div>
@@ -88,6 +88,37 @@
             <p class="meta">You are caught up. Add another lab when you are ready.</p>
         {% endif %}
     </aside>
+
+    <section class="panel panel-wide">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Performance</p>
+                <h2>Activity compared to peers</h2>
+            </div>
+            <a class="text-link" href="{{ url_for('security.index') }}">Open findings</a>
+        </div>
+        <div class="performance-summary">
+            <div>
+                <span class="metric-label">Your score</span>
+                <strong>{{ performance.score }}</strong>
+                <p class="meta">{{ performance.activity_label }} this month - {{ performance.recent_actions }} recent actions.</p>
+            </div>
+            <div>
+                <span class="metric-label">Peer average</span>
+                <strong>{{ performance.peer_average }}</strong>
+                <p class="meta">{{ performance.percentile }}th percentile across active learners.</p>
+            </div>
+            <div>
+                <span class="metric-label">Security work</span>
+                <strong>{{ security_summary.total or 0 }}</strong>
+                <p class="meta">{{ security_summary.found_total or 0 }} found, {{ security_summary.tested_total or 0 }} tested, {{ security_summary.managed_total or 0 }} threats managed.</p>
+            </div>
+        </div>
+        <div class="progress-track" aria-label="Performance score compared to peer average">
+            {% set bar_width = ((performance.score / (performance.score + performance.peer_average)) * 100) if (performance.score + performance.peer_average) else 0 %}
+            <span class="progress-fill" style="width: {{ bar_width|round(0, 'floor') }}%"></span>
+        </div>
+    </section>
 
     <section class="panel quick-panel">
         <div class="panel-header">
@@ -99,8 +130,8 @@
         <div class="quick-grid">
             <a href="{{ url_for('categories.create') }}"><strong>New category</strong><span>Organize your plan</span></a>
             <a href="{{ url_for('labs.create') }}"><strong>Add a lab</strong><span>Queue practical work</span></a>
+            <a href="{{ url_for('security.create') }}"><strong>Log finding</strong><span>Track VAPT work</span></a>
             <a href="{{ url_for('backup.index') }}"><strong>Export data</strong><span>Download a backup</span></a>
-            <a href="{{ url_for('profile.edit') }}"><strong>Update profile</strong><span>Manage your account</span></a>
         </div>
     </section>
 </div>

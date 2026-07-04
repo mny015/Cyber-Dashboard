@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Vulnerability Catalog | Cyber Dashboard{% endblock %}
+
+{% block content %}
+<section class="dashboard-heading">
+    <div>
+        <p class="eyebrow">Admin review</p>
+        <h1>Vulnerability catalog</h1>
+        <p class="heading-copy">Approve user suggestions or add shared vulnerability categories for everyone.</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('security.index') }}">Findings</a>
+</section>
+
+<div class="dashboard-grid">
+    <section class="panel panel-wide">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Pending</p>
+                <h2>User suggestions</h2>
+            </div>
+        </div>
+        {% if pending %}
+            <div class="finding-list">
+                {% for vuln in pending %}
+                    <article class="finding-row">
+                        <div>
+                            <span class="status severity-{{ vuln.default_severity }}">{{ vuln.default_severity|title }}</span>
+                            <h3>{{ vuln.name }}</h3>
+                            <p class="meta">{{ vuln.category }} &middot; Suggested by {{ vuln.requested_by or "Unknown" }}</p>
+                            {% if vuln.description %}<p>{{ vuln.description }}</p>{% endif %}
+                        </div>
+                        <div class="finding-actions">
+                            <form class="inline-form" method="post" action="{{ url_for('security.approve_vulnerability', vulnerability_id=vuln.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit">Approve</button>
+                            </form>
+                            <form class="inline-form" method="post" action="{{ url_for('security.reject_vulnerability', vulnerability_id=vuln.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="danger" type="submit">Reject</button>
+                            </form>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="meta">No pending suggestions.</p>
+        {% endif %}
+    </section>
+
+    <aside class="panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Add shared entry</p>
+                <h2>New vulnerability</h2>
+            </div>
+        </div>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="code">Code</label>
+            <input id="code" name="code" placeholder="Example: CLOUD-IAM">
+            <label for="name">Name</label>
+            <input id="name" name="name" required>
+            <label for="category">Category</label>
+            <input id="category" name="category" required>
+            <label for="default_severity">Default severity</label>
+            <select id="default_severity" name="default_severity">
+                {% for item in severities %}
+                    <option value="{{ item }}">{{ item|title }}</option>
+                {% endfor %}
+            </select>
+            <label for="description">Description</label>
+            <textarea id="description" name="description"></textarea>
+            <button type="submit">Save to catalog</button>
+        </form>
+    </aside>
+</div>
+
+<section class="panel quick-panel">
+    <div class="panel-header">
+        <div>
+            <p class="eyebrow">Shared catalog</p>
+            <h2>Approved and reviewed entries</h2>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vuln in vulnerabilities %}
+                    <tr>
+                        <td>{{ vuln.code }}</td>
+                        <td>{{ vuln.name }}</td>
+                        <td>{{ vuln.category }}</td>
+                        <td>{{ vuln.default_severity|title }}</td>
+                        <td>{{ vuln.approval_status|title }}</td>
+                        <td>{{ vuln.source }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

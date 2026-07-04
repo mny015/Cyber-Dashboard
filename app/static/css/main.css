@@ -523,6 +523,114 @@ a.activity-row:hover strong {
     color: var(--muted);
 }
 
+.performance-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding-top: 16px;
+}
+
+.performance-summary > div {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    background: var(--surface-raised);
+}
+
+.performance-summary strong {
+    display: block;
+    margin: 7px 0;
+    font-size: 1.65rem;
+    line-height: 1;
+}
+
+.progress-track {
+    overflow: hidden;
+    height: 10px;
+    margin-top: 16px;
+    border-radius: 999px;
+    background: var(--surface-raised);
+}
+
+.progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+}
+
+.finding-list {
+    display: grid;
+}
+
+.finding-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px 4px;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.finding-row:last-child {
+    border-bottom: 0;
+}
+
+.finding-row h3 {
+    margin: 9px 0 5px;
+}
+
+.finding-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.finding-form {
+    max-width: 960px;
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.finding-form input,
+.finding-form select,
+.finding-form textarea {
+    width: 100%;
+    max-width: none;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.severity-info {
+    border-color: rgba(145, 160, 179, 0.38);
+    color: var(--muted);
+}
+
+.severity-low {
+    border-color: rgba(53, 199, 139, 0.38);
+    color: var(--success);
+}
+
+.severity-medium {
+    border-color: rgba(240, 180, 77, 0.38);
+    color: var(--warning);
+}
+
+.severity-high,
+.severity-critical {
+    border-color: rgba(239, 107, 115, 0.42);
+    color: var(--danger);
+}
+
 .security-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1041,8 +1149,18 @@ tr:last-child td {
     .dashboard-grid,
     .profile-layout,
     .security-grid,
-    .note-editor-shell {
+    .note-editor-shell,
+    .performance-summary,
+    .form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .finding-row {
+        flex-direction: column;
+    }
+
+    .finding-actions {
+        justify-content: flex-start;
     }
 
     .notes-hero,

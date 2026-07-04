@@ -3,9 +3,23 @@
 {% block title %}Home - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Cyber Dashboard</h1>
-<p>Your personal cybersecurity learning tracker.</p>
-<p>
-    <a class="button" href="{{ url_for('dashboard.dashboard') }}">Open dashboard</a>
-</p>
+<section class="home-hero">
+    <div>
+        <p class="eyebrow">Cyber learning command center</p>
+        <h1>Cyber Dashboard</h1>
+        <p class="home-tagline">Track learning, labs, findings, notes, and security growth in one focused workspace.</p>
+        <div class="heading-actions">
+            <a class="button" href="{{ url_for('dashboard.dashboard') }}">Open dashboard</a>
+            {% if not current_user.is_authenticated %}
+                <a class="button button-secondary" href="{{ url_for('auth.register') }}">Create account</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="home-signal-panel" aria-label="Cyber Dashboard feature summary">
+        <span>Learning roadmap</span>
+        <span>VAPT findings</span>
+        <span>Lab practice</span>
+        <span>Notes and reports</span>
+    </div>
+</section>
 {% endblock %}

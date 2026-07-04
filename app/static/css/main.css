@@ -558,6 +558,260 @@ a.activity-row:hover strong {
     overflow-wrap: anywhere;
 }
 
+.notes-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.notes-hero-actions,
+.note-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.notes-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.notes-overview div {
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.notes-overview strong {
+    font-size: 1.15rem;
+}
+
+.notes-command-bar {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(180px, 260px) auto auto;
+    gap: 10px;
+    align-items: start;
+    margin-bottom: 18px;
+}
+
+.notes-command-bar input,
+.notes-command-bar select {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.notes-library {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    gap: 14px;
+}
+
+.note-tile {
+    display: flex;
+    min-height: 240px;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.note-tile:hover {
+    border-color: var(--accent-strong);
+    transform: translateY(-2px);
+}
+
+.note-tile-main {
+    display: block;
+    padding: 18px 18px 8px;
+    flex: 1;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.note-tile-main h2 {
+    margin: 10px 0 8px;
+    font-size: 1.12rem;
+}
+
+.note-tile-main p {
+    color: var(--muted);
+}
+
+.note-kicker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.note-kicker span {
+    color: var(--muted);
+    font-weight: 500;
+}
+
+.note-tile-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border-soft);
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.link-danger {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--danger);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.link-danger:hover {
+    background: transparent;
+    color: #ff9ba1;
+}
+
+.note-empty-state {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.note-editor-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.note-editor-form,
+.note-preview-panel,
+.note-reader-card {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.note-title-input {
+    font-size: 1.2rem;
+    font-weight: 750;
+}
+
+.note-toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 18px 0 10px;
+}
+
+.note-toolbar button {
+    min-height: 34px;
+    padding: 6px 10px;
+    border-color: var(--border);
+    background: var(--surface-raised);
+    color: var(--text);
+    font-size: 0.84rem;
+}
+
+.note-toolbar button:hover {
+    border-color: var(--accent);
+    background: rgba(24, 184, 200, 0.12);
+}
+
+.note-body-input {
+    width: 100%;
+    min-height: 430px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    line-height: 1.65;
+}
+
+.note-editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.note-preview-panel {
+    position: sticky;
+    top: 84px;
+}
+
+.note-preview-content,
+.note-rendered {
+    padding-top: 16px;
+}
+
+.note-preview-content h1,
+.note-preview-content h2,
+.note-preview-content h3,
+.note-rendered h1,
+.note-rendered h2,
+.note-rendered h3 {
+    margin: 18px 0 8px;
+}
+
+.note-preview-content h1,
+.note-rendered h1 {
+    font-size: 1.45rem;
+}
+
+.note-preview-content p,
+.note-rendered p {
+    color: #dbe7f3;
+}
+
+.note-preview-content ul,
+.note-rendered ul {
+    padding-left: 22px;
+    color: #dbe7f3;
+}
+
+.note-preview-content code,
+.note-rendered code {
+    padding: 2px 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #0b1118;
+    color: #86edf4;
+}
+
+.note-reader-shell {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.note-reader-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.note-reader-card {
+    padding: 28px;
+}
+
 .empty-state {
     display: grid;
     min-height: 220px;
@@ -786,8 +1040,26 @@ tr:last-child td {
 
     .dashboard-grid,
     .profile-layout,
-    .security-grid {
+    .security-grid,
+    .note-editor-shell {
         grid-template-columns: 1fr;
+    }
+
+    .notes-hero,
+    .note-reader-header {
+        flex-direction: column;
+    }
+
+    .notes-command-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .note-preview-panel {
+        position: static;
     }
 
     h1 {
@@ -830,7 +1102,12 @@ tr:last-child td {
         width: 100%;
     }
 
-    .heading-actions .button {
+    .heading-actions .button,
+    .notes-hero-actions .button {
         flex: 1;
+    }
+
+    .notes-library {
+        grid-template-columns: 1fr;
     }
 }

@@ -34,34 +34,62 @@ def get_user_topics():
     )
 
 
+def get_topics_with_note_counts():
+    return fetch_all(
+        """
+        SELECT topics.id, topics.title, COUNT(notes.id) AS note_count
+        FROM topics
+        LEFT JOIN notes
+          ON notes.topic_id = topics.id
+         AND notes.owner_id = %s
+         AND notes.is_deleted = 0
+        WHERE topics.owner_id = %s AND topics.is_deleted = 0
+        GROUP BY topics.id, topics.title
+        ORDER BY topics.title ASC
+        """,
+        (current_user.id, current_user.id),
+    )
+
+
 @notes_bp.route("/")
 @login_required
 def index():
     topic_id = request.args.get("topic_id", type=int)
-    if topic_id:
-        notes = fetch_all(
-            """
-            SELECT notes.*, topics.title AS topic_title
-            FROM notes
-            LEFT JOIN topics ON topics.id = notes.topic_id
-            WHERE notes.owner_id = %s AND notes.is_deleted = 0 AND notes.topic_id = %s
-            ORDER BY notes.updated_at DESC
-            """,
-            (current_user.id, topic_id),
-        )
-    else:
-        notes = fetch_all(
-            """
-            SELECT notes.*, topics.title AS topic_title
-            FROM notes
-            LEFT JOIN topics ON topics.id = notes.topic_id
-            WHERE notes.owner_id = %s AND notes.is_deleted = 0
-            ORDER BY notes.updated_at DESC
-            """,
-            (current_user.id,),
-        )
+    query = clean_text(request.args.get("q"))
+    if topic_id and not user_owns_topic(topic_id):
+        abort(404)
 
-    return render_template("notes/index.html", notes=notes, topics=get_user_topics(), selected_topic_id=topic_id)
+    search_value = f"%{query}%"
+    notes = fetch_all(
+        """
+        SELECT notes.*, topics.title AS topic_title
+        FROM notes
+        LEFT JOIN topics ON topics.id = notes.topic_id
+        WHERE notes.owner_id = %s
+          AND notes.is_deleted = 0
+          AND (%s IS NULL OR notes.topic_id = %s)
+          AND (%s = '' OR notes.title LIKE %s OR notes.body LIKE %s)
+        ORDER BY notes.updated_at DESC
+        """,
+        (current_user.id, topic_id, topic_id, query, search_value, search_value),
+    )
+    stats = fetch_one(
+        """
+        SELECT COUNT(*) AS total_notes, MAX(updated_at) AS last_updated
+        FROM notes
+        WHERE owner_id = %s AND is_deleted = 0
+        """,
+        (current_user.id,),
+    )
+
+    return render_template(
+        "notes/index.html",
+        notes=notes,
+        topics=get_topics_with_note_counts(),
+        selected_topic_id=topic_id,
+        query=query,
+        stats=stats or {"total_notes": 0, "last_updated": None},
+    )
 
 
 @notes_bp.route("/new", methods=["GET", "POST"])

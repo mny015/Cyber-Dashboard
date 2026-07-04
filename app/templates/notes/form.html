@@ -1,30 +1,75 @@
 {% extends "base.html" %}
 
 {% set editing = note and note.id %}
-{% block title %}{{ "Edit" if editing else "New" }} Note - Cyber Dashboard{% endblock %}
+{% block title %}{{ "Edit" if editing else "New" }} Note | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>{{ "Edit" if editing else "New" }} Note</h1>
+<section class="notes-hero">
+    <div>
+        <p class="eyebrow">{{ "Update note" if editing else "New note" }}</p>
+        <h1>{{ "Edit note" if editing else "Create a note" }}</h1>
+        <p class="heading-copy">Write fast, preview safely, and keep the note connected to your learning topics.</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('notes.index') }}">Back to notes</a>
+</section>
 
-<form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<section class="note-editor-shell" data-note-editor>
+    <form class="note-editor-form" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <label for="title">Title</label>
-    <input id="title" type="text" name="title" value="{{ note.title if note else '' }}" required>
+        <label for="title">Title</label>
+        <input
+            class="note-title-input"
+            id="title"
+            type="text"
+            name="title"
+            value="{{ note.title if note else '' }}"
+            placeholder="Example: SQL injection checklist"
+            required
+        >
 
-    <label for="topic_id">Topic</label>
-    <select id="topic_id" name="topic_id">
-        <option value="">No topic</option>
-        {% for topic in topics %}
-            <option value="{{ topic.id }}" {% if note and note.topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
-        {% endfor %}
-    </select>
+        <label for="topic_id">Topic</label>
+        <select id="topic_id" name="topic_id">
+            <option value="">No topic</option>
+            {% for topic in topics %}
+                <option value="{{ topic.id }}" {% if note and note.topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
+            {% endfor %}
+        </select>
 
-    <label for="body">Note</label>
-    <textarea id="body" name="body" required>{{ note.body if note else '' }}</textarea>
+        <div class="note-toolbar" aria-label="Editor toolbar">
+            <button type="button" data-note-action="bold">Bold</button>
+            <button type="button" data-note-action="italic">Italic</button>
+            <button type="button" data-note-action="code">Code</button>
+            <button type="button" data-note-action="bullet">Bullet</button>
+            <button type="button" data-note-action="heading">Heading</button>
+        </div>
 
-    <button type="submit">Save note</button>
-</form>
+        <label for="body">Note body</label>
+        <textarea
+            class="note-body-input"
+            id="body"
+            name="body"
+            data-note-body
+            placeholder="Write observations, commands, steps, payloads, or reflections..."
+            required
+        >{{ note.body if note else '' }}</textarea>
 
-<a href="{{ url_for('notes.index') }}">Back to notes</a>
+        <div class="note-editor-footer">
+            <span class="meta" data-note-stats>0 words · 0 characters</span>
+            <button type="submit">Save note</button>
+        </div>
+    </form>
+
+    <aside class="note-preview-panel" aria-label="Live preview">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Preview</p>
+                <h2>Rendered note</h2>
+            </div>
+        </div>
+        <div class="note-preview-content" data-note-preview>
+            <p class="meta">Start writing to preview your note.</p>
+        </div>
+    </aside>
+</section>
 {% endblock %}

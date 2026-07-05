@@ -1,7 +1,16 @@
+import os
 import uuid
 
 import pytest
 from werkzeug.security import generate_password_hash
+
+os.environ.setdefault("SECRET_KEY", "test-secret-key-use-env-file-for-real-app")
+os.environ.setdefault("DB_HOST", "127.0.0.1")
+os.environ.setdefault("DB_PORT", "3306")
+os.environ.setdefault("DB_USER", "cyber_dashboard_test")
+os.environ.setdefault("DB_PASSWORD", "replace-with-test-password")
+os.environ.setdefault("DB_NAME", "cyber_dashboard")
+os.environ.setdefault("DB_CHARSET", "utf8mb4")
 
 from app import create_app
 from utils.db import execute, fetch_one

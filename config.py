@@ -6,14 +6,29 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
+def require_env(name):
+    value = os.getenv(name)
+    if value is None or not value.strip():
+        raise RuntimeError(f"Missing required environment variable: {name}. Copy .env.example to .env and set it.")
+    return value.strip()
 
-    DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-    DB_PORT = int(os.getenv("DB_PORT", "3306"))
-    DB_USER = os.getenv("DB_USER", "root")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "root")
-    DB_NAME = os.getenv("DB_NAME", "cyber_dashboard")
+
+def require_int_env(name):
+    value = require_env(name)
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be a whole number.") from exc
+
+
+class Config:
+    SECRET_KEY = require_env("SECRET_KEY")
+
+    DB_HOST = require_env("DB_HOST")
+    DB_PORT = require_int_env("DB_PORT")
+    DB_USER = require_env("DB_USER")
+    DB_PASSWORD = require_env("DB_PASSWORD")
+    DB_NAME = require_env("DB_NAME")
     DB_CHARSET = os.getenv("DB_CHARSET", "utf8mb4")
 
     WTF_CSRF_ENABLED = True

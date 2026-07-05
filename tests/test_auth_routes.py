@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -75,6 +76,9 @@ def make_user_row(
         "mfa_secret": None,
         "mfa_enabled": int(mfa_enabled),
         "auth_version": 0,
+        "failed_login_count": 0,
+        "last_failed_login_at": None,
+        "locked_until": None,
     }
 
 
@@ -96,13 +100,19 @@ def test_login_page_renders_without_database(fake_auth_client):
 def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
     user_row = make_user_row()
     fetch_calls = []
+    execute_calls = []
     audit_calls = []
 
     def fake_fetch_one(query, params=None):
         fetch_calls.append((query, params))
         return user_row
 
+    def fake_execute(query, params=None):
+        execute_calls.append((query, params))
+        return 1, 0
+
     monkeypatch.setattr("app.routes.auth.fetch_one", fake_fetch_one)
+    monkeypatch.setattr("app.routes.auth.execute", fake_execute)
     monkeypatch.setattr(
         "app.routes.auth.log_audit",
         lambda action, details="", user=None: audit_calls.append((action, details, user)),
@@ -116,6 +126,7 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/user/dashboard")
     assert fetch_calls == [("SELECT * FROM users WHERE email = %s", ("student@example.com",))]
+    assert "failed_login_count = 0" in execute_calls[0][0]
     assert audit_calls[0][0] == "login"
 
     with fake_auth_client.session_transaction() as session:
@@ -125,9 +136,18 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
 
 def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
     user_row = make_user_row()
+    execute_calls = []
+    audit_calls = []
 
     monkeypatch.setattr("app.routes.auth.fetch_one", lambda query, params=None: user_row)
-    monkeypatch.setattr("app.routes.auth.log_audit", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        "app.routes.auth.execute",
+        lambda query, params=None: execute_calls.append((query, params)) or (1, 0),
+    )
+    monkeypatch.setattr(
+        "app.routes.auth.log_audit",
+        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+    )
 
     response = fake_auth_client.post(
         "/auth/login",
@@ -136,6 +156,59 @@ def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_clien
 
     assert response.status_code == 200
     assert b"Invalid email or password." in response.data
+    assert "failed_login_count = failed_login_count + 1" in execute_calls[0][0]
+    assert audit_calls[0][0] == "login_failed"
 
+    with fake_auth_client.session_transaction() as session:
+        assert "_user_id" not in session
+
+
+def test_locked_account_blocks_login_before_password_check(monkeypatch, fake_auth_client):
+    user_row = make_user_row()
+    user_row["locked_until"] = datetime.now() + timedelta(minutes=10)
+    audit_calls = []
+
+    monkeypatch.setattr("app.routes.auth.fetch_one", lambda query, params=None: user_row)
+    monkeypatch.setattr(
+        "app.routes.auth.execute",
+        lambda query, params=None: pytest.fail("locked accounts should not update login counters"),
+    )
+    monkeypatch.setattr(
+        "app.routes.auth.log_audit",
+        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+    )
+
+    response = fake_auth_client.post(
+        "/auth/login",
+        data={"email": "student@example.com", "password": "CorrectPassword123!"},
+    )
+
+    assert response.status_code == 200
+    assert b"Too many failed login attempts. Try again later." in response.data
+    assert audit_calls[0][0] == "login_locked"
+
+    with fake_auth_client.session_transaction() as session:
+        assert "_user_id" not in session
+
+
+def test_logout_rejects_get_requests(fake_auth_client):
+    response = fake_auth_client.get("/auth/logout")
+
+    assert response.status_code == 405
+
+
+def test_logout_uses_post_request(monkeypatch, fake_auth_client):
+    monkeypatch.setattr("app.models.user.fetch_one", lambda query, params=None: make_user_row())
+    monkeypatch.setattr("app.routes.auth.log_audit", lambda *args, **kwargs: None)
+
+    with fake_auth_client.session_transaction() as session:
+        session["_user_id"] = "42"
+        session["_fresh"] = True
+        session["auth_version"] = 0
+
+    response = fake_auth_client.post("/auth/logout")
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/auth/login")
     with fake_auth_client.session_transaction() as session:
         assert "_user_id" not in session

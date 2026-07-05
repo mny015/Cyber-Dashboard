@@ -1,3 +1,4 @@
+from datetime import datetime
 from io import BytesIO
 
 import pyotp
@@ -19,6 +20,9 @@ except ImportError:
 
 login_rate_limit = limiter.limit("5 per minute") if limiter else (lambda view: view)
 password_rate_limit = limiter.limit("5 per 15 minutes") if limiter else (lambda view: view)
+
+LOCKOUT_FAILURE_LIMIT = 5
+LOCKOUT_MINUTES = 15
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -68,8 +72,18 @@ def login():
 
         user = User.from_row(fetch_one("SELECT * FROM users WHERE email = %s", (email,)))
 
-        if not user or not user.check_password(form.password.data):
-            log_audit("login_failed", f"Failed login for {email}")
+        if user and is_account_locked(user):
+            log_audit("login_locked", f"Login blocked for {email}; locked until {user.locked_until}", user=user)
+            flash("Too many failed login attempts. Try again later.", "danger")
+            return render_template("auth/login.html", form=form)
+
+        if not user:
+            log_audit("login_failed", f"Failed login for unknown account {email}")
+            flash("Invalid email or password.", "danger")
+            return render_template("auth/login.html", form=form)
+
+        if not user.check_password(form.password.data):
+            record_failed_login(user, email)
             flash("Invalid email or password.", "danger")
             return render_template("auth/login.html", form=form)
 
@@ -77,6 +91,8 @@ def login():
             log_audit("login_blocked", f"Banned user tried to log in: {email}", user=user)
             flash("This account is banned. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
+
+        reset_failed_logins(user)
 
         if user.mfa_enabled:
             session["pending_mfa_user_id"] = user.id
@@ -122,7 +138,7 @@ def verify_mfa():
     return render_template("auth/verify_mfa.html", form=form)
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     log_audit("logout", "User logged out")
@@ -240,3 +256,59 @@ def redirect_after_login(user):
     if getattr(user, "is_admin", False):
         return redirect(url_for("dashboard.admin_dashboard"))
     return redirect(url_for("dashboard.user_dashboard"))
+
+
+def is_account_locked(user):
+    if not user.locked_until:
+        return False
+
+    locked_until = user.locked_until
+    if isinstance(locked_until, str):
+        try:
+            locked_until = datetime.fromisoformat(locked_until)
+        except ValueError:
+            return False
+
+    return locked_until > datetime.now()
+
+
+def record_failed_login(user, email):
+    next_failure_count = user.failed_login_count + 1
+    execute(
+        """
+        UPDATE users
+        SET failed_login_count = failed_login_count + 1,
+            last_failed_login_at = NOW(),
+            locked_until = CASE
+                WHEN failed_login_count + 1 >= %s THEN TIMESTAMPADD(MINUTE, %s, NOW())
+                ELSE locked_until
+            END,
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (LOCKOUT_FAILURE_LIMIT, LOCKOUT_MINUTES, user.id),
+    )
+
+    if next_failure_count >= LOCKOUT_FAILURE_LIMIT:
+        log_audit(
+            "login_failed",
+            f"Failed login for {email}; account locked for {LOCKOUT_MINUTES} minutes after {next_failure_count} attempts",
+            user=user,
+        )
+        return
+
+    log_audit("login_failed", f"Failed login for {email}; failed attempts: {next_failure_count}", user=user)
+
+
+def reset_failed_logins(user):
+    execute(
+        """
+        UPDATE users
+        SET failed_login_count = 0,
+            last_failed_login_at = NULL,
+            locked_until = NULL,
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (user.id,),
+    )

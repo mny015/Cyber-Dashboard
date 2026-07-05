@@ -40,7 +40,10 @@
                             <a href="{{ url_for('security.admin_vulnerabilities') }}">Vulnerability catalog</a>
                         {% endif %}
                         <a href="{{ url_for('auth.setup_mfa') }}">Security</a>
-                        <a href="{{ url_for('auth.logout') }}">Logout</a>
+                        <form method="post" action="{{ url_for('auth.logout') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" style="display:block; width:100%; min-height:0; padding:9px 10px; border:0; border-radius:5px; background:transparent; color:var(--muted); box-shadow:none; font:inherit; font-weight:400; text-align:left; justify-content:flex-start;">Logout</button>
+                        </form>
                     </div>
                 </details>
             {% else %}

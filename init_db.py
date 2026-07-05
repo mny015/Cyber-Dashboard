@@ -5,6 +5,7 @@ import re
 import pymysql
 
 from app import create_app
+from config import Config
 from utils.db import get_connection
 from utils.security_catalog import APP_VULNERABILITIES, THREAT_TACTICS
 
@@ -17,18 +18,32 @@ IMAGE_MIME_BY_TYPE = {
 }
 
 
+def database_identifier(name):
+    if not re.fullmatch(r"[A-Za-z0-9_]+", name):
+        raise RuntimeError("DB_NAME may only contain letters, numbers, and underscores.")
+    return f"`{name}`"
+
+
+def bootstrap_connection(database=None):
+    kwargs = {
+        "host": Config.DB_HOST,
+        "port": Config.DB_PORT,
+        "user": Config.DB_USER,
+        "password": Config.DB_PASSWORD,
+        "charset": Config.DB_CHARSET,
+        "autocommit": True,
+    }
+    if database:
+        kwargs["database"] = database
+    return pymysql.connect(**kwargs)
+
+
 def ensure_database_exists():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="root",
-        password="root",
-        charset="utf8mb4",
-        autocommit=True,
-    )
+    connection = bootstrap_connection()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                "CREATE DATABASE IF NOT EXISTS cyber_dashboard "
+                f"CREATE DATABASE IF NOT EXISTS {database_identifier(Config.DB_NAME)} "
                 "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
             )
     finally:
@@ -42,6 +57,9 @@ USER_COLUMN_ALTERS = {
     "mfa_secret": "ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) NULL",
     "mfa_enabled": "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE",
     "auth_version": "ALTER TABLE users ADD COLUMN auth_version INT NOT NULL DEFAULT 0",
+    "failed_login_count": "ALTER TABLE users ADD COLUMN failed_login_count INT NOT NULL DEFAULT 0",
+    "last_failed_login_at": "ALTER TABLE users ADD COLUMN last_failed_login_at DATETIME NULL",
+    "locked_until": "ALTER TABLE users ADD COLUMN locked_until DATETIME NULL",
     "profile_bio": "ALTER TABLE users ADD COLUMN profile_bio TEXT NULL",
     "profile_image": "ALTER TABLE users ADD COLUMN profile_image CHAR(64) NULL",
     "updated_at": "ALTER TABLE users ADD COLUMN updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
@@ -96,6 +114,9 @@ DDL_STATEMENTS = [
         mfa_secret VARCHAR(64) NULL,
         mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE,
         auth_version INT NOT NULL DEFAULT 0,
+        failed_login_count INT NOT NULL DEFAULT 0,
+        last_failed_login_at DATETIME NULL,
+        locked_until DATETIME NULL,
         profile_bio TEXT NULL,
         profile_image CHAR(64) NULL,
         created_at DATETIME NOT NULL,
@@ -329,14 +350,7 @@ def add_column_if_missing(cursor, table_name, column_name, alter_statement):
 
 
 def ensure_existing_user_columns():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="root",
-        password="root",
-        database="cyber_dashboard",
-        charset="utf8mb4",
-        autocommit=True,
-    )
+    connection = bootstrap_connection(Config.DB_NAME)
     try:
         with connection.cursor() as cursor:
             cursor.execute("SHOW TABLES LIKE %s", ("users",))
@@ -350,14 +364,7 @@ def ensure_existing_user_columns():
 
 
 def ensure_existing_learning_columns():
-    connection = pymysql.connect(
-        host="127.0.0.1",
-        user="root",
-        password="root",
-        database="cyber_dashboard",
-        charset="utf8mb4",
-        autocommit=True,
-    )
+    connection = bootstrap_connection(Config.DB_NAME)
     try:
         with connection.cursor() as cursor:
             for table_name, columns in TABLE_COLUMN_ALTERS.items():

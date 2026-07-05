@@ -17,6 +17,9 @@ class User(UserMixin):
         mfa_secret=None,
         mfa_enabled=False,
         auth_version=0,
+        failed_login_count=0,
+        last_failed_login_at=None,
+        locked_until=None,
         profile_bio="",
         profile_image="",
         created_at=None,
@@ -32,6 +35,9 @@ class User(UserMixin):
         self.mfa_secret = mfa_secret
         self.mfa_enabled = bool(mfa_enabled)
         self.auth_version = int(auth_version or 0)
+        self.failed_login_count = int(failed_login_count or 0)
+        self.last_failed_login_at = last_failed_login_at
+        self.locked_until = locked_until
         self.profile_bio = profile_bio or ""
         self.profile_image = profile_image or ""
         self.created_at = created_at

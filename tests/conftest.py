@@ -112,6 +112,7 @@ def admin_client(client, admin_user, login_as):
 
 
 def cleanup_user_records(user_id):
+    execute("DELETE FROM scheduled_tasks WHERE user_id = %s OR created_by = %s", (user_id, user_id))
     execute("DELETE FROM audit_logs WHERE user_id = %s", (user_id,))
     execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
     execute(

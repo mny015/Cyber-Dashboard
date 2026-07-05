@@ -32,7 +32,9 @@
     {% endif %}
 </div>
 
-<p class="meta">
-    Exports exclude passwords, MFA secrets, profile-image data, and recorded IP addresses.
-</p>
+<section class="card schedule-card">
+    <h2>Export safety note</h2>
+    <p class="meta">Exports exclude passwords, MFA secrets, profile-image data, and recorded IP addresses.</p>
+    <a class="button button-secondary" href="{{ url_for('tasks.index') }}">Schedule a backup reminder</a>
+</section>
 {% endblock %}

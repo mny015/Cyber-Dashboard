@@ -3,7 +3,10 @@
 {% block title %}Forbidden - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>403 - Forbidden</h1>
-<p>You do not have permission to access this page.</p>
-<a class="button" href="{{ url_for('dashboard.dashboard') }}">Back to dashboard</a>
+<section class="error-card card">
+    <p class="eyebrow">Access control</p>
+    <h1>403 - Forbidden</h1>
+    <p class="meta">You do not have permission to access this page.</p>
+    <a class="button" href="{{ url_for('dashboard.dashboard') }}">Back to dashboard</a>
+</section>
 {% endblock %}

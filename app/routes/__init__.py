@@ -11,6 +11,7 @@ def register_blueprints(app):
     from app.routes.notifications import notifications_bp
     from app.routes.profile import profile_bp
     from app.routes.security import security_bp
+    from app.routes.scheduled_tasks import tasks_bp
     from app.routes.topics import topics_bp
 
     app.register_blueprint(admin_bp)
@@ -26,3 +27,4 @@ def register_blueprints(app):
     app.register_blueprint(notifications_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(security_bp)
+    app.register_blueprint(tasks_bp)

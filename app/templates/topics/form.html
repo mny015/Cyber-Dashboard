@@ -4,44 +4,56 @@
 {% block title %}{{ "Edit" if editing else "New" }} Topic - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>{{ "Edit" if editing else "New" }} Topic</h1>
+<section class="page-header">
+    <div>
+        <p class="eyebrow">{{ "Update" if editing else "Create" }}</p>
+        <h1>{{ "Edit" if editing else "New" }} Topic</h1>
+        <p class="meta">Plan learning goals, status, priority, and topic notes.</p>
+    </div>
+    <a class="button button-secondary" href="{{ url_for('topics.index') }}">Back to topics</a>
+</section>
 
-<form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<section class="card form-card">
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-    <label for="title">Title</label>
-    <input id="title" type="text" name="title" value="{{ topic.title if topic else '' }}" required>
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" value="{{ topic.title if topic else '' }}" required>
 
-    <label for="category_id">Category</label>
-    <select id="category_id" name="category_id">
-        <option value="">No category</option>
-        {% for category in categories %}
-            <option value="{{ category.id }}" {% if topic and topic.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
-        {% endfor %}
-    </select>
+        <label for="category_id">Category</label>
+        <select id="category_id" name="category_id">
+            <option value="">No category</option>
+            {% for category in categories %}
+                <option value="{{ category.id }}" {% if topic and topic.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+        </select>
 
-    <label for="status">Status</label>
-    <select id="status" name="status">
-        {% for status in ["planned", "learning", "practicing", "complete"] %}
-            <option value="{{ status }}" {% if topic and topic.status == status %}selected{% endif %}>{{ status|title }}</option>
-        {% endfor %}
-    </select>
+        <div class="form-grid">
+            <div>
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for status in ["planned", "learning", "practicing", "complete"] %}
+                        <option value="{{ status }}" {% if topic and topic.status == status %}selected{% endif %}>{{ status|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority">
+                    {% for priority in ["low", "medium", "high"] %}
+                        <option value="{{ priority }}" {% if topic and topic.priority == priority %}selected{% endif %}>{{ priority|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
 
-    <label for="priority">Priority</label>
-    <select id="priority" name="priority">
-        {% for priority in ["low", "medium", "high"] %}
-            <option value="{{ priority }}" {% if topic and topic.priority == priority %}selected{% endif %}>{{ priority|title }}</option>
-        {% endfor %}
-    </select>
+        <label for="description">Description</label>
+        <textarea id="description" name="description">{{ topic.description if topic else '' }}</textarea>
 
-    <label for="description">Description</label>
-    <textarea id="description" name="description">{{ topic.description if topic else '' }}</textarea>
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes">{{ topic.notes if topic else '' }}</textarea>
 
-    <label for="notes">Notes</label>
-    <textarea id="notes" name="notes">{{ topic.notes if topic else '' }}</textarea>
-
-    <button type="submit">Save topic</button>
-</form>
-
-<a href="{{ url_for('topics.index') }}">Back to topics</a>
+        <button type="submit">Save topic</button>
+    </form>
+</section>
 {% endblock %}

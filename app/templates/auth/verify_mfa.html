@@ -3,13 +3,18 @@
 {% block title %}Verify MFA - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Verify MFA</h1>
-<p>Enter the 6-digit code from your authenticator app.</p>
+<section class="auth-shell">
+    <div class="auth-card">
+        <p class="eyebrow">Account check</p>
+        <h1>Verify MFA</h1>
+        <p class="meta">Enter the 6-digit code from your authenticator app.</p>
 
-<form method="post">
-    {{ form.hidden_tag() }}
-    {{ form.token.label }}
-    {{ form.token(placeholder="123456") }}
-    {{ form.submit() }}
-</form>
+        <form method="post">
+            {{ form.hidden_tag() }}
+            {{ form.token.label }}
+            {{ form.token(placeholder="123456") }}
+            {{ form.submit() }}
+        </form>
+    </div>
+</section>
 {% endblock %}

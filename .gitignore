@@ -53,6 +53,13 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Local agent workspace metadata
+.agent
+.agent/
+.agents
+.agents/
+.codex/
+
 # Migration / database scratch files
 migrations/__pycache__/
 *.sqlite3

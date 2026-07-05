@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Cyber Dashboard{% endblock %}</title>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
-<body>
+<body data-theme="light">
+    <div class="app-shell">
     <header class="site-header">
         <a class="nav-brand" href="{{ url_for('dashboard.dashboard') }}">
             <span class="brand-mark">CD</span>
@@ -24,6 +26,7 @@
                 <a href="{{ url_for('topics.index') }}" {% if request.blueprint == 'topics' %}aria-current="page"{% endif %}>Topics</a>
                 <a href="{{ url_for('notes.index') }}" {% if request.blueprint == 'notes' %}aria-current="page"{% endif %}>Notes</a>
                 <a href="{{ url_for('labs.index') }}" {% if request.blueprint == 'labs' %}aria-current="page"{% endif %}>Labs</a>
+                <a href="{{ url_for('tasks.index') }}" {% if request.blueprint == 'tasks' %}aria-current="page"{% endif %}>Tasks</a>
                 <a href="{{ url_for('security.index') }}" {% if request.blueprint == 'security' %}aria-current="page"{% endif %}>Findings</a>
                 <a href="{{ url_for('categories.index') }}" {% if request.blueprint == 'categories' %}aria-current="page"{% endif %}>Categories</a>
                 {% if current_user.is_admin %}
@@ -50,6 +53,9 @@
                 <a href="{{ url_for('auth.login') }}">Login</a>
                 <a class="nav-cta" href="{{ url_for('auth.register') }}">Create account</a>
             {% endif %}
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch color theme">
+                <span data-theme-label>Dark</span>
+            </button>
         </nav>
     </header>
 
@@ -73,10 +79,11 @@
         </div>
     {% endif %}
 
-    <main class="page-shell">
+    <main class="page-shell content-shell">
         {% block content %}{% endblock %}
     </main>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    </div>
 </body>
 </html>

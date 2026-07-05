@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduled Tasks | Cyber Dashboard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Planning</p>
+        <h1>Scheduled Tasks</h1>
+        <p class="meta">Plan reviews, lab practice, exports, and learning work without leaving the dashboard.</p>
+    </div>
+</section>
+
+<div class="task-layout">
+    <section class="card form-card">
+        <h2>Schedule a task</h2>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label for="title">Title</label>
+            <input id="title" name="title" value="{{ task.title if task else '' }}" placeholder="Example: Review shared lab visibility" required>
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description" placeholder="Optional context or checklist">{{ task.description if task else '' }}</textarea>
+
+            <div class="form-grid">
+                <div>
+                    <label for="task_type">Task type</label>
+                    <select id="task_type" name="task_type">
+                        {% for item in task_types %}
+                            <option value="{{ item }}" {% if task and task.task_type == item %}selected{% endif %}>{{ item|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="due_at">Due date</label>
+                    <input id="due_at" name="due_at" type="datetime-local">
+                </div>
+                {% if current_user.is_admin %}
+                    <div>
+                        <label for="scope">Scope</label>
+                        <select id="scope" name="scope">
+                            <option value="personal">Personal</option>
+                            <option value="admin">Admin</option>
+                            <option value="global">Global</option>
+                        </select>
+                    </div>
+                {% endif %}
+            </div>
+
+            <button type="submit">Schedule task</button>
+        </form>
+    </section>
+
+    <section class="card task-card">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Queue</p>
+                <h2>Upcoming and completed work</h2>
+            </div>
+        </div>
+
+        {% if tasks %}
+            <div class="dashboard-list">
+                {% for item in tasks %}
+                    <article>
+                        <span class="dashboard-badge">{{ item.task_type|title }}</span>
+                        <div>
+                            <strong>{{ item.title }}</strong>
+                            <small>
+                                {{ item.scope|title }}
+                                {% if item.due_at %} · Due {{ item.due_at|format_date }}{% endif %}
+                                · {{ item.status|title }}
+                            </small>
+                            {% if item.description %}
+                                <p class="meta">{{ item.description }}</p>
+                            {% endif %}
+                            {% if item.status == "upcoming" %}
+                                <div class="actions">
+                                    <form class="inline-form" method="post" action="{{ url_for('tasks.complete', task_id=item.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit">Complete</button>
+                                    </form>
+                                    <form class="inline-form" method="post" action="{{ url_for('tasks.cancel', task_id=item.id) }}" data-confirm="Cancel this scheduled task?">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="button-secondary" type="submit">Cancel</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="dashboard-empty">
+                <strong>No scheduled tasks yet</strong>
+                <p>Use the form to schedule a task.</p>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

@@ -28,7 +28,7 @@
                     <tr>
                         <td>{{ log.created_at|format_date }}</td>
                         <td>{{ log.action }}</td>
-                        <td>{{ log.user.email if log.user else "System" }}</td>
+                        <td>{{ log.user_email or "System" }}</td>
                         <td>{{ log.ip_address }}</td>
                         <td>{{ log.details }}</td>
                     </tr>

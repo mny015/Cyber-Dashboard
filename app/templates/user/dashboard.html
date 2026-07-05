@@ -3,136 +3,228 @@
 {% block title %}Dashboard | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="dashboard-heading">
-    <div>
-        <p class="eyebrow">Personal workspace</p>
-        <h1>Welcome back, {{ current_user.display_name }}</h1>
-        <p class="heading-copy">Keep your learning plan moving and pick up where you left off.</p>
-    </div>
-    <div class="heading-actions">
-        <a class="button button-secondary" href="{{ url_for('notes.create') }}">New note</a>
-        <a class="button" href="{{ url_for('topics.create') }}">Add topic</a>
-    </div>
-</section>
-
-<section class="metric-grid" aria-label="Learning overview">
-    <a class="metric-card" href="{{ url_for('topics.index') }}">
-        <span class="metric-label">Active topics</span>
-        <strong>{{ stats.topics }}</strong>
-        <span class="metric-link">View learning plan</span>
-    </a>
-    <a class="metric-card" href="{{ url_for('notes.index') }}">
-        <span class="metric-label">Notes</span>
-        <strong>{{ stats.notes }}</strong>
-        <span class="metric-link">Open knowledge base</span>
-    </a>
-    <a class="metric-card" href="{{ url_for('labs.index') }}">
-        <span class="metric-label">Labs completed</span>
-        <strong>{{ stats.completed_labs }}</strong>
-        <span class="metric-link">Continue practicing</span>
-    </a>
-    <a class="metric-card" href="{{ url_for('security.index') }}">
-        <span class="metric-label">Performance score</span>
-        <strong>{{ performance.score }}</strong>
-        <span class="metric-link">Rank #{{ performance.rank or "-" }} of {{ performance.total_users }}</span>
-    </a>
-</section>
-
-<div class="dashboard-grid">
-    <section class="panel panel-wide">
-        <div class="panel-header">
-            <div>
-                <p class="eyebrow">Recently updated</p>
-                <h2>Your topics</h2>
-            </div>
-            <a class="text-link" href="{{ url_for('topics.index') }}">View all</a>
+<div class="dashboard-shell dashboard-shell-user">
+    <section class="dashboard-hero">
+        <div class="dashboard-hero-copy">
+            <span class="dashboard-badge">Overview</span>
+            <h1>Cyber Dashboard</h1>
+            <p>Track your learning progress, notes, labs, and activity in one place</p>
         </div>
-        {% if recent_topics %}
-            <div class="activity-list">
-                {% for topic in recent_topics %}
-                    <a class="activity-row" href="{{ url_for('topics.detail', topic_id=topic.id) }}">
-                        <span class="activity-main">
-                            <strong>{{ topic.title }}</strong>
-                            <span>{{ topic.category_name or "Uncategorized" }} &middot; Updated {{ topic.updated_at|format_date }}</span>
-                        </span>
-                        <span class="status status-{{ topic.status }}">{{ topic.status|title }}</span>
-                    </a>
+
+        <div class="dashboard-chart" aria-label="Recent Changes in the last 7 days">
+            <div class="dashboard-card-header">
+                <div>
+                    <span class="dashboard-kicker">Activity</span>
+                    <h2>Recent Changes (7 days)</h2>
+                </div>
+                <span class="dashboard-badge">{{ changes_this_week }} total</span>
+            </div>
+            <div class="dashboard-chart-bars">
+                {% for item in activity_bars %}
+                    <div class="dashboard-chart-column">
+                        <span class="dashboard-chart-bar" style="--bar-height: {{ item.height }}%;"></span>
+                        <strong>{{ item.count }}</strong>
+                        <small>{{ item.label }}</small>
+                    </div>
                 {% endfor %}
             </div>
-        {% else %}
-            <div class="empty-state">
-                <h3>Build your learning plan</h3>
-                <p>Add your first topic to start tracking progress.</p>
-                <a class="button" href="{{ url_for('topics.create') }}">Add first topic</a>
-            </div>
-        {% endif %}
-    </section>
+            <p class="dashboard-caption">Includes notes, topics, categories, room completions, and updates</p>
+        </div>
 
-    <aside class="panel">
-        <div class="panel-header">
-            <div>
-                <p class="eyebrow">Practice queue</p>
-                <h2>Labs to complete</h2>
+        <aside class="dashboard-donut">
+            <div class="dashboard-donut-ring" style="--donut-progress: {{ room_progress.percent }}%;">
+                <strong>{{ room_progress.completed }}/{{ room_progress.total }}</strong>
             </div>
-        </div>
-        {% if available_labs %}
-            <div class="compact-list">
-                {% for lab in available_labs %}
-                    <a href="{{ url_for('labs.index') }}">
-                        <strong>{{ lab.name }}</strong>
-                        <span>{{ lab.platform }}{% if lab.visibility == "public" %} &middot; Shared{% endif %}</span>
-                    </a>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="meta">You are caught up. Add another lab when you are ready.</p>
-        {% endif %}
-    </aside>
+            <span class="dashboard-kicker">Rooms Completed</span>
+            <p>Your learning progress is</p>
+            <h2>On Track</h2>
+            <p>You have completed {{ room_progress.completed }} of {{ room_progress.total }} available rooms added by you or the admin.</p>
+        </aside>
 
-    <section class="panel panel-wide">
-        <div class="panel-header">
+        <div class="dashboard-strip">
             <div>
-                <p class="eyebrow">Performance</p>
-                <h2>Activity compared to peers</h2>
-            </div>
-            <a class="text-link" href="{{ url_for('security.index') }}">Open findings</a>
-        </div>
-        <div class="performance-summary">
-            <div>
-                <span class="metric-label">Your score</span>
-                <strong>{{ performance.score }}</strong>
-                <p class="meta">{{ performance.activity_label }} this month - {{ performance.recent_actions }} recent actions.</p>
+                <span>Recent activity summary</span>
+                <strong>{{ changes_this_week }} learning changes captured this week</strong>
             </div>
             <div>
-                <span class="metric-label">Peer average</span>
-                <strong>{{ performance.peer_average }}</strong>
-                <p class="meta">{{ performance.percentile }}th percentile across active learners.</p>
+                <span>Progress status</span>
+                <strong>{{ room_progress.completed }} completed rooms out of {{ room_progress.total }} visible practice rooms.</strong>
             </div>
-            <div>
-                <span class="metric-label">Security work</span>
-                <strong>{{ security_summary.total or 0 }}</strong>
-                <p class="meta">{{ security_summary.found_total or 0 }} found, {{ security_summary.tested_total or 0 }} tested, {{ security_summary.managed_total or 0 }} threats managed.</p>
+            <div class="dashboard-live">
+                <span class="dashboard-dot"></span>
+                <strong>{{ changes_this_week }} changes this week</strong>
             </div>
-        </div>
-        <div class="progress-track" aria-label="Performance score compared to peer average">
-            {% set bar_width = ((performance.score / (performance.score + performance.peer_average)) * 100) if (performance.score + performance.peer_average) else 0 %}
-            <span class="progress-fill" style="width: {{ bar_width|round(0, 'floor') }}%"></span>
         </div>
     </section>
 
-    <section class="panel quick-panel">
-        <div class="panel-header">
-            <div>
-                <p class="eyebrow">Shortcuts</p>
-                <h2>Quick actions</h2>
-            </div>
-        </div>
-        <div class="quick-grid">
-            <a href="{{ url_for('categories.create') }}"><strong>New category</strong><span>Organize your plan</span></a>
-            <a href="{{ url_for('labs.create') }}"><strong>Add a lab</strong><span>Queue practical work</span></a>
-            <a href="{{ url_for('security.create') }}"><strong>Log finding</strong><span>Track VAPT work</span></a>
-            <a href="{{ url_for('backup.index') }}"><strong>Export data</strong><span>Download a backup</span></a>
-        </div>
+    <nav class="dashboard-tabs" aria-label="Dashboard sections">
+        <a aria-current="page" href="{{ url_for('dashboard.user_dashboard') }}">Overview</a>
+        <a href="{{ url_for('topics.index') }}">Topics</a>
+        <a href="{{ url_for('notes.index') }}">Notes</a>
+        <a href="{{ url_for('categories.index') }}">Categories</a>
+        <a href="{{ url_for('labs.index') }}">Labs</a>
+        <a href="{{ url_for('topics.index') }}">Roadmap</a>
+        <a href="{{ url_for('profile.edit') }}">Settings</a>
+    </nav>
+
+    <section class="dashboard-grid dashboard-metrics" aria-label="User dashboard metrics">
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('topics.index') }}">
+            <span>Topics</span>
+            <strong>{{ stats.topics }}</strong>
+            <small>Total topics</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('notes.index') }}">
+            <span>Notes</span>
+            <strong>{{ stats.notes }}</strong>
+            <small>+{{ stats.notes_this_week }} this week</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('categories.index') }}">
+            <span>Categories</span>
+            <strong>{{ stats.categories }}</strong>
+            <small>Personal & admin</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('labs.index') }}">
+            <span>Labs / Rooms</span>
+            <strong>{{ stats.visible_labs }}</strong>
+            <small>{{ stats.completed_labs }} completed</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('notifications.index') }}">
+            <span>Requests</span>
+            <strong>{{ stats.pending_requests }}</strong>
+            <small>Pending note access</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('notifications.index') }}">
+            <span>Notifications</span>
+            <strong>{{ stats.notifications }}</strong>
+            <small>Unread</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('security.index') }}">
+            <span>Findings</span>
+            <strong>{{ stats.security_findings }}</strong>
+            <small>Tracked work</small>
+        </a>
+        <a class="dashboard-card dashboard-metric" href="{{ url_for('tasks.index') }}">
+            <span>Scheduled Tasks</span>
+            <strong>{{ stats.scheduled_tasks }}</strong>
+            <small>Upcoming</small>
+        </a>
     </section>
+
+    <div class="dashboard-grid dashboard-content">
+        <section class="dashboard-card dashboard-main-card">
+            <div class="dashboard-card-header">
+                <div>
+                    <span class="dashboard-kicker">Workspace</span>
+                    <h2>Recent Changes</h2>
+                </div>
+                <a href="{{ url_for('notes.index') }}">Open notes</a>
+            </div>
+            {% if recent_changes %}
+                <div class="dashboard-list">
+                    {% for item in recent_changes %}
+                        <article>
+                            <span class="dashboard-badge">{{ item.item_type }}</span>
+                            <div>
+                                <strong>{{ item.title }}</strong>
+                                <small>{{ item.detail|title }} · {{ item.changed_at|format_date }}</small>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="dashboard-empty">
+                    <strong>No recent changes</strong>
+                    <p>Updates to your notes, topics, categories, and rooms will appear here.</p>
+                </div>
+            {% endif %}
+        </section>
+
+        <aside class="dashboard-sidebar">
+            <section class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <span class="dashboard-kicker">Planning</span>
+                        <h2>Scheduled Tasks</h2>
+                    </div>
+                    <a href="{{ url_for('tasks.index') }}">View all</a>
+                </div>
+                {% if scheduled_tasks %}
+                    <div class="dashboard-list dashboard-list-compact">
+                        {% for item in scheduled_tasks %}
+                            <article>
+                                <span class="dashboard-badge">{{ item.task_type|title }}</span>
+                                <div>
+                                    <strong>{{ item.title }}</strong>
+                                    <small>
+                                        {{ item.scope|title }}
+                                        {% if item.due_at %} · Due {{ item.due_at|format_date }}{% endif %}
+                                    </small>
+                                    <form class="inline-form" method="post" action="{{ url_for('tasks.complete', task_id=item.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit">Complete</button>
+                                    </form>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty">
+                        <strong>No scheduled tasks yet</strong>
+                        <p>Plan your next lab, review, or note session.</p>
+                        <a class="button" href="{{ url_for('tasks.index') }}">Schedule a task</a>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <span class="dashboard-kicker">Practice queue</span>
+                        <h2>Rooms to complete</h2>
+                    </div>
+                    <a href="{{ url_for('labs.index') }}">View labs</a>
+                </div>
+                {% if available_labs %}
+                    <div class="dashboard-list dashboard-list-compact">
+                        {% for item in available_labs %}
+                            <article>
+                                <span class="dashboard-badge">{{ "Shared" if item.visibility == "public" else "Personal" }}</span>
+                                <div>
+                                    <strong>{{ item.title }}</strong>
+                                    <small>{{ item.detail }} · {{ item.owner_name }}</small>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty">No upcoming rooms</div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <span class="dashboard-kicker">Completed work</span>
+                        <h2>Last done</h2>
+                    </div>
+                </div>
+                {% if last_done_items %}
+                    <div class="dashboard-list dashboard-list-compact">
+                        {% for item in last_done_items %}
+                            <article>
+                                <span class="dashboard-badge dashboard-badge-success">{{ item.badge }}</span>
+                                <div>
+                                    <strong>{{ item.title|replace("_", " ")|title }}</strong>
+                                    <small>{{ item.detail|truncate(58) }} · {{ item.done_at|format_date }}</small>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty">No recent completed actions</div>
+                {% endif %}
+            </section>
+        </aside>
+    </div>
 </div>
 {% endblock %}

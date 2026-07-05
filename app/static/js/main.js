@@ -6,6 +6,24 @@ document.addEventListener("submit", (event) => {
     }
 });
 
+function setTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
+    localStorage.setItem("cyber-dashboard-theme", theme);
+    document.querySelectorAll("[data-theme-label]").forEach((label) => {
+        label.textContent = theme === "dark" ? "Light" : "Dark";
+    });
+}
+
+setTheme(document.documentElement.dataset.theme || "light");
+
+document.querySelectorAll("[data-theme-toggle]").forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+        const currentTheme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+        setTheme(currentTheme === "dark" ? "light" : "dark");
+    });
+});
+
 document.addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-profile-picture-toggle]");
     if (!toggle) {

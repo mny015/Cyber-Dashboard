@@ -3,17 +3,24 @@
 {% block title %}Login - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<h1>Login</h1>
+<section class="auth-shell">
+    <div class="auth-card">
+        <p class="eyebrow">Welcome back</p>
+        <h1>Login</h1>
+        <p class="meta">Access your topics, notes, labs, requests, and scheduled tasks.</p>
 
-<form method="POST">
-    {{ form.hidden_tag() }}
+        <form method="POST">
+            {{ form.hidden_tag() }}
 
-    {{ form.email.label }}
-    {{ form.email(placeholder="name@example.com") }}
+            {{ form.email.label }}
+            {{ form.email(placeholder="name@example.com") }}
 
-    {{ form.password.label }}
-    {{ form.password(placeholder="Password") }}
+            {{ form.password.label }}
+            {{ form.password(placeholder="Password") }}
 
-    {{ form.submit() }}
-</form>
+            {{ form.submit() }}
+        </form>
+        <p class="meta">New here? <a href="{{ url_for('auth.register') }}">Create an account</a>.</p>
+    </div>
+</section>
 {% endblock %}

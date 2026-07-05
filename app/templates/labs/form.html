@@ -34,7 +34,7 @@
         <label for="visibility">Visibility</label>
         <select id="visibility" name="visibility">
             <option value="personal" {% if not lab or lab.visibility == "personal" %}selected{% endif %}>Personal</option>
-            <option value="public" {% if lab and lab.visibility == "public" %}selected{% endif %}>Everyone</option>
+            <option value="public" {% if lab and lab.visibility == "public" %}selected{% endif %}>Public</option>
         </select>
     {% endif %}
 

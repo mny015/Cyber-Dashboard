@@ -80,7 +80,7 @@
                 {% for lab in available_labs %}
                     <a href="{{ url_for('labs.index') }}">
                         <strong>{{ lab.name }}</strong>
-                        <span>{{ lab.platform }}{% if lab.visibility == "everyone" %} &middot; Shared{% endif %}</span>
+                        <span>{{ lab.platform }}{% if lab.visibility == "public" %} &middot; Shared{% endif %}</span>
                     </a>
                 {% endfor %}
             </div>

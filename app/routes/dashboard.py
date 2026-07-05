@@ -75,7 +75,7 @@ def user_dashboard():
           ON completions.lab_id = labs.id AND completions.user_id = %s
         WHERE labs.is_deleted = 0
           AND completions.id IS NULL
-          AND (labs.owner_id = %s OR labs.visibility = 'everyone')
+          AND (labs.owner_id = %s OR labs.visibility = 'public')
         ORDER BY labs.updated_at DESC
         LIMIT 4
         """,
@@ -102,7 +102,7 @@ def admin_dashboard():
             (SELECT COUNT(*) FROM users WHERE is_banned = 0) AS active_users,
             (SELECT COUNT(*) FROM topics WHERE is_deleted = 0) AS topics,
             (SELECT COUNT(*) FROM lab_references
-             WHERE is_deleted = 0 AND visibility = 'everyone') AS shared_labs,
+             WHERE is_deleted = 0 AND visibility = 'public') AS shared_labs,
             (SELECT COUNT(*) FROM security_findings
              WHERE is_deleted = 0) AS security_findings,
             (SELECT COUNT(*) FROM note_access_requests

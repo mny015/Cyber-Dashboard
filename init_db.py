@@ -527,6 +527,9 @@ def normalize_lab_platforms():
     connection = get_connection()
     try:
         with connection.cursor() as cursor:
+            if column_exists(cursor, "lab_references", "visibility"):
+                cursor.execute("UPDATE lab_references SET visibility = 'public' WHERE visibility = 'everyone'")
+
             for name in ("picoCTF", "TryHackMe", "Hack The Box", "PortSwigger", "Other"):
                 cursor.execute(
                     "INSERT IGNORE INTO lab_platforms (name, slug) VALUES (%s, %s)",

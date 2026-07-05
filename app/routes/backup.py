@@ -198,7 +198,7 @@ def _admin_data(admin_id):
                 FROM lab_references AS labs
                 JOIN lab_platforms AS platforms ON platforms.id = labs.platform_id
                 JOIN users ON users.id = labs.owner_id
-                WHERE labs.visibility = 'everyone'
+                WHERE labs.visibility = 'public'
                 ORDER BY labs.id
                 """
             ),

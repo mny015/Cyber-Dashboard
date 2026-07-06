@@ -10,8 +10,10 @@ function setTheme(theme) {
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;
     localStorage.setItem("cyber-dashboard-theme", theme);
-    document.querySelectorAll("[data-theme-label]").forEach((label) => {
-        label.textContent = theme === "dark" ? "Light" : "Dark";
+    document.querySelectorAll("[data-theme-toggle]").forEach((toggle) => {
+        const nextTheme = theme === "dark" ? "light" : "dark";
+        toggle.setAttribute("aria-label", `Switch to ${nextTheme} theme`);
+        toggle.setAttribute("title", `Switch to ${nextTheme} theme`);
     });
 }
 

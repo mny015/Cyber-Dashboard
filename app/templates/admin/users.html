@@ -6,51 +6,88 @@
 <div class="page-header">
     <div>
         <h1>Users</h1>
-        <p class="meta">Manage account access and roles.</p>
+        <p class="meta">Manage account access, roles, password resets, and account status.</p>
     </div>
     <a class="button" href="{{ url_for('admin.audit_logs') }}">Audit logs</a>
 </div>
 
 {% if users %}
-    <div class="table-wrap">
+    <div class="table-wrap admin-users-table">
         <table>
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
+                    <th>Account</th>
+                    <th>Access</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr>
-                        <td>{{ user.display_name }}</td>
-                        <td>{{ user.email }}</td>
+                    <tr class="admin-user-row">
                         <td>
-                            <form method="post" action="{{ url_for('admin.update_role', user_id=user.id) }}">
+                            <div class="user-identity">
+                                <span class="user-avatar-small">{{ user.display_name[:1]|upper }}</span>
+                                <div>
+                                    <strong>{{ user.display_name }}</strong>
+                                    <span>{{ user.email }}</span>
+                                    <small>Joined {{ user.created_at or "Not recorded" }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <form class="compact-form" method="post" action="{{ url_for('admin.update_role', user_id=user.id) }}">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <select name="role">
+                                <label class="visually-hidden" for="role-{{ user.id }}">Role</label>
+                                <select id="role-{{ user.id }}" name="role">
                                     <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
                                     <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
                                 </select>
-                                <button type="submit">Save</button>
+                                <button class="button-secondary" type="submit">Save role</button>
                             </form>
                         </td>
-                        <td>{{ "Banned" if user.is_banned else "Active" }}</td>
                         <td>
-                            {% if user.is_banned %}
-                                <form class="inline-form" method="post" action="{{ url_for('admin.unban_user', user_id=user.id) }}">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit">Unban</button>
-                                </form>
+                            <span class="status-badge {% if user.is_banned %}status-danger{% else %}status-success{% endif %}">
+                                {{ "Banned" if user.is_banned else "Active" }}
+                            </span>
+                            {% if user.mfa_enabled %}
+                                <span class="status-badge status-info">MFA enabled</span>
                             {% else %}
-                                <form class="inline-form" method="post" action="{{ url_for('admin.ban_user', user_id=user.id) }}" data-confirm="Ban this user?">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button class="danger" type="submit">Ban</button>
-                                </form>
+                                <span class="status-badge">MFA off</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <div class="admin-user-actions">
+                                <details class="admin-action-panel">
+                                    <summary>Reset password</summary>
+                                    <form class="mini-form" method="post" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" autocomplete="off">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <label for="password-{{ user.id }}">New password</label>
+                                        <input id="password-{{ user.id }}" type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password">
+                                        <label for="confirm-password-{{ user.id }}">Confirm password</label>
+                                        <input id="confirm-password-{{ user.id }}" type="password" name="confirm_password" minlength="8" maxlength="128" required autocomplete="new-password">
+                                        <button type="submit">Change password</button>
+                                    </form>
+                                </details>
+
+                                <div class="user-action-row">
+                                    {% if user.is_banned %}
+                                        <form class="inline-form" method="post" action="{{ url_for('admin.unban_user', user_id=user.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button class="button-secondary" type="submit">Unban</button>
+                                        </form>
+                                    {% else %}
+                                        <form class="inline-form" method="post" action="{{ url_for('admin.ban_user', user_id=user.id) }}" data-confirm="Ban this user?">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button class="button-secondary" type="submit">Ban</button>
+                                        </form>
+                                    {% endif %}
+                                    <form class="inline-form" method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" data-confirm="Delete this user and their personal records? This cannot be undone.">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="danger" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}
@@ -58,6 +95,9 @@
         </table>
     </div>
 {% else %}
-    <p>No users found.</p>
+    <section class="empty-state">
+        <h2>No users found</h2>
+        <p class="meta">New accounts will appear here after registration.</p>
+    </section>
 {% endif %}
 {% endblock %}

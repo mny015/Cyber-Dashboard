@@ -1,11 +1,12 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from werkzeug.security import generate_password_hash
 
-from app.forms.admin import RoleForm
+from app.forms.admin import AdminPasswordResetForm, RoleForm
 from app.models.user import User
 from utils.audit import log_audit
 from utils.decorators import admin_required
-from utils.db import execute, fetch_all, fetch_one
+from utils.db import execute, fetch_all, fetch_one, get_connection
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -162,6 +163,12 @@ def update_role(user_id):
         return redirect(url_for("admin.users"))
     form = RoleForm()
     if form.validate_on_submit():
+        if user.id == current_user.id:
+            flash("Use another administrator account to change your own role.", "danger")
+            return redirect(url_for("admin.users"))
+        if user.is_admin and form.role.data != "admin" and is_last_active_admin(user.id):
+            flash("Keep at least one active administrator account.", "danger")
+            return redirect(url_for("admin.users"))
         user.role = form.role.data
         execute("UPDATE users SET role = %s, updated_at = NOW() WHERE id = %s", (user.role, user.id))
         log_audit("role_updated", f"{user.email} role changed to {user.role}")
@@ -180,6 +187,9 @@ def ban_user(user_id):
         return redirect(url_for("admin.users"))
     if user.id == current_user.id:
         flash("You cannot ban your own account.", "danger")
+        return redirect(url_for("admin.users"))
+    if user.is_admin and is_last_active_admin(user.id):
+        flash("Keep at least one active administrator account.", "danger")
         return redirect(url_for("admin.users"))
 
     user.is_banned = True
@@ -203,6 +213,65 @@ def unban_user(user_id):
     return redirect(url_for("admin.users"))
 
 
+@admin_bp.route("/users/<int:user_id>/password", methods=["POST"])
+@login_required
+@admin_required
+def reset_user_password(user_id):
+    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for("admin.users"))
+    if user.id == current_user.id:
+        flash("Use your own Security page to change your password.", "danger")
+        return redirect(url_for("admin.users"))
+
+    form = AdminPasswordResetForm()
+    if not form.validate_on_submit():
+        for errors in form.errors.values():
+            for error in errors:
+                flash(error, "danger")
+        return redirect(url_for("admin.users"))
+
+    password_hash = generate_password_hash(form.password.data)
+    execute(
+        """
+        UPDATE users
+        SET password_hash = %s,
+            auth_version = auth_version + 1,
+            failed_login_count = 0,
+            last_failed_login_at = NULL,
+            locked_until = NULL,
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (password_hash, user.id),
+    )
+    log_audit("admin_password_reset", f"Password reset for {user.email}")
+    flash(f"Password updated for {user.display_name}.", "success")
+    return redirect(url_for("admin.users"))
+
+
+@admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_user(user_id):
+    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for("admin.users"))
+    if user.id == current_user.id:
+        flash("You cannot delete your own account.", "danger")
+        return redirect(url_for("admin.users"))
+    if user.is_admin and is_last_active_admin(user.id):
+        flash("Keep at least one active administrator account.", "danger")
+        return redirect(url_for("admin.users"))
+
+    delete_user_records(user.id)
+    log_audit("user_deleted", f"{user.email} was deleted by {current_user.email}")
+    flash(f"{user.display_name} was deleted.", "success")
+    return redirect(url_for("admin.users"))
+
+
 @admin_bp.route("/audit-logs")
 @login_required
 @admin_required
@@ -222,3 +291,101 @@ def audit_logs():
     total_row = fetch_one("SELECT COUNT(*) AS total FROM audit_logs")
     logs = type("Pagination", (), {"items": rows, "page": page, "pages": 1, "total": total_row["total"] if total_row else 0, "has_next": False, "has_prev": page > 1})()
     return render_template("admin/audit_logs.html", logs=logs)
+
+
+def is_last_active_admin(user_id):
+    row = fetch_one(
+        """
+        SELECT COUNT(*) AS total
+        FROM users
+        WHERE role = 'admin'
+          AND is_banned = 0
+          AND id <> %s
+        """,
+        (user_id,),
+    )
+    return not row or int(row["total"] or 0) == 0
+
+
+def delete_user_records(user_id):
+    connection = get_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM scheduled_tasks WHERE user_id = %s OR created_by = %s",
+                (user_id, user_id),
+            )
+            cursor.execute("UPDATE audit_logs SET user_id = NULL WHERE user_id = %s", (user_id,))
+            cursor.execute(
+                "UPDATE vulnerability_catalog SET created_by_user_id = NULL WHERE created_by_user_id = %s",
+                (user_id,),
+            )
+            cursor.execute(
+                "UPDATE vulnerability_catalog SET reviewed_by_user_id = NULL WHERE reviewed_by_user_id = %s",
+                (user_id,),
+            )
+            cursor.execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
+            cursor.execute(
+                """
+                DELETE FROM note_access_requests
+                WHERE requester_admin_id = %s
+                   OR topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
+                   OR note_id IN (SELECT id FROM notes WHERE owner_id = %s)
+                """,
+                (user_id, user_id, user_id),
+            )
+            cursor.execute(
+                """
+                DELETE FROM lab_completions
+                WHERE user_id = %s
+                   OR lab_id IN (SELECT id FROM lab_references WHERE owner_id = %s)
+                """,
+                (user_id, user_id),
+            )
+            cursor.execute(
+                """
+                UPDATE notes
+                SET topic_id = NULL
+                WHERE topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
+                  AND owner_id <> %s
+                """,
+                (user_id, user_id),
+            )
+            cursor.execute(
+                """
+                UPDATE lab_references
+                SET topic_id = NULL
+                WHERE topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
+                  AND owner_id <> %s
+                """,
+                (user_id, user_id),
+            )
+            cursor.execute(
+                """
+                UPDATE topics
+                SET category_id = NULL
+                WHERE category_id IN (SELECT id FROM categories WHERE owner_id = %s)
+                  AND owner_id <> %s
+                """,
+                (user_id, user_id),
+            )
+            cursor.execute("DELETE FROM notes WHERE owner_id = %s", (user_id,))
+            cursor.execute("DELETE FROM lab_references WHERE owner_id = %s", (user_id,))
+            cursor.execute("DELETE FROM topics WHERE owner_id = %s", (user_id,))
+            cursor.execute("DELETE FROM contacts WHERE owner_id = %s", (user_id,))
+            cursor.execute("DELETE FROM categories WHERE owner_id = %s", (user_id,))
+            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+            cursor.execute(
+                """
+                DELETE profile_images
+                FROM profile_images
+                LEFT JOIN users ON users.profile_image = profile_images.image_hash
+                WHERE users.id IS NULL
+                """
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()

@@ -6,49 +6,98 @@
 <div class="page-header">
     <div>
         <h1>Profile</h1>
-        <p class="meta">Update your account details and profile picture.</p>
+        <p class="meta">Keep your account identity, profile picture, and personal details current.</p>
     </div>
 </div>
 
 <div class="profile-layout">
-    <section class="card profile-preview" data-profile-picture>
-        <button class="avatar-button" type="button" data-profile-picture-toggle aria-label="Open profile picture options">
-            {% if current_user.profile_image %}
-                <img class="avatar" src="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" alt="Profile picture">
-            {% else %}
-                <span class="avatar avatar-placeholder">{{ current_user.display_name[:1]|upper }}</span>
-            {% endif %}
-        </button>
-        <div class="picture-actions" data-profile-picture-menu hidden>
-            {% if current_user.profile_image %}
-                <a class="button" href="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" target="_blank" rel="noopener">View picture</a>
-            {% endif %}
-            <label class="button" for="profile_image">Change picture</label>
-            <p class="meta">Allowed: JPG, PNG, GIF, or WEBP.</p>
+    <section class="card profile-preview profile-card" data-profile-picture>
+        <div class="profile-picture-wrap">
+            <button class="avatar-button" type="button" data-profile-picture-toggle aria-label="Open profile picture options">
+                {% if current_user.profile_image %}
+                    <img class="avatar" src="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" alt="Profile picture">
+                {% else %}
+                    <span class="avatar avatar-placeholder">{{ current_user.display_name[:1]|upper }}</span>
+                {% endif %}
+                <span class="avatar-edit-label">Change</span>
+            </button>
+            <div class="picture-actions" data-profile-picture-menu hidden>
+                {% if current_user.profile_image %}
+                    <a class="button button-secondary" href="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" target="_blank" rel="noopener">View picture</a>
+                {% endif %}
+                <label class="button" for="profile_image">Upload new</label>
+                <p class="meta">JPG, PNG, GIF, or WEBP. Images are validated and stored in the database.</p>
+            </div>
         </div>
-        <h2>{{ current_user.display_name }}</h2>
-        <p class="meta">{{ current_user.email }}</p>
-        <p>{{ current_user.profile_bio or "No profile details yet." }}</p>
+
+        <div class="profile-title-block">
+            <p class="eyebrow">{{ current_user.role|title }} Account</p>
+            <h2>{{ current_user.display_name }}</h2>
+            <p class="meta">{{ current_user.email }}</p>
+        </div>
+
+        <div class="profile-meta-grid">
+            <div>
+                <span>Status</span>
+                <strong>{{ "Banned" if current_user.is_banned else "Active" }}</strong>
+            </div>
+            <div>
+                <span>MFA</span>
+                <strong>{{ "Enabled" if current_user.mfa_enabled else "Not enabled" }}</strong>
+            </div>
+            <div>
+                <span>Member since</span>
+                <strong>{{ current_user.created_at or "Not recorded" }}</strong>
+            </div>
+        </div>
+
+        <div class="profile-bio-preview">
+            <span>Profile details</span>
+            <p>{{ current_user.profile_bio or "No profile details yet. Add a short summary of your learning focus, lab interests, or current role." }}</p>
+        </div>
     </section>
 
-    <form method="post" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
+    <div class="profile-main">
+        <form class="form-card profile-form-card" method="post" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
 
-        {{ form.display_name.label }}
-        {{ form.display_name() }}
+            <div class="form-section-heading">
+                <div>
+                    <h2>Account Details</h2>
+                    <p class="meta">These details are shown inside your dashboard and activity records.</p>
+                </div>
+            </div>
 
-        {{ form.email.label }}
-        {{ form.email() }}
+            {{ form.display_name.label }}
+            {{ form.display_name(autocomplete="name") }}
 
-        {{ form.profile_bio.label }}
-        {{ form.profile_bio() }}
+            {{ form.email.label }}
+            {{ form.email(autocomplete="email") }}
 
-        <div class="visually-hidden">
-            {{ form.profile_image.label }}
-            {{ form.profile_image() }}
-        </div>
+            {{ form.profile_bio.label }}
+            {{ form.profile_bio(rows="7", placeholder="Example: Junior security learner focused on web exploitation, GRC notes, and weekly lab practice.") }}
 
-        {{ form.submit() }}
-    </form>
+            <div class="visually-hidden">
+                {{ form.profile_image.label }}
+                {{ form.profile_image() }}
+            </div>
+
+            <div class="form-actions">
+                {{ form.submit(class_="button") }}
+            </div>
+        </form>
+
+        <section class="card profile-security-panel">
+            <div>
+                <p class="eyebrow">Privacy and Security</p>
+                <h2>Protect Your Account</h2>
+                <p class="meta">Password changes and MFA setup stay in the dedicated security page so sensitive actions remain separated from profile edits.</p>
+            </div>
+            <div class="profile-security-actions">
+                <a class="button" href="{{ url_for('auth.setup_mfa') }}">Security settings</a>
+                <a class="button button-secondary" href="{{ url_for('backup.index') }}">Export data</a>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

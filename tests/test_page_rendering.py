@@ -6,6 +6,8 @@ def test_theme_toggle_present_on_login_page(client):
 
     assert response.status_code == 200
     assert b"data-theme-toggle" in response.data
+    assert b"theme-icon" in response.data
+    assert b"data-theme-label" not in response.data
 
 
 def test_theme_script_exists():
@@ -50,3 +52,11 @@ def test_audit_logs_loads_for_admin(admin_client):
     admin_response = admin_client.get("/admin/audit-logs")
 
     assert admin_response.status_code == 200
+
+
+def test_profile_page_loads_with_professional_sections(authenticated_client):
+    response = authenticated_client.get("/profile/")
+
+    assert response.status_code == 200
+    assert b"Account Details" in response.data
+    assert b"Privacy and Security" in response.data

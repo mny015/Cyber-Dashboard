@@ -3,6 +3,7 @@ from flask_login import current_user, login_required
 
 from app.models.category import Category
 from app.models.topic import Topic
+from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one, fetch_scalar
 from utils.helpers import clean_text, slugify
 
@@ -79,6 +80,7 @@ def create():
         if not commit_topic():
             return render_template("topics/form.html", topic=topic, categories=get_categories())
 
+        log_audit("topic_created", f"Created topic {topic.title}")
         flash("Topic created successfully.", "success")
         return redirect(url_for("topics.detail", topic_id=request._topic_id))
 
@@ -106,6 +108,7 @@ def edit(topic_id):
         if not commit_topic():
             return render_template("topics/form.html", topic=topic, categories=get_categories())
 
+        log_audit("topic_updated", f"Updated topic {topic.title}")
         flash("Topic updated successfully.", "success")
         return redirect(url_for("topics.detail", topic_id=topic.id))
 
@@ -120,6 +123,7 @@ def delete(topic_id):
         "UPDATE topics SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
         (topic.id, current_user.id),
     )
+    log_audit("topic_deleted", f"Deleted topic {topic.title}")
     flash("Topic deleted successfully.", "info")
     return redirect(url_for("topics.index"))
 

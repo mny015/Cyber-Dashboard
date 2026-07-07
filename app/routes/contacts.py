@@ -2,6 +2,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required
 
 from app.models.contact import Contact
+from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text, is_valid_email, is_valid_phone
 
@@ -49,6 +50,7 @@ def create():
             """,
             (contact.name, contact.email, contact.phone, contact.notes, contact.owner_id),
         )
+        log_audit("contact_created", f"Created contact {contact.id}")
         flash("Contact created successfully.", "success")
         return redirect(url_for("contacts.index"))
 
@@ -72,6 +74,7 @@ def edit(contact_id):
             """,
             (contact.name, contact.email, contact.phone, contact.notes, contact.id, current_user.id),
         )
+        log_audit("contact_updated", f"Updated contact {contact.id}")
         flash("Contact updated successfully.", "success")
         return redirect(url_for("contacts.index"))
 
@@ -86,6 +89,7 @@ def delete(contact_id):
         "UPDATE contacts SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
         (contact.id, current_user.id),
     )
+    log_audit("contact_deleted", f"Deleted contact {contact.id}")
     flash("Contact deleted successfully.", "info")
     return redirect(url_for("contacts.index"))
 

@@ -2,6 +2,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required
 
 from app.models.category import Category
+from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text
 
@@ -59,6 +60,7 @@ def create():
             flash("You already have a category with that name.", "danger")
             return render_template("categories/form.html", category=category)
 
+        log_audit("category_created", f"Created category {category.name}")
         flash("Category created successfully.", "success")
         return redirect(url_for("categories.index"))
 
@@ -91,6 +93,7 @@ def edit(category_id):
             flash("You already have a category with that name.", "danger")
             return render_template("categories/form.html", category=category)
 
+        log_audit("category_updated", f"Updated category {category.name}")
         flash("Category updated successfully.", "success")
         return redirect(url_for("categories.index"))
 
@@ -105,5 +108,6 @@ def delete(category_id):
         "UPDATE categories SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
         (category.id, current_user.id),
     )
+    log_audit("category_deleted", f"Deleted category {category.name}")
     flash("Category deleted successfully.", "info")
     return redirect(url_for("categories.index"))

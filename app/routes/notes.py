@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text
 
@@ -114,6 +115,7 @@ def create():
             """,
             (title, body, topic_id, current_user.id),
         )
+        log_audit("note_created", f"Created note {note_id}")
         flash("Note created successfully.", "success")
         return redirect(url_for("notes.detail", note_id=note_id))
 
@@ -149,6 +151,7 @@ def edit(note_id):
             """,
             (title, body, topic_id, note_id, current_user.id),
         )
+        log_audit("note_updated", f"Updated note {note_id}")
         flash("Note updated successfully.", "success")
         return redirect(url_for("notes.detail", note_id=note_id))
 
@@ -163,6 +166,7 @@ def delete(note_id):
         "UPDATE notes SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
         (note["id"], current_user.id),
     )
+    log_audit("note_deleted", f"Deleted note {note['id']}")
     flash("Note deleted successfully.", "info")
     return redirect(url_for("notes.index"))
 

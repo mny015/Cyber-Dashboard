@@ -74,7 +74,7 @@
             <span class="dashboard-card-icon">US</span>
             <span>Users</span>
             <strong>{{ stats.total_users }}</strong>
-            <small>{{ stats.active_users }} active · {{ stats.banned_users }} banned · {{ stats.admin_users }} admin</small>
+            <small>{{ stats.active_users }} active &middot; {{ stats.banned_users }} banned &middot; {{ stats.admin_users }} admin</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.topic_summaries') }}">
             <span class="dashboard-card-icon">TP</span>
@@ -120,36 +120,90 @@
         </a>
     </section>
 
-    <div class="dashboard-grid dashboard-content">
-        <section class="dashboard-card dashboard-main-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <span class="dashboard-kicker">Platforms</span>
-                    <h2>Platform metrics</h2>
+    <div class="dashboard-grid dashboard-content dashboard-content-admin">
+        <div class="dashboard-main-column">
+            <section class="dashboard-card dashboard-main-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <span class="dashboard-kicker">Platforms</span>
+                        <h2>Platform metrics</h2>
+                    </div>
+                    <a href="{{ url_for('labs.index') }}">Manage labs</a>
                 </div>
-                <a href="{{ url_for('labs.index') }}">Manage labs</a>
-            </div>
-            {% if platform_metrics %}
-                <div class="dashboard-list dashboard-platform-list">
-                    {% for platform in platform_metrics %}
-                        <article>
-                            <span class="dashboard-badge">{{ platform.name }}</span>
-                            <div>
-                                <strong>{{ platform.total_labs }} rooms</strong>
-                                <small>{{ platform.shared_labs }} shared · {{ platform.completions }} completions</small>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="dashboard-empty">
-                    <strong>No platform records</strong>
-                    <p>Lab platforms will appear here after the database is seeded.</p>
-                </div>
-            {% endif %}
-        </section>
+                {% if platform_metrics %}
+                    <div class="dashboard-list dashboard-platform-list">
+                        {% for platform in platform_metrics %}
+                            <article>
+                                <span class="dashboard-badge">{{ platform.name }}</span>
+                                <div>
+                                    <strong>{{ platform.total_labs }} rooms</strong>
+                                    <small>{{ platform.shared_labs }} shared &middot; {{ platform.completions }} completions</small>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty">
+                        <strong>No platform records</strong>
+                        <p>Lab platforms will appear here after the database is seeded.</p>
+                    </div>
+                {% endif %}
+            </section>
 
-        <aside class="dashboard-sidebar">
+            <div class="dashboard-inline-grid">
+                <section class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <span class="dashboard-kicker">Requests</span>
+                            <h2>Pending note access</h2>
+                        </div>
+                        <a href="{{ url_for('admin.note_requests') }}">View requests</a>
+                    </div>
+                    {% if pending_requests %}
+                        <div class="dashboard-list">
+                            {% for request_item in pending_requests %}
+                                <article>
+                                    <span class="dashboard-badge">Pending</span>
+                                    <div>
+                                        <strong>{{ request_item.topic_title }}</strong>
+                                        <small>{{ request_item.owner_name }} &middot; {{ request_item.requested_at|format_date }}</small>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dashboard-empty">No pending note access requests</div>
+                    {% endif %}
+                </section>
+
+                <section class="dashboard-card">
+                    <div class="dashboard-card-header">
+                        <div>
+                            <span class="dashboard-kicker">Audit Logs</span>
+                            <h2>Recent audit logs</h2>
+                        </div>
+                        <a href="{{ url_for('admin.audit_logs') }}">View all</a>
+                    </div>
+                    {% if recent_activity %}
+                        <div class="dashboard-list">
+                            {% for item in recent_activity %}
+                                <article>
+                                    <span class="dashboard-badge">{{ item.action|replace("_", " ")|title }}</span>
+                                    <div>
+                                        <strong>{{ item.user_name or "System" }}</strong>
+                                        <small>{{ item.details|truncate(70) }} &middot; {{ item.created_at|format_date }}</small>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="dashboard-empty">No audit logs recorded yet</div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+
+        <aside class="dashboard-sidebar dashboard-admin-sidebar">
             <section class="dashboard-card">
                 <div class="dashboard-card-header">
                     <div>
@@ -170,8 +224,8 @@
                                     {% endif %}
                                     <small>
                                         {{ item.scope|title }}
-                                        {% if item.due_at %} · Due {{ item.due_at|format_date }}{% endif %}
-                                        {% if item.detail %} · {{ item.detail }}{% endif %}
+                                        {% if item.due_at %} &middot; Due {{ item.due_at|format_date }}{% endif %}
+                                        {% if item.detail %} &middot; {{ item.detail }}{% endif %}
                                     </small>
                                     {% if item.id %}
                                         <form class="inline-form" method="post" action="{{ url_for('tasks.complete', task_id=item.id) }}">
@@ -202,7 +256,7 @@
                                 <span class="dashboard-badge dashboard-badge-success">{{ item.badge }}</span>
                                 <div>
                                     <strong>{{ item.title|replace("_", " ")|title }}</strong>
-                                    <small>{{ item.user_name or "System" }} · {{ item.done_at|format_date }}</small>
+                                    <small>{{ item.user_name or "System" }} &middot; {{ item.done_at|format_date }}</small>
                                 </div>
                             </article>
                         {% endfor %}
@@ -211,84 +265,32 @@
                     <div class="dashboard-empty">No recent completed actions</div>
                 {% endif %}
             </section>
+
+            <section class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <div>
+                        <span class="dashboard-kicker">Shared Labs</span>
+                        <h2>Shared lab library</h2>
+                    </div>
+                    <a href="{{ url_for('labs.create') }}">Add lab</a>
+                </div>
+                {% if shared_labs %}
+                    <div class="dashboard-list">
+                        {% for lab in shared_labs %}
+                            <article>
+                                <span class="dashboard-badge">Shared</span>
+                                <div>
+                                    <strong>{{ lab.name }}</strong>
+                                    <small>{{ lab.platform_name }} &middot; {{ lab.owner_name }} &middot; {{ lab.completion_count }} completions</small>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="dashboard-empty">No shared labs yet</div>
+                {% endif %}
+            </section>
         </aside>
-    </div>
-
-    <div class="dashboard-grid dashboard-lower-grid">
-        <section class="dashboard-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <span class="dashboard-kicker">Requests</span>
-                    <h2>Pending note access</h2>
-                </div>
-                <a href="{{ url_for('admin.note_requests') }}">View requests</a>
-            </div>
-            {% if pending_requests %}
-                <div class="dashboard-list">
-                    {% for request_item in pending_requests %}
-                        <article>
-                            <span class="dashboard-badge">Pending</span>
-                            <div>
-                                <strong>{{ request_item.topic_title }}</strong>
-                                <small>{{ request_item.owner_name }} · {{ request_item.requested_at|format_date }}</small>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="dashboard-empty">No pending note access requests</div>
-            {% endif %}
-        </section>
-
-        <section class="dashboard-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <span class="dashboard-kicker">Audit Logs</span>
-                    <h2>Recent audit logs</h2>
-                </div>
-                <a href="{{ url_for('admin.audit_logs') }}">View all</a>
-            </div>
-            {% if recent_activity %}
-                <div class="dashboard-list">
-                    {% for item in recent_activity %}
-                        <article>
-                            <span class="dashboard-badge">{{ item.action|replace("_", " ")|title }}</span>
-                            <div>
-                                <strong>{{ item.user_name or "System" }}</strong>
-                                <small>{{ item.details|truncate(70) }} · {{ item.created_at|format_date }}</small>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="dashboard-empty">No audit logs recorded yet</div>
-            {% endif %}
-        </section>
-
-        <section class="dashboard-card">
-            <div class="dashboard-card-header">
-                <div>
-                    <span class="dashboard-kicker">Shared Labs</span>
-                    <h2>Shared lab library</h2>
-                </div>
-                <a href="{{ url_for('labs.create') }}">Add lab</a>
-            </div>
-            {% if shared_labs %}
-                <div class="dashboard-list">
-                    {% for lab in shared_labs %}
-                        <article>
-                            <span class="dashboard-badge">Shared</span>
-                            <div>
-                                <strong>{{ lab.name }}</strong>
-                                <small>{{ lab.platform_name }} · {{ lab.owner_name }} · {{ lab.completion_count }} completions</small>
-                            </div>
-                        </article>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="dashboard-empty">No shared labs yet</div>
-            {% endif %}
-        </section>
     </div>
 </div>
 {% endblock %}

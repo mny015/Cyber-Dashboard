@@ -1822,8 +1822,23 @@ body[data-theme="dark"] .dashboard-shell {
     align-items: start;
 }
 
+.dashboard-main-column,
+.dashboard-inline-grid {
+    display: grid;
+    gap: 18px;
+    align-items: start;
+}
+
+.dashboard-inline-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .dashboard-main-card {
     min-height: 420px;
+}
+
+.dashboard-shell-admin .dashboard-main-card {
+    min-height: auto;
 }
 
 .dashboard-sidebar {
@@ -1914,7 +1929,8 @@ body[data-theme="dark"] .dashboard-shell {
     }
 
     .dashboard-metrics-admin,
-    .dashboard-lower-grid {
+    .dashboard-lower-grid,
+    .dashboard-inline-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -1931,6 +1947,7 @@ body[data-theme="dark"] .dashboard-shell {
 
     .dashboard-hero,
     .dashboard-content,
+    .dashboard-inline-grid,
     .dashboard-lower-grid,
     .task-layout,
     .dashboard-strip {

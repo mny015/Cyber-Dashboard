@@ -4,18 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Cyber Dashboard{% endblock %}</title>
+    <link id="favicon" rel="icon" type="image/png" href="{{ url_for('static', filename='image/favicon-light.png') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body data-theme="light">
     <div class="app-shell">
     <header class="site-header">
-        <a class="nav-brand" href="{{ url_for('dashboard.dashboard') }}">
-            <span class="brand-mark">CD</span>
-            <span class="brand-copy">
-                <span>Cyber Dashboard</span>
-                <small>Track learning, labs, findings, notes, and security growth.</small>
-            </span>
+        <a class="brand-link" href="{{ url_for('dashboard.dashboard') }}" aria-label="Cyber Dashboard">
+            <img class="brand-logo brand-logo-light" src="{{ url_for('static', filename='image/logo-light.png') }}" alt="Cyber Dashboard">
+            <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
         </a>
         <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
             Menu

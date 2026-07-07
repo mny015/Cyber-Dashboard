@@ -1,118 +1,98 @@
 # Cyber Dashboard
 
-Track learning, labs, notes, requests, and admin activity in one focused workspace.
+Cyber Dashboard is a Flask, Jinja, and MySQL web app for tracking cybersecurity learning work, lab practice, notes, findings, admin activity, and secure account management.
 
-Cyber Dashboard is a Flask-based cybersecurity learning and operations tracker. It combines topic planning, private notes, lab references, controlled note-access requests, MFA-enabled authentication, admin oversight, backups, and audit logging into one local web app.
+Repository: https://github.com/mny015/Cyber-Dashboard
 
-GitHub: https://github.com/mny015/Cyber-Dashboard
+## Overview
 
-## Screenshots And Demo
+The app is built as a local coursework and portfolio project. It gives normal users a private workspace for topics, notes, labs, contacts, scheduled tasks, and security findings. Admin users get oversight tools for users, shared labs, requests, audit logs, platform metrics, and backup/export activity.
 
-The project includes a visual asset that can be used for future documentation or presentation screens:
+The project focuses on:
 
-![Dashboard visual asset](app/static/image/image1.jpg)
+- Clear Flask app structure with blueprints.
+- MySQL-backed CRUD features.
+- Auth, roles, MFA, CSRF, rate limiting, and session hardening.
+- Privacy-aware admin access.
+- Audit evidence for important account, admin, lab, and CRUD actions.
+- A responsive light/dark UI with theme-aware logos and favicons.
 
-Screenshot placeholders to add before submission:
+## Current Features
 
-- `docs/screenshots/login.png`
-- `docs/screenshots/user-dashboard-light.png` - User Dashboard Light
-- `docs/screenshots/user-dashboard-dark.png` - User Dashboard Dark
-- `docs/screenshots/admin-dashboard-light.png` - Admin Dashboard Light
-- `docs/screenshots/admin-dashboard-dark.png` - Admin Dashboard Dark
-- `docs/screenshots/scheduled-tasks.png` - Scheduled Tasks
-- `docs/screenshots/notes.png`
-- `docs/screenshots/labs.png`
+- User registration, login, logout, password changes, and protected routes.
+- Admin role support with user management, ban/unban, delete, role updates, and password reset.
+- MFA setup with TOTP and QR code generation.
+- Topic management with categories, filters, detail pages, soft delete, and audit logs.
+- Category CRUD with per-user ownership and audit logs.
+- Contact CRUD with validation and audit logs.
+- Private note editor with markdown-style preview, topic linking, soft delete, search, and audit logs.
+- Admin note-access request workflow with user approval before private notes are visible.
+- Lab reference manager for picoCTF, TryHackMe, Hack The Box, and other practice platforms.
+- Shared admin labs that are visible to all users.
+- Lab completion tracking.
+- Scheduled task planner for users and admins.
+- Security findings tracker with vulnerability and threat catalog support.
+- Admin review for user-suggested vulnerabilities.
+- Profile editing with validated database-backed profile images.
+- Backup/export features for user and admin data.
+- User dashboard with recent changes, room progress, scheduled work, and last-done activity.
+- Admin dashboard with platform metrics, users, requests, audit logs, shared labs, and scheduled admin work.
+- Light/dark theme toggle with saved browser preference.
+- Theme-aware logo and favicon switching.
+- Pytest test suite with fixtures for users, admins, auth, dashboards, CRUD audit logs, notes, labs, scheduled tasks, and security routes.
 
-Demo video placeholder:
+## Brand Assets
 
-- `docs/demo/cyber-dashboard-demo.mp4`
-
-## Features
-
-- App factory pattern with `create_app()`.
-- Flask blueprints for auth, dashboard, admin, topics, categories, contacts, labs, notes, notifications, security findings, backup, profile, and API routes.
-- User registration, login, logout, protected routes, session hardening, and role-based admin access.
-- Password hashing with Werkzeug.
-- MFA support with TOTP and QR setup.
-- CSRF protection with Flask-WTF.
-- Rate limiting for sensitive auth routes.
-- Security headers through Flask-Talisman when installed.
-- Per-user topic and category management.
-- Private note editor with markdown-style preview hooks.
-- Lab reference manager for platforms such as picoCTF, TryHackMe, Hack The Box, PortSwigger, and other practice sources.
-- Scheduled task planner for personal, admin, and global work.
-- Security findings tracker for vulnerabilities found, tests performed, and threats managed.
-- Vulnerability catalog with admin review for user-submitted suggestions.
-- Profile management with database-backed profile image storage.
-- User dashboard with recent changes, room completion progress, scheduled practice items, and last-done activity.
-- Admin dashboard with platform metrics, users, requests, audit logs, shared labs, and backup/export counts.
-- Light and dark theme toggle with the preference stored in the browser.
-- Backup/export support for user and admin data.
-- Audit logging for account and application actions.
-- Pytest fixtures and route tests for auth, dashboards, notes, and security workflows.
-
-## Dashboard Redesign
-
-The dashboard experience is split by role.
-
-The UI uses a wide responsive shell, rounded cards, consistent tables/forms, and shared CSS variables. The main content area is designed for coursework review screens while still stacking cleanly on tablets and phones.
-
-Theme support:
-
-- Light theme: blue-tinted background, white cards, subtle borders, dark readable text, and blue/cyan accents.
-- Dark theme: deep navy/slate background, elevated dark cards, readable light text, and the same blue/cyan accent system.
-- The navbar theme toggle stores the selected theme in `localStorage`.
-
-User Dashboard:
-
-- Shows a learning/activity overview card with Recent Changes for the last 7 days.
-- Uses HTML/CSS bars for notes, topics, categories, and room completion activity.
-- Shows room completion progress with a pure CSS donut.
-- Provides metric cards for topics, notes, categories, labs/rooms, requests, and notifications.
-- Includes Scheduled and Last done panels for incomplete rooms and recent completed work.
-
-Admin Dashboard:
-
-- Shows an Admin Control Center overview with Platform Changes for the last 7 days.
-- Uses aggregate-only data for users, topics, notes, categories, shared labs, requests, audit logs, and exports.
-- Includes platform metrics, pending note access requests, recent audit logs, and shared lab library panels.
-- Does not display private note bodies from other users.
-
-## Scheduled Tasks
-
-Scheduled tasks help users and admins plan learning and management work.
-
-User workflow:
-
-- Normal users can create personal scheduled tasks.
-- Users can see their own tasks plus admin/global upcoming tasks.
-- Users can mark their own personal tasks complete.
-
-Admin workflow:
-
-- Admins can create personal, admin, or global scheduled tasks.
-- Admin/global tasks can be used for note request reviews, shared lab checks, audit log review, backups/exports, roadmap updates, and room/lab reviews.
-- Admins can complete or cancel admin/global tasks.
-
-The task page is available at:
+Logo and favicon files live in:
 
 ```text
-/scheduled-tasks/
+app/static/image/
 ```
+
+Current files:
+
+- `logo-light.png`
+- `logo-dark.png`
+- `favicon-light.png`
+- `favicon-dark.png`
+
+The navbar and auth pages render both logo variants. CSS shows the light logo in light mode and the dark logo in dark mode. The favicon is linked in `app/templates/base.html` and switched by the existing theme JavaScript.
+
+The old `image1.jpg` file was removed because it was not used by the app.
+
+## Screenshots
+
+No screenshot files are currently required for the app to run. If screenshots are added later, a suggested location is:
+
+```text
+docs/screenshots/
+```
+
+Suggested future screenshots:
+
+- `login-light.png`
+- `login-dark.png`
+- `user-dashboard.png`
+- `admin-dashboard.png`
+- `notes.png`
+- `labs.png`
+- `scheduled-tasks.png`
 
 ## Tech Stack
 
-- Python 3.13+
+- Python 3.13 or newer
 - Flask 3
-- Jinja2 templates
-- Plain CSS and vanilla JavaScript
+- Jinja2
 - MySQL 8
 - PyMySQL
 - Flask-Login
 - Flask-WTF and WTForms
+- Werkzeug password hashing
+- PyOTP and qrcode
 - Flask-Talisman
 - Flask-Limiter
-- PyOTP and qrcode
+- Plain CSS
+- Vanilla JavaScript
 - pytest and pytest-flask
 
 ## Project Structure
@@ -121,26 +101,29 @@ The task page is available at:
 Cyber Dashboard/
 |-- app/
 |   |-- __init__.py              # Flask app factory
+|   |-- forms/                   # WTForms classes
+|   |-- models/                  # User model and extension objects
 |   |-- routes/                  # Blueprint route modules
-|   |-- templates/               # Jinja templates
 |   |-- static/
 |   |   |-- css/main.css
 |   |   |-- js/main.js
-|   |   `-- image/
-|   `-- models/                  # Login, CSRF, limiter, and model helpers
-|-- migrations/versions/         # Schema history
-|-- tests/                       # pytest test suite and fixtures
+|   |   |-- js/theme.js
+|   |   `-- image/               # Logos and favicons
+|   `-- templates/               # Jinja templates
+|-- migrations/versions/         # Alembic migration history
+|-- tests/                       # pytest suite
 |-- utils/                       # DB, audit, decorators, helpers, exports
-|-- config.py                    # Environment-driven configuration
-|-- init_db.py                   # Local database initializer and seed script
-|-- create_admin.py              # Admin account setup script
+|-- config.py                    # Environment-driven config
+|-- create_admin.py              # Admin account helper
+|-- init_db.py                   # Database initializer and seed script
 |-- run.py                       # Development server entry point
+|-- test_db.py                   # DB connection smoke test
 `-- requirements.txt
 ```
 
-## Setup
+## Setup On Windows
 
-These steps assume Windows PowerShell.
+Use PowerShell from the project root.
 
 1. Clone the repository.
 
@@ -153,6 +136,7 @@ cd "Cyber-Dashboard"
 
 ```powershell
 py -3.13 -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -163,13 +147,15 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-4. Create a `.env` file in the project root.
+Use `requirements.txt`. Do not run `pip install -r requirements` because that file does not exist.
+
+4. Create `.env`.
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Then edit `.env` with your local values:
+Edit `.env` with your local values:
 
 ```env
 SECRET_KEY=replace-with-a-long-random-secret-key
@@ -184,56 +170,58 @@ RATELIMIT_STORAGE_URI=memory://
 LOG_FILE=instance/cyber_dashboard.log
 ```
 
-5. Make sure MySQL is running.
-
-The app requires these values from `.env`; it does not use a fallback secret key or committed database password. Use a dedicated local MySQL user when possible.
-
-```text
-Host: 127.0.0.1
-Port: 3306
-User: your configured DB_USER
-Password: your configured DB_PASSWORD
-Database: cyber_dashboard
-```
+The app intentionally requires environment variables. It does not use a fallback secret key or committed database password.
 
 ## Database Setup
 
-Create the database, create/update tables, normalize older local tables, and seed shared catalog data:
+Make sure MySQL is running, then initialize the database:
 
 ```powershell
 python init_db.py
 ```
 
-The initializer handles:
+The initializer can:
 
-- Creating the `cyber_dashboard` database if it does not exist.
-- Creating core tables such as users, topics, categories, contacts, notes, labs, scheduled tasks, audit logs, profile images, vulnerability catalog, threat catalog, and security findings.
-- Adding missing columns for older local databases.
-- Normalizing profile images into the database.
-- Seeding lab platforms.
-- Seeding vulnerability and threat catalog entries.
+- Create the configured database if missing.
+- Create required tables.
+- Add missing columns for older local databases.
+- Normalize profile images into the database.
+- Seed lab platforms.
+- Seed vulnerability and threat catalog entries.
 
-Main database tables used by the dashboard:
+Important tables include:
 
 - `users`
+- `profile_images`
 - `topics`
 - `categories`
+- `contacts`
 - `notes`
+- `note_access_requests`
 - `lab_platforms`
 - `lab_references`
 - `lab_completions`
 - `scheduled_tasks`
-- `note_access_requests`
-- `audit_logs`
 - `security_findings`
+- `vulnerability_catalog`
+- `threat_catalog`
+- `audit_logs`
 
-To create or update an admin account:
+Create or update an admin account:
 
 ```powershell
 python create_admin.py
 ```
 
-## Run the App
+Check the database connection:
+
+```powershell
+python test_db.py
+```
+
+## Run The App
+
+Activate the virtual environment first, then run:
 
 ```powershell
 python run.py
@@ -245,6 +233,8 @@ Open:
 http://127.0.0.1:5000
 ```
 
+On Windows, prefer `python run.py` inside the active virtual environment. Avoid `python3 run.py` if it points to a different Python install.
+
 ## Test Commands
 
 Run the full test suite:
@@ -253,67 +243,77 @@ Run the full test suite:
 python -m pytest tests -v
 ```
 
-Run focused test files:
+Run focused tests:
 
 ```powershell
 python -m pytest tests/test_auth_routes.py -v
 python -m pytest tests/test_dashboard_routes.py -v
 python -m pytest tests/test_page_rendering.py -v
-python -m pytest tests/test_scheduled_tasks.py -v
+python -m pytest tests/test_crud_audit_logs.py -v
 python -m pytest tests/test_notes_routes.py -v
+python -m pytest tests/test_lab_visibility.py -v
+python -m pytest tests/test_scheduled_tasks.py -v
 python -m pytest tests/test_security_routes.py -v
 ```
 
-Check the database connection:
+Current suite size:
 
-```powershell
-python test_db.py
+```text
+49 tests
 ```
 
 ## Architecture Notes
 
-The app uses a simple layered Flask structure:
-
-- `app/__init__.py` creates and configures the Flask application.
-- `app/routes/__init__.py` registers all blueprints.
-- Route files handle feature workflows and call shared helpers.
-- `utils/db.py` owns PyMySQL connection helpers and parameterized query execution.
-- `utils/decorators.py` contains access-control decorators.
-- `utils/audit.py` records audit events.
-- Templates extend `base.html` and share static assets from `app/static`.
-- Tests use pytest fixtures to create users, authenticate clients, and clean records after each test.
+- `app/__init__.py` creates the Flask app, loads config, initializes extensions, and registers routes.
+- `app/routes/__init__.py` registers blueprints.
+- Route modules own feature workflows.
+- `utils/db.py` provides PyMySQL connection helpers and parameterized query execution.
+- `utils/audit.py` records audit log rows.
+- `utils/decorators.py` contains role and login protection helpers.
+- `utils/helpers.py` contains small formatting, slug, and validation helpers.
+- Templates extend `base.html`.
+- Static CSS and JS are served locally from `app/static`.
+- Tests use fixtures to create users, authenticate clients, and clean database records.
 
 ## Security Notes
 
-- Passwords are stored as Werkzeug password hashes.
-- CSRF protection is enabled for forms.
-- Login sessions use Flask-Login and an `auth_version` check to invalidate stale sessions after sensitive changes.
-- MFA uses TOTP secrets and QR setup.
-- SQL queries use parameterized values.
-- Profile images are validated and stored in the database instead of the static folder.
-- Admin-only routes use role checks.
-- The user dashboard only shows the signed-in user's private notes and activity.
-- The admin dashboard uses aggregates for notes and requests; it does not display private note bodies.
-- Scheduled tasks enforce ownership and scope checks before completion or cancellation.
-- Theme scripts are served from local static files so the security-header policy can remain strict.
-- Audit logs capture important account and application events.
+- Passwords are stored with Werkzeug password hashes.
+- Login uses Flask-Login.
+- Sensitive forms use CSRF protection.
+- Auth routes are rate limited.
+- MFA uses TOTP.
+- Session state includes `auth_version` so stale sessions can be invalidated after sensitive changes.
+- SQL uses parameterized queries.
+- Profile images are validated and stored in the database instead of being served from user-controlled static paths.
+- Normal users can only manage their own topics, categories, notes, contacts, labs, tasks, and findings.
+- Admins can see topic/category summaries and aggregate platform activity.
+- Admins cannot read private note bodies unless the user approves a note-access request.
+- Audit logs capture auth, admin, lab, scheduled task, backup/export, security finding, and core CRUD actions.
 
-## Known Limitations
+## Theme And Logo Behavior
 
-- Scheduled tasks are intentionally lightweight and do not yet support recurring reminders.
-- Notifications are currently tied to note access requests rather than a full read/unread notification table.
-- Roadmap navigation currently reuses existing topic and task workflows.
+- The default favicon is linked in `app/templates/base.html`.
+- `app/static/js/theme.js` applies the stored or preferred theme early.
+- `app/static/js/main.js` handles the theme toggle.
+- `updateFavicon(theme)` switches between:
+  - `/static/image/favicon-light.png`
+  - `/static/image/favicon-dark.png`
+- CSS switches between:
+  - `logo-light.png`
+  - `logo-dark.png`
 
-## Future Improvements
+Manual check:
 
-- Add recurring scheduled tasks and calendar views.
-- Add a dedicated learning roadmap module with milestones.
-- Add filters for audit logs and scheduled tasks.
-- Add screenshot assets and a short demo video under `docs/`.
+1. Start the app with `python run.py`.
+2. Open `/auth/login`.
+3. Confirm the logo appears in the navbar and auth card.
+4. Toggle light/dark mode.
+5. Confirm the logo changes.
+6. Check the browser tab favicon. Hard refresh if the browser cached the old icon.
 
 ## Development Workflow
 
-Common local workflow:
+Useful local workflow:
 
 ```powershell
 git status
@@ -330,8 +330,23 @@ git diff --check
 python -m pytest tests -v
 ```
 
+## Known Limitations
+
+- Scheduled tasks are lightweight and do not yet support recurrence.
+- Notifications currently focus on note-access requests.
+- The roadmap feature is represented through existing topic, lab, task, and dashboard workflows.
+- Screenshots and demo media are not committed yet.
+
+## Future Improvements
+
+- Add recurring scheduled tasks.
+- Add a dedicated roadmap and milestone module.
+- Add audit-log filters.
+- Add dashboard screenshots and a short demo video under `docs/`.
+- Add richer export/import restore flows.
+
 ## Repository
 
-GitHub repository:
+GitHub:
 
 https://github.com/mny015/Cyber-Dashboard

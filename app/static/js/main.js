@@ -15,6 +15,9 @@ function setTheme(theme) {
         toggle.setAttribute("aria-label", `Switch to ${nextTheme} theme`);
         toggle.setAttribute("title", `Switch to ${nextTheme} theme`);
     });
+    if (window.updateFavicon) {
+        window.updateFavicon(theme);
+    }
 }
 
 setTheme(document.documentElement.dataset.theme || "light");

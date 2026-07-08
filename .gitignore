@@ -64,10 +64,6 @@ Thumbs.db
 migrations/__pycache__/
 *.sqlite3
 *.db
-docs/local/
-local_only/
-*_schema_map.sql
-db_schema_map.sql
 
 
 

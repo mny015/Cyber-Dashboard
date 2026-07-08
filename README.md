@@ -110,9 +110,9 @@ Cyber Dashboard/
 |   |   |-- js/theme.js
 |   |   `-- image/               # Logos and favicons
 |   `-- templates/               # Jinja templates
-|-- migrations/versions/         # Historical Alembic migration history
+|-- migrations/versions/         # Alembic migration history
 |-- tests/                       # pytest suite
-|-- utils/                       # DB, schema, audit, decorators, helpers, exports
+|-- utils/                       # DB, audit, decorators, helpers, exports
 |-- config.py                    # Environment-driven config
 |-- create_admin.py              # Admin account helper
 |-- init_db.py                   # Database initializer and seed script
@@ -207,16 +207,6 @@ Important tables include:
 - `threat_catalog`
 - `audit_logs`
 
-## Database Schema Source Of Truth
-
-The database schema lives in `utils/schema.py`. That module stores plain Python table metadata, `CREATE TABLE` statements, compatibility `ALTER TABLE` statements, table order, column names, keys, relationships, and whitelist helpers for safe dynamic SQL construction.
-
-`init_db.py` imports schema data from `utils/schema.py` and executes it during local setup. The project does not use SQLAlchemy, Flask-SQLAlchemy, Peewee, Django ORM, or any ORM at runtime. Application queries still use PyMySQL and parameterized SQL through `utils/db.py`.
-
-The `migrations/` folder is historical coursework migration history only. Current local setup uses `init_db.py` plus `utils/schema.py` as the source of truth.
-
-A local-only DB map SQL file can be generated for ERD tools, but it is ignored by Git and is not part of the submitted source code.
-
 Create or update an admin account:
 
 ```powershell
@@ -269,7 +259,7 @@ python -m pytest tests/test_security_routes.py -v
 Current suite size:
 
 ```text
-55 tests
+49 tests
 ```
 
 ## Architecture Notes

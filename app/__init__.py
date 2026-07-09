@@ -5,27 +5,18 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, session
 from flask_login import current_user, logout_user
 
-from config import Config
-from app.models import csrf, limiter, login_manager
+from config import get_config
+from app.extensions import init_extensions
 from app.routes import register_blueprints
 from utils.helpers import format_date
 
-try:
-    from flask_talisman import Talisman
-except ImportError:
-    Talisman = None
 
-
-def create_app():
+def create_app(config_name=None):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(get_config(config_name))
 
-    login_manager.init_app(app)
-    csrf.init_app(app)
-    if limiter:
-        limiter.init_app(app)
+    init_extensions(app)
 
-    configure_security_headers(app)
     configure_logging(app)
 
     register_blueprints(app)
@@ -47,25 +38,6 @@ def register_session_checks(app):
         if session_version != current_user.auth_version:
             logout_user()
             session.clear()
-
-
-def configure_security_headers(app):
-    if not Talisman:
-        return
-
-    csp = {
-        "default-src": "'self'",
-        "style-src": ["'self'", "'unsafe-inline'"],
-        "script-src": ["'self'"],
-        "img-src": ["'self'", "data:"],
-    }
-    Talisman(
-        app,
-        content_security_policy=csp,
-        force_https=False,
-        frame_options="DENY",
-        strict_transport_security=True,
-    )
 
 
 def configure_logging(app):

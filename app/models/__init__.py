@@ -1,21 +1,4 @@
-from flask_login import LoginManager
-from flask_wtf import CSRFProtect
-
-try:
-    from flask_limiter import Limiter
-    from flask_limiter.util import get_remote_address
-except ImportError:
-    Limiter = None
-
-    def get_remote_address():
-        return "127.0.0.1"
-
-login_manager = LoginManager()
-csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address) if Limiter else None
-
-login_manager.login_view = "auth.login"
-login_manager.login_message_category = "warning"
+from app.extensions import csrf, limiter, login_manager
 
 from app.models.user import User  # noqa: E402,F401
 from app.models.category import Category  # noqa: E402,F401

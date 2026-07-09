@@ -4,16 +4,33 @@ import uuid
 import pytest
 from werkzeug.security import generate_password_hash
 
+os.environ.setdefault("APP_ENV", "testing")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-use-env-file-for-real-app")
 os.environ.setdefault("DB_HOST", "127.0.0.1")
 os.environ.setdefault("DB_PORT", "3306")
 os.environ.setdefault("DB_USER", "cyber_dashboard_test")
 os.environ.setdefault("DB_PASSWORD", "replace-with-test-password")
-os.environ.setdefault("DB_NAME", "cyber_dashboard")
+TEST_DB_NAME = os.getenv("TEST_DB_NAME", "").strip()
+os.environ["DB_NAME"] = TEST_DB_NAME or "cyber_dashboard_test_unconfigured"
 os.environ.setdefault("DB_CHARSET", "utf8mb4")
 
 from app import create_app
 from utils.db import execute, fetch_one
+
+
+SYSTEM_DATABASES = {"information_schema", "mysql", "performance_schema", "sys"}
+
+
+@pytest.fixture(scope="session")
+def dedicated_test_database():
+    if not TEST_DB_NAME:
+        pytest.skip("Set TEST_DB_NAME to run tests that access MySQL.")
+
+    normalized_name = TEST_DB_NAME.lower()
+    if "test" not in normalized_name or normalized_name in SYSTEM_DATABASES:
+        pytest.fail("TEST_DB_NAME must identify a dedicated test database and contain 'test'.")
+
+    return TEST_DB_NAME
 
 
 @pytest.fixture(scope="session")
@@ -38,7 +55,7 @@ def runner(app):
 
 
 @pytest.fixture()
-def user_factory():
+def user_factory(dedicated_test_database):
     created_user_ids = []
 
     def create_user(

@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "ignored_methods": ["HEAD", "OPTIONS"],
+  "blueprints": {
+    "dashboard": [
+      {"endpoint": "dashboard.index", "rule": "/", "methods": ["GET"], "auth": "public"},
+      {"endpoint": "dashboard.dashboard", "rule": "/dashboard", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "dashboard.user_dashboard", "rule": "/user/dashboard", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "dashboard.admin_dashboard", "rule": "/admin/dashboard", "methods": ["GET"], "auth": "admin"}
+    ],
+    "auth": [
+      {"endpoint": "auth.register", "rule": "/auth/register", "methods": ["GET", "POST"], "auth": "public"},
+      {"endpoint": "auth.login", "rule": "/auth/login", "methods": ["GET", "POST"], "auth": "public"},
+      {"endpoint": "auth.verify_mfa", "rule": "/auth/mfa/verify", "methods": ["GET", "POST"], "auth": "pending_mfa"},
+      {"endpoint": "auth.logout", "rule": "/auth/logout", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "auth.setup_mfa", "rule": "/auth/profile/mfa", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "auth.mfa_qr", "rule": "/auth/profile/mfa/qr", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "auth.change_password", "rule": "/auth/profile/password", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "admin": [
+      {"endpoint": "admin.users", "rule": "/admin/users", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "admin.topic_summaries", "rule": "/admin/topics", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "admin.request_topic_notes", "rule": "/admin/topics/<int:topic_id>/request-notes", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.note_requests", "rule": "/admin/note-requests", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "admin.approved_note", "rule": "/admin/note-requests/<int:request_id>/note", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "admin.category_summaries", "rule": "/admin/categories", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "admin.update_role", "rule": "/admin/users/<int:user_id>/role", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.ban_user", "rule": "/admin/users/<int:user_id>/ban", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.unban_user", "rule": "/admin/users/<int:user_id>/unban", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.reset_user_password", "rule": "/admin/users/<int:user_id>/password", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.delete_user", "rule": "/admin/users/<int:user_id>/delete", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "admin.audit_logs", "rule": "/admin/audit-logs", "methods": ["GET"], "auth": "admin"}
+    ],
+    "backup": [
+      {"endpoint": "backup.index", "rule": "/backup/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "backup.personal_json", "rule": "/backup/personal.json", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "backup.personal_csv", "rule": "/backup/personal.zip", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "backup.admin_json", "rule": "/backup/admin.json", "methods": ["GET"], "auth": "admin"},
+      {"endpoint": "backup.admin_csv", "rule": "/backup/admin.zip", "methods": ["GET"], "auth": "admin"}
+    ],
+    "api": [
+      {"endpoint": "api.ping", "rule": "/api/ping", "methods": ["GET"], "auth": "public"}
+    ],
+    "categories": [
+      {"endpoint": "categories.index", "rule": "/categories/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "categories.create", "rule": "/categories/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "categories.edit", "rule": "/categories/<int:category_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "categories.delete", "rule": "/categories/<int:category_id>/delete", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "topics": [
+      {"endpoint": "topics.index", "rule": "/topics/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "topics.create", "rule": "/topics/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "topics.detail", "rule": "/topics/<int:topic_id>", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "topics.edit", "rule": "/topics/<int:topic_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "topics.delete", "rule": "/topics/<int:topic_id>/delete", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "contacts": [
+      {"endpoint": "contacts.index", "rule": "/contacts/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "contacts.create", "rule": "/contacts/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "contacts.edit", "rule": "/contacts/<int:contact_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "contacts.delete", "rule": "/contacts/<int:contact_id>/delete", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "notes": [
+      {"endpoint": "notes.index", "rule": "/notes/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "notes.create", "rule": "/notes/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "notes.detail", "rule": "/notes/<int:note_id>", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "notes.edit", "rule": "/notes/<int:note_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "notes.delete", "rule": "/notes/<int:note_id>/delete", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "labs": [
+      {"endpoint": "labs.index", "rule": "/labs/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "labs.create", "rule": "/labs/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "labs.detail", "rule": "/labs/<int:lab_id>", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "labs.edit", "rule": "/labs/<int:lab_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "labs.delete", "rule": "/labs/<int:lab_id>/delete", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "labs.complete", "rule": "/labs/<int:lab_id>/complete", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "labs.incomplete", "rule": "/labs/<int:lab_id>/incomplete", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "notifications": [
+      {"endpoint": "notifications.index", "rule": "/notifications/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "notifications.approve", "rule": "/notifications/<int:request_id>/approve", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "notifications.deny", "rule": "/notifications/<int:request_id>/deny", "methods": ["POST"], "auth": "authenticated"}
+    ],
+    "profile": [
+      {"endpoint": "profile.edit", "rule": "/profile/", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "profile.picture", "rule": "/profile/picture/<image_hash>", "methods": ["GET"], "auth": "authenticated"}
+    ],
+    "security": [
+      {"endpoint": "security.index", "rule": "/security/", "methods": ["GET"], "auth": "authenticated"},
+      {"endpoint": "security.create", "rule": "/security/new", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "security.edit", "rule": "/security/<int:finding_id>/edit", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "security.delete", "rule": "/security/<int:finding_id>/delete", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "security.suggest_vulnerability", "rule": "/security/vulnerabilities/suggest", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "security.admin_vulnerabilities", "rule": "/security/admin/vulnerabilities", "methods": ["GET", "POST"], "auth": "admin"},
+      {"endpoint": "security.approve_vulnerability", "rule": "/security/admin/vulnerabilities/<int:vulnerability_id>/approve", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "security.reject_vulnerability", "rule": "/security/admin/vulnerabilities/<int:vulnerability_id>/reject", "methods": ["POST"], "auth": "admin"}
+    ],
+    "tasks": [
+      {"endpoint": "tasks.index", "rule": "/scheduled-tasks/", "methods": ["GET", "POST"], "auth": "authenticated"},
+      {"endpoint": "tasks.complete", "rule": "/scheduled-tasks/<int:task_id>/complete", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "tasks.cancel", "rule": "/scheduled-tasks/<int:task_id>/cancel", "methods": ["POST"], "auth": "authenticated"}
+    ]
+  }
+}

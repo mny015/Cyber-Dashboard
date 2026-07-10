@@ -8,6 +8,7 @@ from flask_login import current_user, logout_user
 from config import get_config
 from app.extensions import init_extensions
 from app.routes import register_blueprints
+from app.utils.database import init_database
 from utils.helpers import format_date
 
 
@@ -16,6 +17,7 @@ def create_app(config_name=None):
     app.config.from_object(get_config(config_name))
 
     init_extensions(app)
+    init_database(app)
 
     configure_logging(app)
 

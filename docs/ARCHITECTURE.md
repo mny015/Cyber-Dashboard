@@ -56,6 +56,29 @@ The future query builder belongs in `app/utils/database/`. It may assemble optio
 
 Complex runtime queries belong in feature modules under `app/database/queries/`. Named SQL modules contain query definitions only; execution and transactions stay in `app/utils/database/`.
 
+### Database Layer
+
+`app/utils/database/` owns the synchronous PyMySQL connection pool, dictionary
+cursors, safe database exceptions, and transaction boundaries. Repositories use
+two operation-level context managers:
+
+```python
+from app.utils.database import connection, transaction
+
+with connection() as database:
+    with database.cursor() as cursor:
+        cursor.execute("SELECT * FROM topics WHERE owner_id = %s", (owner_id,))
+        rows = cursor.fetchall()
+
+with transaction() as cursor:
+    cursor.execute("UPDATE topics SET status = %s WHERE id = %s", (status, topic_id))
+```
+
+`connection()` is for reads and always returns its connection to the pool.
+`transaction()` commits on success and rolls back on failure. Driver exceptions
+are converted to safe database-layer exceptions. Existing `utils/db.py` helpers
+remain temporarily for behavior-compatible, feature-by-feature migration.
+
 ### SQL Migrations
 
 Numbered plain-SQL schema migrations in `migrations/` are the only authoritative schema history. `scripts/migrate.py` applies them explicitly through PyMySQL; normal web requests never run migrations. Seed data is handled separately by `scripts/seed.py`, and `init_db.py` is only a compatibility entry point. No ORM or Alembic runtime is used.

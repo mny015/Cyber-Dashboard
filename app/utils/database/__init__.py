@@ -1,12 +1,24 @@
-"""Stable database infrastructure imports during the layered migration."""
+"""Public database API for repositories and services."""
 
-from utils.db import execute, fetch_all, fetch_one, fetch_scalar, get_connection, verify_connection
+from app.utils.database.connection import close_database, connection, init_database
+from app.utils.database.exceptions import (
+    DatabaseConnectionError,
+    DatabaseError,
+    DatabaseIntegrityError,
+    DatabaseQueryError,
+    DatabaseTransactionError,
+)
+from app.utils.database.transaction import transaction
+
 
 __all__ = [
-    "execute",
-    "fetch_all",
-    "fetch_one",
-    "fetch_scalar",
-    "get_connection",
-    "verify_connection",
+    "DatabaseConnectionError",
+    "DatabaseError",
+    "DatabaseIntegrityError",
+    "DatabaseQueryError",
+    "DatabaseTransactionError",
+    "close_database",
+    "connection",
+    "init_database",
+    "transaction",
 ]

@@ -38,6 +38,8 @@ class BaseConfig:
     DB_PASSWORD = os.getenv("DB_PASSWORD", "").strip()
     DB_NAME = os.getenv("DB_NAME", "").strip()
     DB_CHARSET = os.getenv("DB_CHARSET", "utf8mb4").strip() or "utf8mb4"
+    DB_POOL_SIZE = os.getenv("DB_POOL_SIZE", "5").strip()
+    DB_POOL_TIMEOUT = os.getenv("DB_POOL_TIMEOUT", "5").strip()
 
     WTF_CSRF_ENABLED = True
 
@@ -80,6 +82,13 @@ class BaseConfig:
             cls.DB_PORT = int(cls.DB_PORT)
         except (TypeError, ValueError) as exc:
             raise RuntimeError("DB_PORT must be a whole number.") from exc
+        try:
+            cls.DB_POOL_SIZE = int(cls.DB_POOL_SIZE)
+            cls.DB_POOL_TIMEOUT = float(cls.DB_POOL_TIMEOUT)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError("DB_POOL_SIZE and DB_POOL_TIMEOUT must be numbers.") from exc
+        if cls.DB_POOL_SIZE < 1 or cls.DB_POOL_TIMEOUT <= 0:
+            raise RuntimeError("DB_POOL_SIZE and DB_POOL_TIMEOUT must be positive.")
 
 
 class DevelopmentConfig(BaseConfig):

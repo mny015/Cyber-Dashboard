@@ -168,6 +168,8 @@ DB_USER=cyber_dashboard_user
 DB_PASSWORD=replace-with-a-strong-database-password
 DB_NAME=cyber_dashboard
 DB_CHARSET=utf8mb4
+DB_POOL_SIZE=5
+DB_POOL_TIMEOUT=5
 SESSION_COOKIE_SECURE=false
 RATELIMIT_STORAGE_URI=memory://
 LOG_FILE=instance/cyber_dashboard.log
@@ -302,6 +304,7 @@ python -m pytest tests/test_migrations_integration.py -v -m integration
 - `app/routes/__init__.py` registers blueprints.
 - Route modules own feature workflows.
 - `utils/db.py` provides PyMySQL connection helpers and parameterized query execution.
+- `app/utils/database/` provides pooled `connection()` and atomic `transaction()` context managers for repositories.
 - `utils/audit.py` records audit log rows.
 - `utils/decorators.py` contains role and login protection helpers.
 - `utils/helpers.py` contains small formatting, slug, and validation helpers.

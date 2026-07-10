@@ -114,10 +114,11 @@ def get_visible_tasks(limit=None, status=None):
 
     return fetch_all(
         f"""
-        SELECT scheduled_tasks.*, creators.display_name AS creator_name,
+        SELECT scheduled_tasks.*,
+               COALESCE(creators.display_name, 'Deleted user') AS creator_name,
                assignees.display_name AS assignee_name
         FROM scheduled_tasks
-        JOIN users AS creators ON creators.id = scheduled_tasks.created_by
+        LEFT JOIN users AS creators ON creators.id = scheduled_tasks.created_by
         LEFT JOIN users AS assignees ON assignees.id = scheduled_tasks.user_id
         WHERE 1 = 1
           {status_clause}

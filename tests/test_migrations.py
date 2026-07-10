@@ -41,9 +41,9 @@ EXPECTED_TABLES = {
 def test_numbered_migrations_are_ordered_and_complete():
     migrations = discover_migrations()
 
-    assert [migration.version for migration in migrations] == list(range(1, 26))
+    assert [migration.version for migration in migrations] == list(range(1, 28))
     assert migrations[0].filename == "001_create_schema_migrations.sql"
-    assert migrations[-1].filename == "025_remove_alembic_version.sql"
+    assert migrations[-1].filename == "027_add_relationship_query_indexes.sql"
 
 
 def test_create_migrations_cover_every_current_table():

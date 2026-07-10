@@ -239,9 +239,10 @@ def get_user_scheduled_items(user_id):
 def get_user_scheduled_tasks(user_id):
     return safe_fetch_all(
         """
-        SELECT scheduled_tasks.*, creators.display_name AS creator_name
+        SELECT scheduled_tasks.*,
+               COALESCE(creators.display_name, 'Deleted user') AS creator_name
         FROM scheduled_tasks
-        JOIN users AS creators ON creators.id = scheduled_tasks.created_by
+        LEFT JOIN users AS creators ON creators.id = scheduled_tasks.created_by
         WHERE scheduled_tasks.status = 'upcoming'
           AND (
                 scheduled_tasks.user_id = %s
@@ -445,9 +446,10 @@ def get_admin_shared_labs():
 def get_admin_scheduled_tasks(stats):
     tasks = safe_fetch_all(
         """
-        SELECT scheduled_tasks.*, creators.display_name AS creator_name
+        SELECT scheduled_tasks.*,
+               COALESCE(creators.display_name, 'Deleted user') AS creator_name
         FROM scheduled_tasks
-        JOIN users AS creators ON creators.id = scheduled_tasks.created_by
+        LEFT JOIN users AS creators ON creators.id = scheduled_tasks.created_by
         WHERE scheduled_tasks.status = 'upcoming'
           AND scheduled_tasks.scope IN ('admin', 'global')
         ORDER BY scheduled_tasks.due_at IS NULL ASC,

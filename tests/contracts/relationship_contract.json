@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "relationships": [
+    {"table": "users", "column": "profile_image", "referenced_table": "profile_images", "referenced_column": "image_hash", "delete_rule": "RESTRICT"},
+    {"table": "categories", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "contacts", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "topics", "column": "category_id", "referenced_table": "categories", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "topics", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "audit_logs", "column": "user_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "notes", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "notes", "column": "topic_id", "referenced_table": "topics", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "note_access_requests", "column": "requester_admin_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "note_access_requests", "column": "topic_id", "referenced_table": "topics", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "note_access_requests", "column": "note_id", "referenced_table": "notes", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "lab_references", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "lab_references", "column": "topic_id", "referenced_table": "topics", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "lab_references", "column": "platform_id", "referenced_table": "lab_platforms", "referenced_column": "id", "delete_rule": "RESTRICT"},
+    {"table": "lab_completions", "column": "lab_id", "referenced_table": "lab_references", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "lab_completions", "column": "user_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "vulnerability_catalog", "column": "created_by_user_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "vulnerability_catalog", "column": "reviewed_by_user_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "security_findings", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "security_findings", "column": "vulnerability_id", "referenced_table": "vulnerability_catalog", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "security_findings", "column": "threat_id", "referenced_table": "threat_catalog", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "scheduled_tasks", "column": "user_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "scheduled_tasks", "column": "created_by", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "work_logs", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "roadmap_items", "column": "topic_id", "referenced_table": "topics", "referenced_column": "id", "delete_rule": "SET NULL"},
+    {"table": "roadmap_items", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "progress_reflections", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "CASCADE"},
+    {"table": "activity_events", "column": "owner_id", "referenced_table": "users", "referenced_column": "id", "delete_rule": "SET NULL"}
+  ]
+}

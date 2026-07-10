@@ -18,6 +18,10 @@ though they are not currently accessed by Flask routes.
 - Catalog and reference seeds are maintained by `scripts/seed.py`.
 - Migrations are run explicitly and never during a Flask web request.
 
+Foreign-key deletion behavior is frozen by migration `026`; relationship and
+index decisions are documented in `docs/DATABASE_RELATIONSHIPS.md`. Migration
+`027` adds the composite indexes used by dashboard and list query paths.
+
 ## Commands
 
 ```powershell

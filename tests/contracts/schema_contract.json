@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "tables": {
     "profile_images": {
       "columns": {
@@ -230,7 +230,7 @@
         "id": {"type": "int", "nullable": false},
         "topic_id": {"type": "int", "nullable": false},
         "note_id": {"type": "int", "nullable": true},
-        "requester_admin_id": {"type": "int", "nullable": false},
+        "requester_admin_id": {"type": "int", "nullable": true},
         "status": {"type": "varchar", "nullable": false},
         "requested_at": {"type": "datetime", "nullable": false},
         "responded_at": {"type": "datetime", "nullable": true}
@@ -294,7 +294,7 @@
       "columns": {
         "id": {"type": "int", "nullable": false},
         "user_id": {"type": "int", "nullable": true},
-        "created_by": {"type": "int", "nullable": false},
+        "created_by": {"type": "int", "nullable": true},
         "title": {"type": "varchar", "nullable": false},
         "description": {"type": "text", "nullable": true},
         "task_type": {"type": "varchar", "nullable": false},
@@ -382,7 +382,7 @@
         "event_type": {"type": "varchar", "nullable": false},
         "intensity": {"type": "int", "nullable": false},
         "occurred_on": {"type": "date", "nullable": false},
-        "owner_id": {"type": "int", "nullable": false},
+        "owner_id": {"type": "int", "nullable": true},
         "created_at": {"type": "datetime", "nullable": false},
         "updated_at": {"type": "datetime", "nullable": false}
       },

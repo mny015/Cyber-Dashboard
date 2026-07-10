@@ -305,6 +305,7 @@ python -m pytest tests/test_migrations_integration.py -v -m integration
 - `utils/audit.py` records audit log rows.
 - `utils/decorators.py` contains role and login protection helpers.
 - `utils/helpers.py` contains small formatting, slug, and validation helpers.
+- `docs/DATABASE_RELATIONSHIPS.md` records the frozen foreign-key deletion and indexing policy.
 - Templates extend `base.html`.
 - Static CSS and JS are served locally from `app/static`.
 - Tests use fixtures to create users, authenticate clients, and clean database records.

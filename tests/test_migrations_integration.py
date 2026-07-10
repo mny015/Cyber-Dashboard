@@ -223,6 +223,57 @@ def fetch_row_counts(config, table_names):
         connection.close()
 
 
+def explain_important_queries(config):
+    queries = {
+        "topics_list": (
+            "SELECT id FROM topics WHERE owner_id = %s AND is_deleted = 0 "
+            "ORDER BY updated_at DESC",
+            (1,),
+        ),
+        "notes_list": (
+            "SELECT id FROM notes WHERE owner_id = %s AND is_deleted = 0 "
+            "ORDER BY updated_at DESC",
+            (1,),
+        ),
+        "audit_list": ("SELECT id FROM audit_logs ORDER BY created_at DESC LIMIT 25", ()),
+        "scheduled_dashboard": (
+            "SELECT id FROM scheduled_tasks WHERE status = 'upcoming' "
+            "AND (user_id = %s OR scope IN ('admin', 'global')) "
+            "ORDER BY due_at, updated_at DESC LIMIT 4",
+            (1,),
+        ),
+        "findings_list": (
+            "SELECT id FROM security_findings WHERE owner_id = %s AND is_deleted = 0 "
+            "ORDER BY detected_at DESC, updated_at DESC",
+            (1,),
+        ),
+        "labs_list": (
+            "SELECT id FROM lab_references WHERE is_deleted = 0 "
+            "AND (owner_id = %s OR visibility = 'public') ORDER BY updated_at DESC",
+            (1,),
+        ),
+    }
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            plans = {}
+            for name, (query, params) in queries.items():
+                cursor.execute(f"EXPLAIN {query}", params)
+                plans[name] = [
+                    {
+                        "table": row.get("table"),
+                        "access_type": row.get("type"),
+                        "key": row.get("key"),
+                        "rows": row.get("rows"),
+                        "extra": row.get("Extra"),
+                    }
+                    for row in cursor.fetchall()
+                ]
+            return plans
+    finally:
+        connection.close()
+
+
 @pytest.mark.integration
 def test_migrations_build_clean_database_and_never_rerun():
     base_name = os.getenv("MIGRATION_TEST_DB_NAME", "").strip()
@@ -235,10 +286,10 @@ def test_migrations_build_clean_database_and_never_rerun():
         first_result = run_migrations(config=config, output=lambda _message: None)
         second_result = run_migrations(config=config, output=lambda _message: None)
 
-        assert len(first_result.applied) == 25
+        assert len(first_result.applied) == 27
         assert first_result.skipped == ()
         assert second_result.applied == ()
-        assert len(second_result.skipped) == 25
+        assert len(second_result.skipped) == 27
         assert "schema_migrations" in fetch_table_names(config)
         assert_schema_contract(config)
     finally:
@@ -278,5 +329,9 @@ def test_migrations_preserve_copy_of_existing_database():
         assert after_counts == before_counts
         assert "alembic_version" not in fetch_table_names(config)
         assert_schema_contract(config)
+        plans = explain_important_queries(config)
+        assert all(plans.values())
+        if os.getenv("SHOW_EXPLAIN_PLANS") == "1":
+            print(json.dumps(plans, indent=2, default=str))
     finally:
         drop_test_database(config)

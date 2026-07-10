@@ -144,11 +144,12 @@ def _personal_data(user_id):
         "note_access_requests": fetch_all(
             """
             SELECT requests.id, requests.topic_id, requests.note_id,
-                   admins.display_name AS requested_by, requests.status,
+                   COALESCE(admins.display_name, 'Deleted administrator') AS requested_by,
+                   requests.status,
                    requests.requested_at, requests.responded_at
             FROM note_access_requests AS requests
             JOIN topics ON topics.id = requests.topic_id
-            JOIN users AS admins ON admins.id = requests.requester_admin_id
+            LEFT JOIN users AS admins ON admins.id = requests.requester_admin_id
             WHERE topics.owner_id = %s
             ORDER BY requests.id
             """,

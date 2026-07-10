@@ -308,72 +308,10 @@ def is_last_active_admin(user_id):
 
 
 def delete_user_records(user_id):
+    """Delete one account and let the frozen foreign-key policy handle dependents."""
     connection = get_connection()
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                "DELETE FROM scheduled_tasks WHERE user_id = %s OR created_by = %s",
-                (user_id, user_id),
-            )
-            cursor.execute("UPDATE audit_logs SET user_id = NULL WHERE user_id = %s", (user_id,))
-            cursor.execute(
-                "UPDATE vulnerability_catalog SET created_by_user_id = NULL WHERE created_by_user_id = %s",
-                (user_id,),
-            )
-            cursor.execute(
-                "UPDATE vulnerability_catalog SET reviewed_by_user_id = NULL WHERE reviewed_by_user_id = %s",
-                (user_id,),
-            )
-            cursor.execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
-            cursor.execute(
-                """
-                DELETE FROM note_access_requests
-                WHERE requester_admin_id = %s
-                   OR topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
-                   OR note_id IN (SELECT id FROM notes WHERE owner_id = %s)
-                """,
-                (user_id, user_id, user_id),
-            )
-            cursor.execute(
-                """
-                DELETE FROM lab_completions
-                WHERE user_id = %s
-                   OR lab_id IN (SELECT id FROM lab_references WHERE owner_id = %s)
-                """,
-                (user_id, user_id),
-            )
-            cursor.execute(
-                """
-                UPDATE notes
-                SET topic_id = NULL
-                WHERE topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
-                  AND owner_id <> %s
-                """,
-                (user_id, user_id),
-            )
-            cursor.execute(
-                """
-                UPDATE lab_references
-                SET topic_id = NULL
-                WHERE topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
-                  AND owner_id <> %s
-                """,
-                (user_id, user_id),
-            )
-            cursor.execute(
-                """
-                UPDATE topics
-                SET category_id = NULL
-                WHERE category_id IN (SELECT id FROM categories WHERE owner_id = %s)
-                  AND owner_id <> %s
-                """,
-                (user_id, user_id),
-            )
-            cursor.execute("DELETE FROM notes WHERE owner_id = %s", (user_id,))
-            cursor.execute("DELETE FROM lab_references WHERE owner_id = %s", (user_id,))
-            cursor.execute("DELETE FROM topics WHERE owner_id = %s", (user_id,))
-            cursor.execute("DELETE FROM contacts WHERE owner_id = %s", (user_id,))
-            cursor.execute("DELETE FROM categories WHERE owner_id = %s", (user_id,))
             cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
             cursor.execute(
                 """

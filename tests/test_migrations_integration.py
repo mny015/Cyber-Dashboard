@@ -1,0 +1,282 @@
+import json
+import os
+import re
+from pathlib import Path
+from types import SimpleNamespace
+
+import pymysql
+import pytest
+from dotenv import dotenv_values
+from pymysql.cursors import DictCursor
+
+from scripts.migrate import run_migrations
+
+
+CONTRACT_PATH = Path(__file__).parent / "contracts" / "schema_contract.json"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+LOCAL_DATABASE_ENV = dotenv_values(PROJECT_ROOT / ".env")
+SAFE_TEST_NAME = re.compile(r"^[A-Za-z0-9_]*migration_test[A-Za-z0-9_]*$", re.IGNORECASE)
+
+
+def migration_config(database_name):
+    required = {
+        "DB_HOST": os.getenv("MIGRATION_DB_HOST") or LOCAL_DATABASE_ENV.get("DB_HOST"),
+        "DB_PORT": os.getenv("MIGRATION_DB_PORT") or LOCAL_DATABASE_ENV.get("DB_PORT", "3306"),
+        "DB_USER": os.getenv("MIGRATION_DB_USER") or LOCAL_DATABASE_ENV.get("DB_USER"),
+        "DB_PASSWORD": os.getenv("MIGRATION_DB_PASSWORD") or LOCAL_DATABASE_ENV.get("DB_PASSWORD"),
+        "DB_CHARSET": os.getenv("MIGRATION_DB_CHARSET") or LOCAL_DATABASE_ENV.get("DB_CHARSET", "utf8mb4"),
+    }
+    missing = [name for name, value in required.items() if value is None]
+    if missing:
+        pytest.skip("Set migration test database credentials: " + ", ".join(missing))
+    return SimpleNamespace(DB_NAME=database_name, **required)
+
+
+def server_connection(config):
+    return pymysql.connect(
+        host=config.DB_HOST,
+        port=int(config.DB_PORT),
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        charset=config.DB_CHARSET,
+        autocommit=True,
+        cursorclass=DictCursor,
+    )
+
+
+def database_connection(config):
+    return pymysql.connect(
+        host=config.DB_HOST,
+        port=int(config.DB_PORT),
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_NAME,
+        charset=config.DB_CHARSET,
+        autocommit=True,
+        cursorclass=DictCursor,
+    )
+
+
+def require_test_name(name):
+    if not SAFE_TEST_NAME.fullmatch(name):
+        pytest.fail("Migration test databases must contain 'migration_test' and use safe characters.")
+    return f"`{name}`"
+
+
+def drop_test_database(config):
+    quoted_name = require_test_name(config.DB_NAME)
+    connection = server_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP DATABASE IF EXISTS {quoted_name}")
+    finally:
+        connection.close()
+
+
+def fetch_table_names(config):
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SHOW TABLES")
+            return {next(iter(row.values())) for row in cursor.fetchall()}
+    finally:
+        connection.close()
+
+
+def assert_schema_contract(config):
+    contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))["tables"]
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT table_name AS table_name,
+                       column_name AS column_name,
+                       data_type AS data_type,
+                       is_nullable AS is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = %s
+                """,
+                (config.DB_NAME,),
+            )
+            column_rows = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT table_name AS table_name,
+                       index_name AS index_name,
+                       non_unique AS non_unique,
+                       column_name AS column_name,
+                       seq_in_index AS sequence_number
+                FROM information_schema.statistics
+                WHERE table_schema = %s
+                ORDER BY table_name, index_name, seq_in_index
+                """,
+                (config.DB_NAME,),
+            )
+            index_rows = cursor.fetchall()
+            cursor.execute(
+                """
+                SELECT table_name AS table_name,
+                       constraint_name AS constraint_name,
+                       column_name AS column_name,
+                       referenced_table_name AS referenced_table,
+                       referenced_column_name AS referenced_column,
+                       ordinal_position AS sequence_number
+                FROM information_schema.key_column_usage
+                WHERE table_schema = %s AND referenced_table_name IS NOT NULL
+                ORDER BY table_name, constraint_name, ordinal_position
+                """,
+                (config.DB_NAME,),
+            )
+            foreign_key_rows = cursor.fetchall()
+    finally:
+        connection.close()
+
+    actual_columns = {}
+    for row in column_rows:
+        actual_columns.setdefault(row["table_name"], {})[row["column_name"]] = {
+            "type": row["data_type"].lower(),
+            "nullable": row["is_nullable"] == "YES",
+        }
+    actual_indexes = {}
+    index_uniqueness = {}
+    for row in index_rows:
+        table_indexes = actual_indexes.setdefault(row["table_name"], {})
+        table_indexes.setdefault(row["index_name"], []).append(row["column_name"])
+        index_uniqueness.setdefault(row["table_name"], {})[row["index_name"]] = not bool(
+            row["non_unique"]
+        )
+    foreign_keys = {}
+    for row in foreign_key_rows:
+        table_keys = foreign_keys.setdefault(row["table_name"], {})
+        key = table_keys.setdefault(
+            row["constraint_name"],
+            {"columns": [], "referenced_columns": []},
+        )
+        key["columns"].append(row["column_name"])
+        key["referenced_table"] = row["referenced_table"]
+        key["referenced_columns"].append(row["referenced_column"])
+
+    assert set(actual_columns) == set(contract) | {"schema_migrations"}
+    for table_name, expected_table in contract.items():
+        assert actual_columns[table_name] == expected_table["columns"]
+        assert actual_indexes[table_name]["PRIMARY"] == expected_table["primary_key"]
+        for index_name, expected_columns in expected_table["unique_indexes"].items():
+            assert actual_indexes[table_name][index_name] == expected_columns
+            assert index_uniqueness[table_name][index_name]
+        for index_name, expected_columns in expected_table["indexes"].items():
+            assert actual_indexes[table_name][index_name] == expected_columns
+        actual_foreign_keys = list(foreign_keys.get(table_name, {}).values())
+        for expected_foreign_key in expected_table["foreign_keys"]:
+            assert expected_foreign_key in actual_foreign_keys
+
+
+def clone_existing_database(source_name, target_config):
+    if not re.fullmatch(r"[A-Za-z0-9_]+", source_name):
+        pytest.fail("MIGRATION_EXISTING_SOURCE_DB_NAME contains unsafe characters.")
+    if source_name == target_config.DB_NAME:
+        pytest.fail("Migration source and target databases must be different.")
+
+    source_config = migration_config(source_name)
+    source_connection = database_connection(source_config)
+    target_connection = database_connection(target_config)
+    row_counts = {}
+    try:
+        with source_connection.cursor() as source_cursor, target_connection.cursor() as target_cursor:
+            source_cursor.execute("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")
+            table_names = [next(iter(row.values())) for row in source_cursor.fetchall()]
+            table_names = [name for name in table_names if name != "schema_migrations"]
+            target_cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
+            for table_name in table_names:
+                if not re.fullmatch(r"[A-Za-z0-9_]+", table_name):
+                    pytest.fail(f"Unsafe source table name: {table_name}")
+                target_cursor.execute(
+                    f"CREATE TABLE `{target_config.DB_NAME}`.`{table_name}` "
+                    f"LIKE `{source_name}`.`{table_name}`"
+                )
+                target_cursor.execute(
+                    f"INSERT INTO `{target_config.DB_NAME}`.`{table_name}` "
+                    f"SELECT * FROM `{source_name}`.`{table_name}`"
+                )
+                if table_name != "alembic_version":
+                    source_cursor.execute(
+                        f"SELECT COUNT(*) AS total FROM `{source_name}`.`{table_name}`"
+                    )
+                    row_counts[table_name] = source_cursor.fetchone()["total"]
+            target_cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
+    finally:
+        source_connection.close()
+        target_connection.close()
+    return row_counts
+
+
+def fetch_row_counts(config, table_names):
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            counts = {}
+            for table_name in table_names:
+                cursor.execute(f"SELECT COUNT(*) AS total FROM `{table_name}`")
+                counts[table_name] = cursor.fetchone()["total"]
+            return counts
+    finally:
+        connection.close()
+
+
+@pytest.mark.integration
+def test_migrations_build_clean_database_and_never_rerun():
+    base_name = os.getenv("MIGRATION_TEST_DB_NAME", "").strip()
+    if not base_name:
+        pytest.skip("Set MIGRATION_TEST_DB_NAME to run destructive migration integration tests.")
+    config = migration_config(f"{base_name}_clean")
+    require_test_name(config.DB_NAME)
+    drop_test_database(config)
+    try:
+        first_result = run_migrations(config=config, output=lambda _message: None)
+        second_result = run_migrations(config=config, output=lambda _message: None)
+
+        assert len(first_result.applied) == 25
+        assert first_result.skipped == ()
+        assert second_result.applied == ()
+        assert len(second_result.skipped) == 25
+        assert "schema_migrations" in fetch_table_names(config)
+        assert_schema_contract(config)
+    finally:
+        drop_test_database(config)
+
+
+@pytest.mark.integration
+def test_migrations_preserve_copy_of_existing_database():
+    base_name = os.getenv("MIGRATION_TEST_DB_NAME", "").strip()
+    source_name = (
+        os.getenv("MIGRATION_EXISTING_SOURCE_DB_NAME")
+        or LOCAL_DATABASE_ENV.get("DB_NAME", "")
+    ).strip()
+    if not base_name or not source_name:
+        pytest.skip(
+            "Set MIGRATION_TEST_DB_NAME and MIGRATION_EXISTING_SOURCE_DB_NAME "
+            "to test an existing database copy."
+        )
+    config = migration_config(f"{base_name}_existing")
+    require_test_name(config.DB_NAME)
+    drop_test_database(config)
+    try:
+        server = server_connection(config)
+        try:
+            with server.cursor() as cursor:
+                cursor.execute(
+                    f"CREATE DATABASE {require_test_name(config.DB_NAME)} "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+                )
+        finally:
+            server.close()
+
+        before_counts = clone_existing_database(source_name, config)
+        run_migrations(config=config, output=lambda _message: None)
+        after_counts = fetch_row_counts(config, before_counts)
+
+        assert after_counts == before_counts
+        assert "alembic_version" not in fetch_table_names(config)
+        assert_schema_contract(config)
+    finally:
+        drop_test_database(config)

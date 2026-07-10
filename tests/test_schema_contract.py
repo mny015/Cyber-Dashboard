@@ -102,7 +102,7 @@ def test_mysql_schema_matches_frozen_contract(dedicated_test_database):
     indexes, uniqueness = group_indexes(index_rows)
     foreign_keys = group_foreign_keys(foreign_key_rows)
 
-    assert len(contract) == 15
+    assert len(contract) == 19
     assert set(contract).issubset(columns)
 
     for table_name, expected in contract.items():

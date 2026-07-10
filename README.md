@@ -110,12 +110,15 @@ Cyber Dashboard/
 |   |   |-- js/theme.js
 |   |   `-- image/               # Logos and favicons
 |   `-- templates/               # Jinja templates
-|-- migrations/versions/         # Alembic migration history
+|-- migrations/                  # Authoritative numbered SQL schema history
+|-- scripts/
+|   |-- migrate.py               # Plain-SQL migration runner
+|   `-- seed.py                  # Reference catalog seed command
 |-- tests/                       # pytest suite
 |-- utils/                       # DB, audit, decorators, helpers, exports
 |-- config.py                    # Environment-driven config
 |-- create_admin.py              # Admin account helper
-|-- init_db.py                   # Database initializer and seed script
+|-- init_db.py                   # Deprecated migrate-and-seed compatibility command
 |-- run.py                       # Development server entry point
 |-- test_db.py                   # DB connection smoke test
 `-- requirements.txt
@@ -174,20 +177,38 @@ The app intentionally requires environment variables. It does not use a fallback
 
 ## Database Setup
 
-Make sure MySQL is running, then initialize the database:
+Make sure MySQL is running, then apply the numbered schema migrations:
+
+```powershell
+python scripts/migrate.py
+```
+
+Apply reference seed data separately:
+
+```powershell
+python scripts/seed.py
+```
+
+`migrations/*.sql` is the single source of truth for schema history. The runner:
+
+- Creates the configured database and `schema_migrations` ledger when missing.
+- Applies SQL files once in filename order.
+- Verifies SHA-256 checksums for already applied files.
+- Upgrades clean databases and older project databases without deleting records.
+- Normalizes known legacy columns and relationships through guarded SQL.
+- Imports legacy profile image bytes before obsolete image columns are removed.
+
+The application does not run migrations during requests. Alembic and ORM-based
+migrations are not used. `init_db.py` is retained only as a compatibility command
+that runs both the migration and seed steps:
 
 ```powershell
 python init_db.py
 ```
 
-The initializer can:
-
-- Create the configured database if missing.
-- Create required tables.
-- Add missing columns for older local databases.
-- Normalize profile images into the database.
-- Seed lab platforms.
-- Seed vulnerability and threat catalog entries.
+Never edit a migration that has already been applied. Add the next numbered SQL
+file instead. MySQL DDL can commit implicitly, so failed migrations are written
+to be safely rerunnable after the reported data or permission issue is fixed.
 
 Important tables include:
 
@@ -206,6 +227,14 @@ Important tables include:
 - `vulnerability_catalog`
 - `threat_catalog`
 - `audit_logs`
+- `work_logs`
+- `roadmap_items`
+- `progress_reflections`
+- `activity_events`
+
+The final schema contains 19 application tables plus the `schema_migrations`
+ledger. The last four tables are retained from the existing database so older
+coursework data remains available even though current routes do not use them.
 
 Create or update an admin account:
 
@@ -254,12 +283,17 @@ python -m pytest tests/test_notes_routes.py -v
 python -m pytest tests/test_lab_visibility.py -v
 python -m pytest tests/test_scheduled_tasks.py -v
 python -m pytest tests/test_security_routes.py -v
+python -m pytest tests/test_migrations.py -v
 ```
 
-Current suite size:
+Migration integration tests are destructive only to database names containing
+`migration_test`. They load local credentials from `.env`, create isolated clean
+and existing-copy databases, and remove those test databases afterward:
 
-```text
-49 tests
+```powershell
+$env:MIGRATION_TEST_DB_NAME="cyber_dashboard_migration_test"
+$env:MIGRATION_EXISTING_SOURCE_DB_NAME="cyber_dashboard"
+python -m pytest tests/test_migrations_integration.py -v -m integration
 ```
 
 ## Architecture Notes
@@ -317,7 +351,8 @@ Useful local workflow:
 
 ```powershell
 git status
-python init_db.py
+python scripts/migrate.py
+python scripts/seed.py
 python -m pytest tests -v
 python run.py
 ```

@@ -58,7 +58,7 @@ Complex runtime queries belong in feature modules under `app/database/queries/`.
 
 ### SQL Migrations
 
-Numbered schema migrations belong in `migrations/`. During scaffolding, `init_db.py` remains the active setup path and the historical migration files remain untouched. Migration ownership must be resolved without introducing an ORM dependency.
+Numbered plain-SQL schema migrations in `migrations/` are the only authoritative schema history. `scripts/migrate.py` applies them explicitly through PyMySQL; normal web requests never run migrations. Seed data is handled separately by `scripts/seed.py`, and `init_db.py` is only a compatibility entry point. No ORM or Alembic runtime is used.
 
 ## Compatibility Gates
 

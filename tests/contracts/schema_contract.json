@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "tables": {
     "profile_images": {
       "columns": {
@@ -314,6 +314,83 @@
       "foreign_keys": [
         {"columns": ["user_id"], "referenced_table": "users", "referenced_columns": ["id"]},
         {"columns": ["created_by"], "referenced_table": "users", "referenced_columns": ["id"]}
+      ]
+    },
+    "work_logs": {
+      "columns": {
+        "id": {"type": "int", "nullable": false},
+        "title": {"type": "varchar", "nullable": false},
+        "log_type": {"type": "varchar", "nullable": false},
+        "content": {"type": "text", "nullable": false},
+        "evidence_url": {"type": "varchar", "nullable": false},
+        "risk_rating": {"type": "varchar", "nullable": false},
+        "log_date": {"type": "date", "nullable": false},
+        "owner_id": {"type": "int", "nullable": false},
+        "created_at": {"type": "datetime", "nullable": false},
+        "updated_at": {"type": "datetime", "nullable": false}
+      },
+      "primary_key": ["id"],
+      "unique_indexes": {},
+      "indexes": {"ix_work_logs_owner_id": ["owner_id"]},
+      "foreign_keys": [
+        {"columns": ["owner_id"], "referenced_table": "users", "referenced_columns": ["id"]}
+      ]
+    },
+    "roadmap_items": {
+      "columns": {
+        "id": {"type": "int", "nullable": false},
+        "title": {"type": "varchar", "nullable": false},
+        "milestone": {"type": "varchar", "nullable": false},
+        "status": {"type": "varchar", "nullable": false},
+        "due_date": {"type": "date", "nullable": true},
+        "topic_id": {"type": "int", "nullable": true},
+        "owner_id": {"type": "int", "nullable": false},
+        "created_at": {"type": "datetime", "nullable": false},
+        "updated_at": {"type": "datetime", "nullable": false}
+      },
+      "primary_key": ["id"],
+      "unique_indexes": {},
+      "indexes": {
+        "ix_roadmap_items_topic_id": ["topic_id"],
+        "ix_roadmap_items_owner_id": ["owner_id"]
+      },
+      "foreign_keys": [
+        {"columns": ["topic_id"], "referenced_table": "topics", "referenced_columns": ["id"]},
+        {"columns": ["owner_id"], "referenced_table": "users", "referenced_columns": ["id"]}
+      ]
+    },
+    "progress_reflections": {
+      "columns": {
+        "id": {"type": "int", "nullable": false},
+        "insight": {"type": "text", "nullable": false},
+        "challenge": {"type": "text", "nullable": false},
+        "next_step": {"type": "text", "nullable": false},
+        "owner_id": {"type": "int", "nullable": false},
+        "created_at": {"type": "datetime", "nullable": false},
+        "updated_at": {"type": "datetime", "nullable": false}
+      },
+      "primary_key": ["id"],
+      "unique_indexes": {},
+      "indexes": {"ix_progress_reflections_owner_id": ["owner_id"]},
+      "foreign_keys": [
+        {"columns": ["owner_id"], "referenced_table": "users", "referenced_columns": ["id"]}
+      ]
+    },
+    "activity_events": {
+      "columns": {
+        "id": {"type": "int", "nullable": false},
+        "event_type": {"type": "varchar", "nullable": false},
+        "intensity": {"type": "int", "nullable": false},
+        "occurred_on": {"type": "date", "nullable": false},
+        "owner_id": {"type": "int", "nullable": false},
+        "created_at": {"type": "datetime", "nullable": false},
+        "updated_at": {"type": "datetime", "nullable": false}
+      },
+      "primary_key": ["id"],
+      "unique_indexes": {},
+      "indexes": {"ix_activity_events_owner_id": ["owner_id"]},
+      "foreign_keys": [
+        {"columns": ["owner_id"], "referenced_table": "users", "referenced_columns": ["id"]}
       ]
     }
   }

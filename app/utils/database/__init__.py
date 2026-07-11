@@ -7,7 +7,12 @@ from app.utils.database.exceptions import (
     DatabaseIntegrityError,
     DatabaseQueryError,
     DatabaseTransactionError,
+    InvalidNamedQueryNameError,
+    NamedQueryError,
+    NamedQueryNotFoundError,
+    NamedQueryParameterError,
 )
+from app.utils.database.named_queries import clear_named_query_cache, load_named_query
 from app.utils.database.query_builder import (
     Database,
     InvalidIdentifierError,
@@ -29,14 +34,20 @@ __all__ = [
     "DatabaseTransactionError",
     "Database",
     "InvalidIdentifierError",
+    "InvalidNamedQueryNameError",
     "InvalidOperatorError",
+    "NamedQueryError",
+    "NamedQueryNotFoundError",
+    "NamedQueryParameterError",
     "PaginationResult",
     "QueryBuilderError",
     "UnsafeQueryError",
     "WriteResult",
     "close_database",
+    "clear_named_query_cache",
     "connection",
     "db",
     "init_database",
+    "load_named_query",
     "transaction",
 ]

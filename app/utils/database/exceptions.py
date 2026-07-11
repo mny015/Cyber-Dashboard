@@ -31,3 +31,28 @@ class DatabaseTransactionError(DatabaseError):
 
     def __init__(self, message="The database transaction could not be completed."):
         super().__init__(message)
+
+
+class NamedQueryError(DatabaseError):
+    """Base class for named runtime SQL loading and binding failures."""
+
+
+class InvalidNamedQueryNameError(NamedQueryError):
+    """Raised when a query name could escape the named-query directory."""
+
+    def __init__(self, message="The named query identifier is invalid."):
+        super().__init__(message)
+
+
+class NamedQueryNotFoundError(NamedQueryError):
+    """Raised when a validated named query does not have a SQL file."""
+
+    def __init__(self, message="The requested named query does not exist."):
+        super().__init__(message)
+
+
+class NamedQueryParameterError(NamedQueryError):
+    """Raised when named parameters do not match the SQL file placeholders."""
+
+    def __init__(self, message="The named query parameters are invalid."):
+        super().__init__(message)

@@ -50,11 +50,11 @@ Models are plain Python objects or dataclasses used to represent application dat
 
 ### Query Builder
 
-The future query builder belongs in `app/utils/database/`. It may assemble optional SQL clauses only from strict server-owned whitelists. User values always remain database parameters.
+The fluent query builder in `app/utils/database/query_builder.py` handles normal CRUD and filtering. It assembles identifiers only from the central table/column registry and keeps user values in PyMySQL parameters.
 
 ### Named SQL
 
-Complex runtime queries belong in feature modules under `app/database/queries/`. Named SQL modules contain query definitions only; execution and transactions stay in `app/utils/database/`.
+Complex runtime reports and aggregates live as named `.sql` files directly under `app/database/queries/`. `db.named_query()` validates the query name, loads only from that directory, verifies named parameters, and executes through the pooled database layer. Simple CRUD does not belong in named SQL, and numbered schema migrations remain exclusively under `migrations/`.
 
 ### Database Layer
 

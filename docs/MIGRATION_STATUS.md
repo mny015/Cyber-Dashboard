@@ -29,7 +29,7 @@ Total frozen application routes: **70**.
 | Services | Package boundary created; no unnecessary service modules |
 | Repositories | Package boundary created; no feature repositories yet |
 | Database infrastructure | `app/utils/database/` exposes the existing helpers without changing callers |
-| Named SQL | Package boundary created; existing SQL remains in legacy modules for now |
+| Named SQL | Loader and execution API active; user/admin dashboard metric aggregates migrated |
 | Extensions | Centralized in `app/extensions.py`; `app.models` re-exports the same instances for compatibility |
 | WSGI | `wsgi.py` provides a production-server entry point |
 | Route compatibility | Frozen in `tests/contracts/route_contract.json` |

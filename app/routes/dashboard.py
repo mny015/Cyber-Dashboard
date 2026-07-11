@@ -4,6 +4,7 @@ from flask import Blueprint, redirect, render_template, url_for
 from flask_login import current_user, login_required
 from pymysql.err import OperationalError, ProgrammingError
 
+from app.utils.database import db
 from utils.decorators import admin_required
 from utils.db import fetch_all, fetch_one
 
@@ -73,33 +74,10 @@ def admin_dashboard():
 
 
 def get_user_dashboard_stats(user_id, room_progress):
-    row = fetch_one(
-        """
-        SELECT
-            (SELECT COUNT(*)
-             FROM topics
-             WHERE owner_id = %s AND is_deleted = 0) AS topics,
-            (SELECT COUNT(*)
-             FROM notes
-             WHERE owner_id = %s AND is_deleted = 0) AS notes,
-            (SELECT COUNT(*)
-             FROM notes
-             WHERE owner_id = %s AND is_deleted = 0
-               AND updated_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS notes_this_week,
-            (SELECT COUNT(*)
-             FROM categories AS categories
-             JOIN users AS owners ON owners.id = categories.owner_id
-             WHERE categories.is_deleted = 0
-               AND (categories.owner_id = %s OR owners.role = 'admin')) AS categories,
-            (SELECT COUNT(*)
-             FROM note_access_requests AS requests
-             JOIN topics ON topics.id = requests.topic_id
-             WHERE topics.owner_id = %s AND requests.status = 'pending') AS pending_requests,
-            (SELECT COUNT(*)
-             FROM security_findings
-             WHERE owner_id = %s AND is_deleted = 0) AS security_findings
-        """,
-        (user_id, user_id, user_id, user_id, user_id, user_id),
+    row = db.named_query(
+        "user_dashboard_metrics",
+        {"user_id": user_id},
+        fetch="one",
     ) or {}
     stats = normalize_counts(row)
     stats["visible_labs"] = room_progress["total"]
@@ -300,28 +278,10 @@ def get_user_last_done_items(user_id):
 
 
 def get_admin_dashboard_stats():
-    row = fetch_one(
-        """
-        SELECT
-            (SELECT COUNT(*) FROM users) AS total_users,
-            (SELECT COUNT(*) FROM users WHERE is_banned = 0) AS active_users,
-            (SELECT COUNT(*) FROM users WHERE is_banned = 1) AS banned_users,
-            (SELECT COUNT(*) FROM users WHERE role = 'admin') AS admin_users,
-            (SELECT COUNT(*) FROM topics WHERE is_deleted = 0) AS total_topics,
-            (SELECT COUNT(*) FROM notes WHERE is_deleted = 0) AS total_notes,
-            (SELECT COUNT(*) FROM categories WHERE is_deleted = 0) AS total_categories,
-            (SELECT COUNT(*) FROM lab_references WHERE is_deleted = 0) AS total_labs,
-            (SELECT COUNT(*) FROM lab_references
-             WHERE is_deleted = 0 AND visibility = 'public') AS shared_labs,
-            (SELECT COUNT(*) FROM note_access_requests
-             WHERE status = 'pending') AS pending_requests,
-            (SELECT COUNT(*) FROM audit_logs
-             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS audit_events_week,
-            (SELECT COUNT(*) FROM audit_logs
-             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-               AND (action LIKE %s OR action LIKE %s)) AS backup_exports_week
-        """,
-        ("%backup%", "%export%"),
+    row = db.named_query(
+        "admin_dashboard_metrics",
+        {"backup_pattern": "%backup%", "export_pattern": "%export%"},
+        fetch="one",
     ) or {}
     return normalize_counts(row)
 

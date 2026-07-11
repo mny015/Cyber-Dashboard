@@ -6,6 +6,8 @@ from math import ceil
 from typing import Mapping
 
 from app.utils.database.connection import connection
+from app.utils.database.exceptions import NamedQueryError
+from app.utils.database.named_queries import load_named_query, prepare_named_parameters
 from app.utils.database.transaction import transaction
 
 
@@ -161,6 +163,16 @@ class Database:
 
     def table(self, table_name):
         return QueryBuilder(self, table_name)
+
+    def named_query(self, query_name, parameters=None, *, fetch="all"):
+        """Execute a trusted complex SELECT loaded from app/database/queries."""
+        sql = load_named_query(query_name)
+        bound_parameters = prepare_named_parameters(sql, parameters)
+        if fetch == "all":
+            return self._fetch_all(sql, bound_parameters)
+        if fetch == "one":
+            return self._fetch_one(sql, bound_parameters)
+        raise NamedQueryError("Named query fetch mode must be 'all' or 'one'.")
 
     def _fetch_all(self, sql, params):
         with connection() as raw_connection:

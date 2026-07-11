@@ -8,6 +8,16 @@ from app.utils.database.exceptions import (
     DatabaseQueryError,
     DatabaseTransactionError,
 )
+from app.utils.database.query_builder import (
+    Database,
+    InvalidIdentifierError,
+    InvalidOperatorError,
+    PaginationResult,
+    QueryBuilderError,
+    UnsafeQueryError,
+    WriteResult,
+    db,
+)
 from app.utils.database.transaction import transaction
 
 
@@ -17,8 +27,16 @@ __all__ = [
     "DatabaseIntegrityError",
     "DatabaseQueryError",
     "DatabaseTransactionError",
+    "Database",
+    "InvalidIdentifierError",
+    "InvalidOperatorError",
+    "PaginationResult",
+    "QueryBuilderError",
+    "UnsafeQueryError",
+    "WriteResult",
     "close_database",
     "connection",
+    "db",
     "init_database",
     "transaction",
 ]

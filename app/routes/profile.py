@@ -7,6 +7,7 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
 from app.forms.profile import ProfileForm
+from app.models import ProfileImage
 from utils.audit import log_audit
 from utils.db import execute, fetch_one
 
@@ -62,23 +63,23 @@ def picture(image_hash):
     if image_hash != current_user.profile_image:
         abort(404)
 
-    row = fetch_one(
+    image = ProfileImage.from_row(fetch_one(
         """
-        SELECT images.image_data, images.mime_type, images.byte_size
+        SELECT images.*
         FROM users
         JOIN profile_images AS images ON images.image_hash = users.profile_image
         WHERE users.id = %s AND users.profile_image = %s
         """,
         (current_user.id, image_hash),
-    )
-    if not row or not row["image_data"]:
+    ))
+    if not image or not image.image_data:
         abort(404)
 
     return Response(
-        row["image_data"],
-        mimetype=row["mime_type"],
+        image.image_data,
+        mimetype=image.mime_type,
         headers={
-            "Content-Length": str(row["byte_size"] or len(row["image_data"])),
+            "Content-Length": str(image.byte_size or len(image.image_data)),
             "Content-Disposition": "inline",
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, max-age=300",

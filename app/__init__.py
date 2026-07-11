@@ -6,10 +6,16 @@ from flask import Flask, render_template, session
 from flask_login import current_user, logout_user
 
 from config import get_config
-from app.extensions import init_extensions
+from app.extensions import init_extensions, login_manager
+from app.repositories import user_repository
 from app.routes import register_blueprints
 from app.utils.database import init_database
 from utils.helpers import format_date
+
+
+@login_manager.user_loader
+def load_authenticated_user(user_id):
+    return user_repository.find_by_id(user_id)
 
 
 def create_app(config_name=None):

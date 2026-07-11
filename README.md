@@ -308,6 +308,7 @@ python -m pytest tests/test_migrations_integration.py -v -m integration
 - `app/utils/database/query_builder.py` handles parameterized normal CRUD and filtering through strict identifier whitelists.
 - `app/database/queries/` contains named `.sql` files only for complex runtime metrics, reports, and exports; `db.named_query()` loads them by validated name.
 - `migrations/` remains the only location for numbered schema-changing SQL.
+- `app/models/` contains slotted plain-Python dataclasses with `from_row()` conversion; these models have no persistence or Flask request behavior.
 - `utils/audit.py` records audit log rows.
 - `utils/decorators.py` contains role and login protection helpers.
 - `utils/helpers.py` contains small formatting, slug, and validation helpers.

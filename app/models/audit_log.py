@@ -1,24 +1,22 @@
-from types import SimpleNamespace
+from dataclasses import dataclass
+from datetime import datetime
+from typing import ClassVar
+
+from app.models.base import RowModel
 
 
-class AuditLog:
-    def __init__(self, **kwargs):
-        self.id = kwargs.get("id")
-        self.action = kwargs.get("action", "")
-        self.details = kwargs.get("details", "")
-        self.ip_address = kwargs.get("ip_address", "")
-        self.user_id = kwargs.get("user_id")
-        self.user_email = kwargs.get("user_email")
-        self.created_at = kwargs.get("created_at")
+@dataclass(slots=True)
+class AuditLog(RowModel):
+    TABLE_NAME: ClassVar[str] = "audit_logs"
+    COLUMNS: ClassVar[tuple[str, ...]] = (
+        "id", "action", "details", "ip_address", "user_id", "created_at",
+    )
 
-    @property
-    def user(self):
-        if not self.user_email:
-            return None
-        return SimpleNamespace(email=self.user_email)
-
-    @classmethod
-    def from_row(cls, row):
-        if not row:
-            return None
-        return cls(**row)
+    id: int | None = None
+    action: str = ""
+    details: str = ""
+    ip_address: str = ""
+    user_id: int | None = None
+    created_at: datetime | None = None
+    user_email: str | None = None
+    user_name: str | None = None

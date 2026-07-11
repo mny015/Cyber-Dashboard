@@ -4,6 +4,7 @@ from flask import Blueprint, redirect, render_template, url_for
 from flask_login import current_user, login_required
 from pymysql.err import OperationalError, ProgrammingError
 
+from app.models import AuditLog, LabReference, NoteAccessRequest, ScheduledTask
 from app.utils.database import db
 from utils.decorators import admin_required
 from utils.db import fetch_all, fetch_one
@@ -195,7 +196,7 @@ def get_user_recent_changes(user_id):
 
 
 def get_user_scheduled_items(user_id):
-    return safe_fetch_all(
+    return LabReference.from_rows(safe_fetch_all(
         """
         SELECT labs.id, labs.name AS title, platforms.name AS detail,
                owners.display_name AS owner_name, labs.visibility, labs.updated_at
@@ -211,11 +212,11 @@ def get_user_scheduled_items(user_id):
         LIMIT 3
         """,
         (user_id, user_id),
-    )
+    ))
 
 
 def get_user_scheduled_tasks(user_id):
-    return safe_fetch_all(
+    return ScheduledTask.from_rows(safe_fetch_all(
         """
         SELECT scheduled_tasks.*,
                COALESCE(creators.display_name, 'Deleted user') AS creator_name
@@ -232,7 +233,7 @@ def get_user_scheduled_tasks(user_id):
         LIMIT 3
         """,
         (user_id,),
-    )
+    ))
 
 
 def count_user_scheduled_tasks(user_id):
@@ -359,7 +360,7 @@ def get_admin_platform_metrics():
 
 
 def get_admin_pending_requests():
-    return fetch_all(
+    return NoteAccessRequest.from_rows(fetch_all(
         """
         SELECT requests.id, topics.title AS topic_title, owners.display_name AS owner_name,
                requests.requested_at
@@ -370,11 +371,11 @@ def get_admin_pending_requests():
         ORDER BY requests.requested_at DESC
         LIMIT 3
         """
-    )
+    ))
 
 
 def get_admin_recent_activity():
-    return fetch_all(
+    return AuditLog.from_rows(fetch_all(
         """
         SELECT audit_logs.action, audit_logs.details, audit_logs.created_at,
                users.display_name AS user_name
@@ -383,11 +384,11 @@ def get_admin_recent_activity():
         ORDER BY audit_logs.created_at DESC
         LIMIT 5
         """
-    )
+    ))
 
 
 def get_admin_shared_labs():
-    return fetch_all(
+    return LabReference.from_rows(fetch_all(
         """
         SELECT labs.name, platforms.name AS platform_name, owners.display_name AS owner_name,
                COUNT(completions.id) AS completion_count, labs.updated_at
@@ -400,11 +401,11 @@ def get_admin_shared_labs():
         ORDER BY labs.updated_at DESC
         LIMIT 5
         """
-    )
+    ))
 
 
 def get_admin_scheduled_tasks(stats):
-    tasks = safe_fetch_all(
+    tasks = ScheduledTask.from_rows(safe_fetch_all(
         """
         SELECT scheduled_tasks.*,
                COALESCE(creators.display_name, 'Deleted user') AS creator_name
@@ -417,7 +418,7 @@ def get_admin_scheduled_tasks(stats):
                  scheduled_tasks.updated_at DESC
         LIMIT 4
         """
-    )
+    ))
     if tasks:
         return tasks
 

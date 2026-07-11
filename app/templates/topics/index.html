@@ -29,7 +29,7 @@
                 <p>{{ topic.description or "No description yet." }}</p>
                 <p class="meta">
                     {{ topic.status|title }} &middot; {{ topic.priority|title }}
-                    {% if topic.category %} &middot; {{ topic.category.name }}{% endif %}
+                    {% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}
                 </p>
                 <div class="actions">
                     <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>

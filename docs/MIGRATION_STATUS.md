@@ -28,6 +28,7 @@ Total frozen application routes: **70**.
 | Controllers | Package boundary created; no feature controller modules yet |
 | Services | Package boundary created; no unnecessary service modules |
 | Repositories | Package boundary created; no feature repositories yet |
+| Plain models | Slotted dataclasses cover all 19 application tables; user loading moved to a repository |
 | Database infrastructure | `app/utils/database/` exposes the existing helpers without changing callers |
 | Named SQL | Loader and execution API active; user/admin dashboard metric aggregates migrated |
 | Extensions | Centralized in `app/extensions.py`; `app.models` re-exports the same instances for compatibility |

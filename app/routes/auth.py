@@ -6,6 +6,7 @@ import qrcode
 from flask import Blueprint, abort, flash, redirect, render_template, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
+from app.extensions import limiter
 from app.forms.auth import ChangePasswordForm, LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
 from app.models.user import User
 from utils.audit import log_audit
@@ -13,13 +14,8 @@ from utils.db import execute, fetch_one
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
-try:
-    from app.models import limiter
-except ImportError:
-    limiter = None
-
-login_rate_limit = limiter.limit("5 per minute") if limiter else (lambda view: view)
-password_rate_limit = limiter.limit("5 per 15 minutes") if limiter else (lambda view: view)
+login_rate_limit = limiter.limit("5 per minute")
+password_rate_limit = limiter.limit("5 per 15 minutes")
 
 LOCKOUT_FAILURE_LIMIT = 5
 LOCKOUT_MINUTES = 15

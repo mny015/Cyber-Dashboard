@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import ScheduledTask
 from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text
@@ -58,9 +59,9 @@ def complete(task_id):
         SET status = 'completed', updated_at = NOW()
         WHERE id = %s
         """,
-        (task["id"],),
+        (task.id,),
     )
-    log_audit("scheduled_task_completed", f"Completed scheduled task {task['title']}")
+    log_audit("scheduled_task_completed", f"Completed scheduled task {task.title}")
     flash("Task marked complete.", "success")
     return redirect(url_for("tasks.index"))
 
@@ -75,9 +76,9 @@ def cancel(task_id):
         SET status = 'cancelled', updated_at = NOW()
         WHERE id = %s
         """,
-        (task["id"],),
+        (task.id,),
     )
-    log_audit("scheduled_task_cancelled", f"Cancelled scheduled task {task['title']}")
+    log_audit("scheduled_task_cancelled", f"Cancelled scheduled task {task.title}")
     flash("Task cancelled.", "info")
     return redirect(url_for("tasks.index"))
 
@@ -112,7 +113,7 @@ def get_visible_tasks(limit=None, status=None):
         limit_clause = "LIMIT %s"
         params.append(limit)
 
-    return fetch_all(
+    return ScheduledTask.from_rows(fetch_all(
         f"""
         SELECT scheduled_tasks.*,
                COALESCE(creators.display_name, 'Deleted user') AS creator_name,
@@ -131,24 +132,24 @@ def get_visible_tasks(limit=None, status=None):
         {limit_clause}
         """,
         tuple(params),
-    )
+    ))
 
 
 def get_manageable_task_or_404(task_id):
-    task = fetch_one(
+    task = ScheduledTask.from_row(fetch_one(
         """
         SELECT *
         FROM scheduled_tasks
         WHERE id = %s
         """,
         (task_id,),
-    )
+    ))
     if not task:
         abort(404)
 
-    if current_user.is_admin and (task["created_by"] == current_user.id or task["scope"] in {"admin", "global"}):
+    if current_user.is_admin and (task.created_by == current_user.id or task.scope in {"admin", "global"}):
         return task
-    if task["user_id"] == current_user.id and task["scope"] == "personal":
+    if task.user_id == current_user.id and task.scope == "personal":
         return task
 
     abort(403)

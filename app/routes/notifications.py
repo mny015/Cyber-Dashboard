@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import Note, NoteAccessRequest, Notification
 from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 
@@ -10,7 +11,7 @@ notifications_bp = Blueprint("notifications", __name__, url_prefix="/notificatio
 @notifications_bp.route("/")
 @login_required
 def index():
-    requests = fetch_all(
+    requests = Notification.from_rows(fetch_all(
         """
         SELECT note_access_requests.*, topics.title AS topic_title,
                COALESCE(users.display_name, 'Deleted administrator') AS admin_name,
@@ -22,19 +23,19 @@ def index():
         ORDER BY note_access_requests.requested_at DESC
         """,
         (current_user.id,),
-    )
+    ))
     notes_by_topic = {
-        row["topic_id"]: fetch_all(
+        row.topic_id: Note.from_rows(fetch_all(
             """
             SELECT id, title
             FROM notes
             WHERE owner_id = %s AND topic_id = %s AND is_deleted = 0
             ORDER BY updated_at DESC
             """,
-            (current_user.id, row["topic_id"]),
-        )
+            (current_user.id, row.topic_id),
+        ))
         for row in requests
-        if row["status"] == "pending"
+        if row.status == "pending"
     }
     return render_template("notifications/index.html", requests=requests, notes_by_topic=notes_by_topic)
 
@@ -50,7 +51,7 @@ def approve(request_id):
         FROM notes
         WHERE id = %s AND owner_id = %s AND topic_id = %s AND is_deleted = 0
         """,
-        (note_id, current_user.id, access_request["topic_id"]),
+        (note_id, current_user.id, access_request.topic_id),
     )
     if not note:
         flash("Choose one of your notes for this topic.", "danger")
@@ -79,7 +80,7 @@ def deny(request_id):
         SET status = 'denied', responded_at = NOW()
         WHERE id = %s AND status = 'pending'
         """,
-        (access_request["id"],),
+        (access_request.id,),
     )
     log_audit("note_access_denied", f"Denied note access request {request_id}")
     flash("Note access denied.", "info")
@@ -87,7 +88,7 @@ def deny(request_id):
 
 
 def get_pending_request_or_404(request_id):
-    access_request = fetch_one(
+    access_request = NoteAccessRequest.from_row(fetch_one(
         """
         SELECT note_access_requests.*
         FROM note_access_requests
@@ -97,7 +98,7 @@ def get_pending_request_or_404(request_id):
           AND note_access_requests.status = 'pending'
         """,
         (request_id, current_user.id),
-    )
+    ))
     if not access_request:
         abort(404)
     return access_request

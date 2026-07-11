@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from math import ceil
 from typing import Mapping
 
+from app.models import MODEL_REGISTRY
 from app.utils.database.connection import connection
 from app.utils.database.exceptions import NamedQueryError
 from app.utils.database.named_queries import load_named_query, prepare_named_parameters
@@ -16,88 +17,11 @@ WHERE_OPERATORS = {"=", "!=", "<>", "<", "<=", ">", ">=", "LIKE", "NOT LIKE"}
 JOIN_OPERATORS = {"=", "!=", "<>", "<", "<=", ">", ">="}
 ORDER_DIRECTIONS = {"ASC", "DESC"}
 
-# This is runtime query metadata only. Numbered SQL migrations remain the schema
-# source of truth. Explicit columns keep request data out of SQL identifiers.
+# Dataclass metadata is the runtime identifier whitelist. Numbered migrations
+# remain the authoritative schema history.
 TABLE_COLUMNS = {
-    "users": frozenset(
-        {
-            "id", "email", "password_hash", "display_name", "role", "is_banned",
-            "mfa_secret", "mfa_enabled", "auth_version", "failed_login_count",
-            "last_failed_login_at", "locked_until", "profile_bio", "profile_image",
-            "created_at", "updated_at",
-        }
-    ),
-    "profile_images": frozenset(
-        {"image_hash", "image_data", "mime_type", "byte_size", "created_at"}
-    ),
-    "categories": frozenset(
-        {"id", "name", "description", "color", "is_deleted", "owner_id", "created_at", "updated_at"}
-    ),
-    "contacts": frozenset(
-        {"id", "name", "email", "phone", "notes", "is_deleted", "owner_id", "created_at", "updated_at"}
-    ),
-    "topics": frozenset(
-        {
-            "id", "title", "slug", "description", "status", "priority", "notes",
-            "is_deleted", "category_id", "owner_id", "created_at", "updated_at",
-        }
-    ),
-    "audit_logs": frozenset({"id", "action", "details", "ip_address", "user_id", "created_at"}),
-    "notes": frozenset(
-        {"id", "title", "body", "topic_id", "owner_id", "is_deleted", "created_at", "updated_at"}
-    ),
-    "note_access_requests": frozenset(
-        {
-            "id", "topic_id", "note_id", "requester_admin_id", "status",
-            "requested_at", "responded_at",
-        }
-    ),
-    "lab_platforms": frozenset({"id", "name", "slug"}),
-    "lab_references": frozenset(
-        {
-            "id", "name", "platform_id", "url", "notes", "topic_id", "owner_id",
-            "visibility", "is_deleted", "created_at", "updated_at",
-        }
-    ),
-    "lab_completions": frozenset({"id", "lab_id", "user_id", "completed_at"}),
-    "vulnerability_catalog": frozenset(
-        {
-            "id", "code", "name", "category", "default_severity", "description",
-            "source", "approval_status", "is_active", "created_by_user_id",
-            "reviewed_by_user_id", "reviewed_at", "created_at", "updated_at",
-        }
-    ),
-    "threat_catalog": frozenset(
-        {"id", "code", "name", "default_level", "description", "source", "is_active", "created_at", "updated_at"}
-    ),
-    "security_findings": frozenset(
-        {
-            "id", "owner_id", "vulnerability_id", "threat_id", "activity_type",
-            "title", "target", "severity", "status", "evidence", "notes",
-            "detected_at", "is_deleted", "created_at", "updated_at",
-        }
-    ),
-    "scheduled_tasks": frozenset(
-        {
-            "id", "user_id", "created_by", "title", "description", "task_type",
-            "due_at", "status", "scope", "created_at", "updated_at",
-        }
-    ),
-    "work_logs": frozenset(
-        {
-            "id", "title", "log_type", "content", "evidence_url", "risk_rating",
-            "log_date", "owner_id", "created_at", "updated_at",
-        }
-    ),
-    "roadmap_items": frozenset(
-        {"id", "title", "milestone", "status", "due_date", "topic_id", "owner_id", "created_at", "updated_at"}
-    ),
-    "progress_reflections": frozenset(
-        {"id", "insight", "challenge", "next_step", "owner_id", "created_at", "updated_at"}
-    ),
-    "activity_events": frozenset(
-        {"id", "event_type", "intensity", "occurred_on", "owner_id", "created_at", "updated_at"}
-    ),
+    table_name: frozenset(model.COLUMNS)
+    for table_name, model in MODEL_REGISTRY.items()
 }
 
 

@@ -2,16 +2,12 @@ import pytest
 
 from app import create_app
 from app.extensions import csrf, limiter, login_manager, talisman
-from app.models import csrf as models_csrf
-from app.models import limiter as models_limiter
-from app.models import login_manager as models_login_manager
+from app.routes.auth import limiter as auth_limiter
 from config import DevelopmentConfig, ProductionConfig, TestingConfig, get_config
 
 
-def test_extensions_are_singletons_with_compatibility_exports():
-    assert models_login_manager is login_manager
-    assert models_csrf is csrf
-    assert models_limiter is limiter
+def test_extensions_are_singletons_outside_the_model_package():
+    assert auth_limiter is limiter
 
 
 def test_testing_factory_initializes_security_extensions():

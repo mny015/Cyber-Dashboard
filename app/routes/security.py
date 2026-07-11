@@ -3,6 +3,7 @@ from uuid import uuid4
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import SecurityFinding, ThreatCatalogEntry, VulnerabilityCatalogEntry
 from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.decorators import admin_required
@@ -29,7 +30,7 @@ def index():
         """,
         (current_user.id,),
     )
-    findings = fetch_all(
+    findings = SecurityFinding.from_rows(fetch_all(
         """
         SELECT findings.*, vulns.name AS vulnerability_name, vulns.code AS vulnerability_code,
                threats.name AS threat_name, threats.code AS threat_code
@@ -40,8 +41,8 @@ def index():
         ORDER BY findings.detected_at DESC, findings.updated_at DESC
         """,
         (current_user.id,),
-    )
-    pending_suggestions = fetch_all(
+    ))
+    pending_suggestions = VulnerabilityCatalogEntry.from_rows(fetch_all(
         """
         SELECT id, code, name, category, default_severity, approval_status, created_at
         FROM vulnerability_catalog
@@ -49,7 +50,7 @@ def index():
         ORDER BY created_at DESC
         """,
         (current_user.id,),
-    )
+    ))
     return render_template(
         "security/index.html",
         metrics=metrics or {},
@@ -101,9 +102,9 @@ def delete(finding_id):
         SET is_deleted = 1, updated_at = NOW()
         WHERE id = %s AND owner_id = %s
         """,
-        (finding["id"], current_user.id),
+        (finding.id, current_user.id),
     )
-    log_audit("security_finding_deleted", f"Deleted finding {finding['title']}")
+    log_audit("security_finding_deleted", f"Deleted finding {finding.title}")
     flash("Security finding deleted.", "info")
     return redirect(url_for("security.index"))
 
@@ -278,43 +279,43 @@ def save_finding(finding_id=None):
 
 
 def get_finding_or_404(finding_id):
-    finding = fetch_one(
+    finding = SecurityFinding.from_row(fetch_one(
         """
         SELECT *
         FROM security_findings
         WHERE id = %s AND owner_id = %s AND is_deleted = 0
         """,
         (finding_id, current_user.id),
-    )
+    ))
     if not finding:
         abort(404)
     return finding
 
 
 def get_approved_vulnerabilities():
-    return fetch_all(
+    return VulnerabilityCatalogEntry.from_rows(fetch_all(
         """
         SELECT id, code, name, category, default_severity, source
         FROM vulnerability_catalog
         WHERE approval_status = 'approved' AND is_active = 1
         ORDER BY category, name
         """
-    )
+    ))
 
 
 def get_all_vulnerabilities():
-    return fetch_all(
+    return VulnerabilityCatalogEntry.from_rows(fetch_all(
         """
         SELECT vulns.*, users.display_name AS requested_by
         FROM vulnerability_catalog AS vulns
         LEFT JOIN users ON users.id = vulns.created_by_user_id
         ORDER BY vulns.approval_status = 'pending' DESC, vulns.category, vulns.name
         """
-    )
+    ))
 
 
 def get_pending_vulnerabilities():
-    return fetch_all(
+    return VulnerabilityCatalogEntry.from_rows(fetch_all(
         """
         SELECT vulns.*, users.display_name AS requested_by
         FROM vulnerability_catalog AS vulns
@@ -322,18 +323,18 @@ def get_pending_vulnerabilities():
         WHERE vulns.approval_status = 'pending'
         ORDER BY vulns.created_at DESC
         """
-    )
+    ))
 
 
 def get_threats():
-    return fetch_all(
+    return ThreatCatalogEntry.from_rows(fetch_all(
         """
         SELECT id, code, name, default_level, source
         FROM threat_catalog
         WHERE is_active = 1
         ORDER BY default_level = 'critical' DESC, name
         """
-    )
+    ))
 
 
 def vulnerability_is_available(vulnerability_id):

@@ -8,7 +8,7 @@
         <h1>{{ topic.title }}</h1>
         <p class="meta">
             {{ topic.status|title }} &middot; {{ topic.priority|title }}
-            {% if topic.category %} &middot; {{ topic.category.name }}{% endif %}
+            {% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}
         </p>
     </div>
     <div class="actions">

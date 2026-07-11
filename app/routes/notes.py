@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import Note, Topic
 from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text
@@ -9,7 +10,7 @@ notes_bp = Blueprint("notes", __name__, url_prefix="/notes")
 
 
 def get_note_or_404(note_id):
-    note = fetch_one(
+    note = Note.from_row(fetch_one(
         """
         SELECT notes.*, topics.title AS topic_title
         FROM notes
@@ -17,14 +18,14 @@ def get_note_or_404(note_id):
         WHERE notes.id = %s AND notes.owner_id = %s AND notes.is_deleted = 0
         """,
         (note_id, current_user.id),
-    )
+    ))
     if not note:
         abort(404)
     return note
 
 
 def get_user_topics():
-    return fetch_all(
+    return Topic.from_rows(fetch_all(
         """
         SELECT id, title
         FROM topics
@@ -32,7 +33,7 @@ def get_user_topics():
         ORDER BY title ASC
         """,
         (current_user.id,),
-    )
+    ))
 
 
 def get_topics_with_note_counts():
@@ -61,7 +62,7 @@ def index():
         abort(404)
 
     search_value = f"%{query}%"
-    notes = fetch_all(
+    notes = Note.from_rows(fetch_all(
         """
         SELECT notes.*, topics.title AS topic_title
         FROM notes
@@ -73,7 +74,7 @@ def index():
         ORDER BY notes.updated_at DESC
         """,
         (current_user.id, topic_id, topic_id, query, search_value, search_value),
-    )
+    ))
     stats = fetch_one(
         """
         SELECT COUNT(*) AS total_notes, MAX(updated_at) AS last_updated
@@ -164,9 +165,9 @@ def delete(note_id):
     note = get_note_or_404(note_id)
     execute(
         "UPDATE notes SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
-        (note["id"], current_user.id),
+        (note.id, current_user.id),
     )
-    log_audit("note_deleted", f"Deleted note {note['id']}")
+    log_audit("note_deleted", f"Deleted note {note.id}")
     flash("Note deleted successfully.", "info")
     return redirect(url_for("notes.index"))
 

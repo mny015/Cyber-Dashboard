@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import LabPlatform, LabReference, Topic
 from utils.audit import log_audit
 from utils.db import execute, fetch_all, fetch_one
 from utils.helpers import clean_text
@@ -15,7 +16,7 @@ labs_bp = Blueprint("labs", __name__, url_prefix="/labs")
 def index():
     platform_id = request.args.get("platform_id", type=int)
     if platform_id:
-        labs = fetch_all(
+        labs = LabReference.from_rows(fetch_all(
             """
             SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                    owners.display_name AS owner_name, owners.role AS owner_role,
@@ -32,9 +33,9 @@ def index():
             ORDER BY is_completed ASC, labs.updated_at DESC
             """,
             (current_user.id, current_user.id, platform_id),
-        )
+        ))
     else:
-        labs = fetch_all(
+        labs = LabReference.from_rows(fetch_all(
             """
             SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                    owners.display_name AS owner_name, owners.role AS owner_role,
@@ -50,7 +51,7 @@ def index():
             ORDER BY is_completed ASC, labs.updated_at DESC
             """,
             (current_user.id, current_user.id),
-        )
+        ))
     return render_template(
         "labs/index.html",
         labs=labs,
@@ -144,7 +145,7 @@ def delete(lab_id):
         "UPDATE lab_references SET is_deleted = 1, updated_at = NOW() WHERE id = %s AND owner_id = %s",
         (lab_id, current_user.id),
     )
-    log_audit("lab_deleted", f"Deleted lab {lab['name']}")
+    log_audit("lab_deleted", f"Deleted lab {lab.name}")
     flash("Lab deleted successfully.", "info")
     return redirect(url_for("labs.index"))
 
@@ -179,7 +180,7 @@ def incomplete(lab_id):
 
 
 def get_visible_lab_or_404(lab_id):
-    lab = fetch_one(
+    lab = LabReference.from_row(fetch_one(
         """
         SELECT labs.*, platforms.name AS platform_name, topics.title AS topic_title,
                owners.display_name AS owner_name, owners.role AS owner_role,
@@ -194,35 +195,35 @@ def get_visible_lab_or_404(lab_id):
           AND (labs.owner_id = %s OR (labs.visibility = 'public' AND owners.role = 'admin'))
         """,
         (current_user.id, lab_id, current_user.id),
-    )
+    ))
     if not lab:
         abort(404)
     return lab
 
 
 def get_owned_lab_or_404(lab_id):
-    lab = fetch_one(
+    lab = LabReference.from_row(fetch_one(
         """
         SELECT *
         FROM lab_references
         WHERE id = %s AND owner_id = %s AND is_deleted = 0
         """,
         (lab_id, current_user.id),
-    )
+    ))
     if not lab:
         abort(404)
     return lab
 
 
 def get_user_topics():
-    return fetch_all(
+    return Topic.from_rows(fetch_all(
         "SELECT id, title FROM topics WHERE owner_id = %s AND is_deleted = 0 ORDER BY title",
         (current_user.id,),
-    )
+    ))
 
 
 def get_platforms():
-    return fetch_all("SELECT id, name FROM lab_platforms ORDER BY name")
+    return LabPlatform.from_rows(fetch_all("SELECT id, name, slug FROM lab_platforms ORDER BY name"))
 
 
 def read_lab_form():

@@ -46,7 +46,7 @@ Repositories perform feature-specific persistence through parameterized SQL. The
 
 ### Models
 
-Models are plain Python objects or dataclasses used to represent application data. They are not SQLAlchemy, ORM, or active-record models.
+Models are slotted dataclasses used only to represent persisted application data and explicit joined-row labels. Every application table is registered in `app.models.MODEL_REGISTRY`, and each model declares its table and known columns for safe row conversion and query validation. Models never open connections, execute SQL, save themselves, lazy-load relationships, or read Flask request/session state. They are not SQLAlchemy, ORM, or active-record models.
 
 ### Query Builder
 

@@ -1,53 +1,47 @@
+"""Plain user data model used by Flask-Login."""
+
+from dataclasses import dataclass
+from datetime import datetime
+from typing import ClassVar
+
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.models import login_manager
-from utils.db import fetch_one
+from app.models.base import RowModel, as_bool
 
 
-class User(UserMixin):
-    def __init__(
-        self,
-        id=None,
-        email="",
-        password_hash="",
-        display_name="",
-        role="user",
-        is_banned=False,
-        mfa_secret=None,
-        mfa_enabled=False,
-        auth_version=0,
-        failed_login_count=0,
-        last_failed_login_at=None,
-        locked_until=None,
-        profile_bio="",
-        profile_image="",
-        created_at=None,
-        updated_at=None,
-        **extra,
-    ):
-        self.id = id
-        self.email = email
-        self.password_hash = password_hash
-        self.display_name = display_name
-        self.role = role
-        self.is_banned = bool(is_banned)
-        self.mfa_secret = mfa_secret
-        self.mfa_enabled = bool(mfa_enabled)
-        self.auth_version = int(auth_version or 0)
-        self.failed_login_count = int(failed_login_count or 0)
-        self.last_failed_login_at = last_failed_login_at
-        self.locked_until = locked_until
-        self.profile_bio = profile_bio or ""
-        self.profile_image = profile_image or ""
-        self.created_at = created_at
-        self.updated_at = updated_at
+@dataclass(slots=True)
+class User(UserMixin, RowModel):
+    TABLE_NAME: ClassVar[str] = "users"
+    COLUMNS: ClassVar[tuple[str, ...]] = (
+        "id", "email", "password_hash", "display_name", "role", "is_banned",
+        "mfa_secret", "mfa_enabled", "auth_version", "failed_login_count",
+        "last_failed_login_at", "locked_until", "profile_bio", "profile_image",
+        "created_at", "updated_at",
+    )
 
-    @classmethod
-    def from_row(cls, row):
-        if not row:
-            return None
-        return cls(**row)
+    id: int | None = None
+    email: str = ""
+    password_hash: str = ""
+    display_name: str = ""
+    role: str = "user"
+    is_banned: bool = False
+    mfa_secret: str | None = None
+    mfa_enabled: bool = False
+    auth_version: int = 0
+    failed_login_count: int = 0
+    last_failed_login_at: datetime | None = None
+    locked_until: datetime | None = None
+    profile_bio: str | None = None
+    profile_image: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    def __post_init__(self):
+        self.is_banned = as_bool(self.is_banned)
+        self.mfa_enabled = as_bool(self.mfa_enabled)
+        self.auth_version = int(self.auth_version or 0)
+        self.failed_login_count = int(self.failed_login_count or 0)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -58,9 +52,3 @@ class User(UserMixin):
     @property
     def is_admin(self):
         return self.role == "admin"
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    row = fetch_one("SELECT * FROM users WHERE id = %s", (int(user_id),))
-    return User.from_row(row)

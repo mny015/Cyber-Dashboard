@@ -5,7 +5,8 @@ import pytest
 from flask import Blueprint, redirect, render_template, url_for
 from werkzeug.security import generate_password_hash
 
-from app.models import limiter, login_manager
+from app.extensions import limiter, login_manager
+from app.models import User
 from app.routes.auth import auth_bp
 
 
@@ -198,7 +199,10 @@ def test_logout_rejects_get_requests(fake_auth_client):
 
 
 def test_logout_uses_post_request(monkeypatch, fake_auth_client):
-    monkeypatch.setattr("app.models.user.fetch_one", lambda query, params=None: make_user_row())
+    monkeypatch.setattr(
+        "app.repositories.user_repository.find_by_id",
+        lambda user_id: User.from_row(make_user_row()),
+    )
     monkeypatch.setattr("app.routes.auth.log_audit", lambda *args, **kwargs: None)
 
     with fake_auth_client.session_transaction() as session:

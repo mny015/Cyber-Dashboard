@@ -3,7 +3,7 @@ from flask_login import current_user, login_required
 from werkzeug.security import generate_password_hash
 
 from app.forms.admin import AdminPasswordResetForm, RoleForm
-from app.models.user import User
+from app.models import AuditLog, Category, NoteAccessRequest, Topic, User
 from utils.audit import log_audit
 from utils.decorators import admin_required
 from utils.db import execute, fetch_all, fetch_one, get_connection
@@ -36,7 +36,7 @@ def topic_summaries():
         ORDER BY topics.updated_at DESC
         """
     )
-    return render_template("admin/topic_summaries.html", topics=rows)
+    return render_template("admin/topic_summaries.html", topics=Topic.from_rows(rows))
 
 
 @admin_bp.route("/topics/<int:topic_id>/request-notes", methods=["POST"])
@@ -103,7 +103,10 @@ def note_requests():
         """,
         (current_user.id,),
     )
-    return render_template("admin/note_requests.html", requests=requests)
+    return render_template(
+        "admin/note_requests.html",
+        requests=NoteAccessRequest.from_rows(requests),
+    )
 
 
 @admin_bp.route("/note-requests/<int:request_id>/note")
@@ -151,7 +154,7 @@ def category_summaries():
         ORDER BY categories.updated_at DESC
         """
     )
-    return render_template("admin/category_summaries.html", categories=rows)
+    return render_template("admin/category_summaries.html", categories=Category.from_rows(rows))
 
 
 @admin_bp.route("/users/<int:user_id>/role", methods=["POST"])
@@ -289,7 +292,7 @@ def audit_logs():
         (offset,),
     )
     total_row = fetch_one("SELECT COUNT(*) AS total FROM audit_logs")
-    logs = type("Pagination", (), {"items": rows, "page": page, "pages": 1, "total": total_row["total"] if total_row else 0, "has_next": False, "has_prev": page > 1})()
+    logs = type("Pagination", (), {"items": AuditLog.from_rows(rows), "page": page, "pages": 1, "total": total_row["total"] if total_row else 0, "has_next": False, "has_prev": page > 1})()
     return render_template("admin/audit_logs.html", logs=logs)
 
 

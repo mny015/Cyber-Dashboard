@@ -99,24 +99,20 @@ def test_login_page_renders_without_database(fake_auth_client):
 
 
 def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
-    user_row = make_user_row()
-    fetch_calls = []
-    execute_calls = []
+    user = User.from_row(make_user_row())
+    reset_calls = []
     audit_calls = []
 
-    def fake_fetch_one(query, params=None):
-        fetch_calls.append((query, params))
-        return user_row
-
-    def fake_execute(query, params=None):
-        execute_calls.append((query, params))
-        return 1, 0
-
-    monkeypatch.setattr("app.routes.auth.fetch_one", fake_fetch_one)
-    monkeypatch.setattr("app.routes.auth.execute", fake_execute)
+    monkeypatch.setattr("app.repositories.user_repository.find_by_email", lambda email: user)
     monkeypatch.setattr(
-        "app.routes.auth.log_audit",
-        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+        "app.repositories.user_repository.reset_failed_logins",
+        lambda user_id: reset_calls.append(user_id),
+    )
+    monkeypatch.setattr(
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_calls.append(
+            (action, details, context)
+        ),
     )
 
     response = fake_auth_client.post(
@@ -126,8 +122,7 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
 
     assert response.status_code == 302
     assert response.headers["Location"].endswith("/user/dashboard")
-    assert fetch_calls == [("SELECT * FROM users WHERE email = %s", ("student@example.com",))]
-    assert "failed_login_count = 0" in execute_calls[0][0]
+    assert reset_calls == [42]
     assert audit_calls[0][0] == "login"
 
     with fake_auth_client.session_transaction() as session:
@@ -136,19 +131,32 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
 
 
 def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
-    user_row = make_user_row()
-    execute_calls = []
+    user = User.from_row(make_user_row())
+    failure_calls = []
     audit_calls = []
 
-    monkeypatch.setattr("app.routes.auth.fetch_one", lambda query, params=None: user_row)
+    monkeypatch.setattr("app.repositories.user_repository.find_by_email", lambda email: user)
     monkeypatch.setattr(
-        "app.routes.auth.execute",
-        lambda query, params=None: execute_calls.append((query, params)) or (1, 0),
+        "app.repositories.user_repository.record_failed_login",
+        lambda user_id, limit, minutes, cursor=None: failure_calls.append(
+            (user_id, limit, minutes)
+        ),
     )
     monkeypatch.setattr(
-        "app.routes.auth.log_audit",
-        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_calls.append(
+            (action, details, context)
+        ),
     )
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def fake_transaction():
+        yield object()
+
+    monkeypatch.setattr("app.services.auth_service.transaction", fake_transaction)
+    monkeypatch.setattr("app.services.auth_service.db.using", lambda _cursor: object())
 
     response = fake_auth_client.post(
         "/auth/login",
@@ -157,7 +165,7 @@ def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_clien
 
     assert response.status_code == 200
     assert b"Invalid email or password." in response.data
-    assert "failed_login_count = failed_login_count + 1" in execute_calls[0][0]
+    assert failure_calls == [(42, 5, 15)]
     assert audit_calls[0][0] == "login_failed"
 
     with fake_auth_client.session_transaction() as session:
@@ -169,14 +177,19 @@ def test_locked_account_blocks_login_before_password_check(monkeypatch, fake_aut
     user_row["locked_until"] = datetime.now() + timedelta(minutes=10)
     audit_calls = []
 
-    monkeypatch.setattr("app.routes.auth.fetch_one", lambda query, params=None: user_row)
     monkeypatch.setattr(
-        "app.routes.auth.execute",
-        lambda query, params=None: pytest.fail("locked accounts should not update login counters"),
+        "app.repositories.user_repository.find_by_email",
+        lambda email: User.from_row(user_row),
     )
     monkeypatch.setattr(
-        "app.routes.auth.log_audit",
-        lambda action, details="", user=None: audit_calls.append((action, details, user)),
+        "app.repositories.user_repository.record_failed_login",
+        lambda *args: pytest.fail("locked accounts should not update login counters"),
+    )
+    monkeypatch.setattr(
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_calls.append(
+            (action, details, context)
+        ),
     )
 
     response = fake_auth_client.post(

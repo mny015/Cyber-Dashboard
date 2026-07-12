@@ -3,7 +3,9 @@ from flask_login import current_user, login_required
 
 from app.models import Note
 from app.repositories import note_repository, topic_repository
-from utils.audit import log_audit
+from app.services import note_service
+from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
+from utils.audit import get_audit_context
 from utils.helpers import clean_text
 
 notes_bp = Blueprint("notes", __name__, url_prefix="/notes")
@@ -53,17 +55,15 @@ def create():
         title = clean_text(request.form.get("title"))
         body = clean_text(request.form.get("body"))
         topic_id = request.form.get("topic_id", type=int) or None
-        if not title or not body:
-            flash("Note title and body are required.", "danger")
+        try:
+            note = note_service.create_note(
+                current_user.id, title, body, topic_id, get_audit_context()
+            )
+        except ValidationError as exc:
+            flash(str(exc), "danger")
             return render_template("notes/form.html", note=request.form, topics=get_user_topics())
-
-        if topic_id and not user_owns_topic(topic_id):
+        except PermissionDeniedError:
             abort(403)
-
-        note = note_repository.create(
-            Note(title=title, body=body, topic_id=topic_id, owner_id=current_user.id)
-        )
-        log_audit("note_created", f"Created note {note.id}")
         flash("Note created successfully.", "success")
         return redirect(url_for("notes.detail", note_id=note.id))
 
@@ -84,18 +84,17 @@ def edit(note_id):
         title = clean_text(request.form.get("title"))
         body = clean_text(request.form.get("body"))
         topic_id = request.form.get("topic_id", type=int) or None
-        if not title or not body:
-            flash("Note title and body are required.", "danger")
+        try:
+            note_service.update_note(
+                note_id, current_user.id, title, body, topic_id, get_audit_context()
+            )
+        except ValidationError as exc:
+            flash(str(exc), "danger")
             return render_template("notes/form.html", note=request.form, topics=get_user_topics())
-
-        if topic_id and not user_owns_topic(topic_id):
+        except PermissionDeniedError:
             abort(403)
-
-        note.title = title
-        note.body = body
-        note.topic_id = topic_id
-        note_repository.update_owned(note, current_user.id)
-        log_audit("note_updated", f"Updated note {note_id}")
+        except NotFoundError:
+            abort(404)
         flash("Note updated successfully.", "success")
         return redirect(url_for("notes.detail", note_id=note_id))
 
@@ -105,9 +104,10 @@ def edit(note_id):
 @notes_bp.route("/<int:note_id>/delete", methods=["POST"])
 @login_required
 def delete(note_id):
-    note = get_note_or_404(note_id)
-    note_repository.delete_owned(note.id, current_user.id)
-    log_audit("note_deleted", f"Deleted note {note.id}")
+    try:
+        note_service.delete_note(note_id, current_user.id, get_audit_context())
+    except NotFoundError:
+        abort(404)
     flash("Note deleted successfully.", "info")
     return redirect(url_for("notes.index"))
 

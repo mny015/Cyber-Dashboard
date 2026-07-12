@@ -3,16 +3,15 @@ from datetime import datetime
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.models import ScheduledTask
-from utils.audit import log_audit
-from utils.db import execute, fetch_all, fetch_one
+from app.repositories import scheduled_task_repository
+from app.services import scheduled_task_service
+from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
+from utils.audit import get_audit_context
 from utils.helpers import clean_text
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/scheduled-tasks")
 
-TASK_TYPES = ("general", "lab", "note", "backup", "review", "roadmap")
-TASK_STATUSES = ("upcoming", "completed", "cancelled")
-TASK_SCOPES = ("personal", "admin", "global")
+TASK_TYPES = scheduled_task_service.TASK_TYPES
 
 
 @tasks_bp.route("/", methods=["GET", "POST"])
@@ -20,29 +19,16 @@ TASK_SCOPES = ("personal", "admin", "global")
 def index():
     if request.method == "POST":
         task = read_task_form()
-        error = validate_task(task)
-        if error:
-            flash(error, "danger")
-            return render_template("tasks/index.html", tasks=get_visible_tasks(), task=task, task_types=TASK_TYPES)
-
-        execute(
-            """
-            INSERT INTO scheduled_tasks
-                (user_id, created_by, title, description, task_type, due_at,
-                 status, scope, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, 'upcoming', %s, NOW(), NOW())
-            """,
-            (
-                task["user_id"],
+        try:
+            scheduled_task_service.create_task(
                 current_user.id,
-                task["title"],
-                task["description"],
-                task["task_type"],
-                task["due_at"],
-                task["scope"],
-            ),
-        )
-        log_audit("scheduled_task_created", f"Created scheduled task {task['title']}")
+                current_user.is_admin,
+                task,
+                get_audit_context(),
+            )
+        except ValidationError as exc:
+            flash(str(exc), "danger")
+            return render_template("tasks/index.html", tasks=get_visible_tasks(), task=task, task_types=TASK_TYPES)
         flash("Scheduled task created.", "success")
         return redirect(url_for("tasks.index"))
 
@@ -52,16 +38,7 @@ def index():
 @tasks_bp.route("/<int:task_id>/complete", methods=["POST"])
 @login_required
 def complete(task_id):
-    task = get_manageable_task_or_404(task_id)
-    execute(
-        """
-        UPDATE scheduled_tasks
-        SET status = 'completed', updated_at = NOW()
-        WHERE id = %s
-        """,
-        (task.id,),
-    )
-    log_audit("scheduled_task_completed", f"Completed scheduled task {task.title}")
+    change_task_status(task_id, "completed")
     flash("Task marked complete.", "success")
     return redirect(url_for("tasks.index"))
 
@@ -69,90 +46,31 @@ def complete(task_id):
 @tasks_bp.route("/<int:task_id>/cancel", methods=["POST"])
 @login_required
 def cancel(task_id):
-    task = get_manageable_task_or_404(task_id)
-    execute(
-        """
-        UPDATE scheduled_tasks
-        SET status = 'cancelled', updated_at = NOW()
-        WHERE id = %s
-        """,
-        (task.id,),
-    )
-    log_audit("scheduled_task_cancelled", f"Cancelled scheduled task {task.title}")
+    change_task_status(task_id, "cancelled")
     flash("Task cancelled.", "info")
     return redirect(url_for("tasks.index"))
 
 
 def get_visible_tasks(limit=None, status=None):
-    params = []
-    status_clause = ""
-    if status:
-        status_clause = "AND scheduled_tasks.status = %s"
-        params.append(status)
-
-    if current_user.is_admin:
-        visibility_clause = """
-          AND (
-                scheduled_tasks.created_by = %s
-             OR scheduled_tasks.scope IN ('admin', 'global')
-             OR scheduled_tasks.user_id = %s
-          )
-        """
-        params.extend([current_user.id, current_user.id])
-    else:
-        visibility_clause = """
-          AND (
-                scheduled_tasks.user_id = %s
-             OR (scheduled_tasks.scope IN ('admin', 'global') AND scheduled_tasks.status = 'upcoming')
-          )
-        """
-        params.append(current_user.id)
-
-    limit_clause = ""
-    if limit:
-        limit_clause = "LIMIT %s"
-        params.append(limit)
-
-    return ScheduledTask.from_rows(fetch_all(
-        f"""
-        SELECT scheduled_tasks.*,
-               COALESCE(creators.display_name, 'Deleted user') AS creator_name,
-               assignees.display_name AS assignee_name
-        FROM scheduled_tasks
-        LEFT JOIN users AS creators ON creators.id = scheduled_tasks.created_by
-        LEFT JOIN users AS assignees ON assignees.id = scheduled_tasks.user_id
-        WHERE 1 = 1
-          {status_clause}
-          {visibility_clause}
-        ORDER BY
-          scheduled_tasks.status = 'upcoming' DESC,
-          scheduled_tasks.due_at IS NULL ASC,
-          scheduled_tasks.due_at ASC,
-          scheduled_tasks.updated_at DESC
-        {limit_clause}
-        """,
-        tuple(params),
-    ))
+    return scheduled_task_repository.list_visible(
+        current_user.id,
+        current_user.is_admin,
+        status=status,
+        limit=limit,
+    )
 
 
 def get_manageable_task_or_404(task_id):
-    task = ScheduledTask.from_row(fetch_one(
-        """
-        SELECT *
-        FROM scheduled_tasks
-        WHERE id = %s
-        """,
-        (task_id,),
-    ))
-    if not task:
+    access = scheduled_task_repository.find_manageable(
+        task_id,
+        current_user.id,
+        current_user.is_admin,
+    )
+    if not access.task:
         abort(404)
-
-    if current_user.is_admin and (task.created_by == current_user.id or task.scope in {"admin", "global"}):
-        return task
-    if task.user_id == current_user.id and task.scope == "personal":
-        return task
-
-    abort(403)
+    if not access.can_manage:
+        abort(403)
+    return access.task
 
 
 def read_task_form():
@@ -171,14 +89,19 @@ def read_task_form():
     }
 
 
-def validate_task(task):
-    if not task["title"]:
-        return "Task title is required."
-    if task["task_type"] not in TASK_TYPES:
-        return "Choose a valid task type."
-    if task["scope"] not in TASK_SCOPES:
-        return "Choose a valid task scope."
-    return None
+def change_task_status(task_id, status):
+    try:
+        return scheduled_task_service.set_status(
+            task_id,
+            current_user.id,
+            current_user.is_admin,
+            status,
+            get_audit_context(),
+        )
+    except NotFoundError:
+        abort(404)
+    except PermissionDeniedError:
+        abort(403)
 
 
 def parse_due_at(raw_value):

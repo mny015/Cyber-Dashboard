@@ -88,6 +88,10 @@ class Database:
     def table(self, table_name):
         return QueryBuilder(self, table_name)
 
+    def using(self, cursor):
+        """Return a database facade bound to an existing transaction cursor."""
+        return CursorDatabase(cursor)
+
     def named_query(self, query_name, parameters=None, *, fetch="all"):
         """Execute a trusted complex SELECT loaded from app/database/queries."""
         sql = load_named_query(query_name)
@@ -119,6 +123,29 @@ class Database:
         with transaction() as cursor:
             cursor.executemany(sql, params)
             return WriteResult(cursor.rowcount, cursor.lastrowid or None)
+
+
+class CursorDatabase(Database):
+    """Execute builder and named-query operations in a caller-owned transaction."""
+
+    def __init__(self, cursor):
+        self._cursor = cursor
+
+    def _fetch_all(self, sql, params):
+        self._cursor.execute(sql, params)
+        return list(self._cursor.fetchall())
+
+    def _fetch_one(self, sql, params):
+        self._cursor.execute(sql, params)
+        return self._cursor.fetchone()
+
+    def _execute(self, sql, params):
+        self._cursor.execute(sql, params)
+        return WriteResult(self._cursor.rowcount, self._cursor.lastrowid or None)
+
+    def _executemany(self, sql, params):
+        self._cursor.executemany(sql, params)
+        return WriteResult(self._cursor.rowcount, self._cursor.lastrowid or None)
 
 
 class QueryBuilder:
@@ -489,6 +516,7 @@ db = Database()
 
 __all__ = [
     "Database",
+    "CursorDatabase",
     "InvalidIdentifierError",
     "InvalidOperatorError",
     "PaginationResult",

@@ -1,4 +1,3 @@
-from datetime import datetime
 from io import BytesIO
 
 import pyotp
@@ -8,18 +7,15 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from app.extensions import limiter
 from app.forms.auth import ChangePasswordForm, LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
-from app.models.user import User
-from utils.audit import log_audit
-from utils.db import execute, fetch_one
+from app.repositories import user_repository
+from app.services import auth_service
+from app.services.exceptions import ConflictError, ValidationError
+from utils.audit import get_audit_context, log_audit
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 login_rate_limit = limiter.limit("5 per minute")
 password_rate_limit = limiter.limit("5 per 15 minutes")
-
-LOCKOUT_FAILURE_LIMIT = 5
-LOCKOUT_MINUTES = 15
-
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 @login_rate_limit
@@ -28,30 +24,16 @@ def register():
     if form.validate_on_submit():
         email = form.email.data.lower().strip()
 
-        existing_user = User.from_row(fetch_one("SELECT * FROM users WHERE email = %s", (email,)))
-        if existing_user:
-            flash("Email already exists.", "danger")
+        try:
+            auth_service.register(
+                form.display_name.data,
+                email,
+                form.password.data,
+                get_audit_context(),
+            )
+        except ConflictError as exc:
+            flash(str(exc), "danger")
             return render_template("auth/register.html", form=form)
-
-        user = User(display_name=form.display_name.data.strip(), email=email)
-        user.set_password(form.password.data)
-
-        execute(
-            """
-            INSERT INTO users (email, password_hash, display_name, role, is_banned, mfa_secret, mfa_enabled, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
-            """,
-            (
-                user.email,
-                user.password_hash,
-                user.display_name,
-                user.role,
-                int(user.is_banned),
-                user.mfa_secret,
-                int(user.mfa_enabled),
-            ),
-        )
-        log_audit("register", f"New account registered for {email}", user=user)
 
         flash("Account created successfully. Please log in.", "success")
         return redirect(url_for("auth.login"))
@@ -66,31 +48,20 @@ def login():
     if form.validate_on_submit():
         email = form.email.data.lower().strip()
 
-        user = User.from_row(fetch_one("SELECT * FROM users WHERE email = %s", (email,)))
-
-        if user and is_account_locked(user):
-            log_audit("login_locked", f"Login blocked for {email}; locked until {user.locked_until}", user=user)
+        decision = auth_service.authenticate(
+            email, form.password.data, get_audit_context()
+        )
+        user = decision.user
+        if decision.status == "locked":
             flash("Too many failed login attempts. Try again later.", "danger")
             return render_template("auth/login.html", form=form)
-
-        if not user:
-            log_audit("login_failed", f"Failed login for unknown account {email}")
+        if decision.status == "invalid":
             flash("Invalid email or password.", "danger")
             return render_template("auth/login.html", form=form)
-
-        if not user.check_password(form.password.data):
-            record_failed_login(user, email)
-            flash("Invalid email or password.", "danger")
-            return render_template("auth/login.html", form=form)
-
-        if user.is_banned:
-            log_audit("login_blocked", f"Banned user tried to log in: {email}", user=user)
+        if decision.status == "banned":
             flash("This account is banned. Contact an administrator.", "danger")
             return render_template("auth/login.html", form=form)
-
-        reset_failed_logins(user)
-
-        if user.mfa_enabled:
+        if decision.status == "mfa_required":
             session["pending_mfa_user_id"] = user.id
             session.permanent = True
             return redirect(url_for("auth.verify_mfa"))
@@ -98,7 +69,7 @@ def login():
         login_user(user)
         session.permanent = True
         session["auth_version"] = user.auth_version
-        log_audit("login", "User logged in", user=user)
+        auth_service.record_login(user, get_audit_context(user))
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
 
@@ -112,14 +83,14 @@ def verify_mfa():
     if not user_id:
         return redirect(url_for("auth.login"))
 
-    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (user_id,)))
+    user = user_repository.find_by_id(user_id)
     if not user:
         return redirect(url_for("auth.login"))
     form = MfaTokenForm()
     if form.validate_on_submit():
-        totp = pyotp.TOTP(user.mfa_secret)
-        if not totp.verify(form.token.data.strip(), valid_window=1):
-            log_audit("mfa_failed", "Invalid MFA token", user=user)
+        if not auth_service.verify_mfa_token(
+            user, form.token.data, get_audit_context(user), audit_failure=True
+        ):
             flash("Invalid MFA code.", "danger")
             return render_template("auth/verify_mfa.html", form=form)
 
@@ -127,7 +98,7 @@ def verify_mfa():
         session.permanent = True
         login_user(user)
         session["auth_version"] = user.auth_version
-        log_audit("login", "User logged in with MFA", user=user)
+        auth_service.record_login(user, get_audit_context(user), used_mfa=True)
         flash("Logged in successfully.", "success")
         return redirect_after_login(user)
 
@@ -157,9 +128,7 @@ def setup_mfa():
             provisioning_uri=None,
         )
 
-    if not current_user.mfa_secret:
-        current_user.mfa_secret = pyotp.random_base32()
-        execute("UPDATE users SET mfa_secret = %s, updated_at = NOW() WHERE id = %s", (current_user.mfa_secret, current_user.id))
+    auth_service.ensure_mfa_secret(current_user)
 
     totp = pyotp.TOTP(current_user.mfa_secret)
     provisioning_uri = totp.provisioning_uri(
@@ -168,18 +137,18 @@ def setup_mfa():
     )
 
     if form.validate_on_submit():
-        if not totp.verify(form.token.data.strip(), valid_window=1):
-            flash("Invalid MFA code.", "danger")
+        try:
+            auth_service.enable_mfa(
+                current_user, form.token.data, get_audit_context()
+            )
+        except ValidationError as exc:
+            flash(str(exc), "danger")
             return render_template(
                 "auth/setup_mfa.html",
                 form=form,
                 password_form=password_form,
                 provisioning_uri=provisioning_uri,
             )
-
-        current_user.mfa_enabled = True
-        execute("UPDATE users SET mfa_enabled = 1, updated_at = NOW() WHERE id = %s", (current_user.id,))
-        log_audit("mfa_enabled", "User enabled MFA")
         flash("MFA enabled successfully.", "success")
         return redirect(url_for("dashboard.dashboard"))
 
@@ -222,26 +191,16 @@ def change_password():
                 flash(error, "danger")
         return redirect(url_for("auth.setup_mfa"))
 
-    user = User.from_row(fetch_one("SELECT * FROM users WHERE id = %s", (current_user.id,)))
-    if not user or not user.check_password(form.current_password.data):
-        log_audit("password_change_failed", "Current password verification failed")
-        flash("Current password is incorrect.", "danger")
+    try:
+        auth_service.change_password(
+            current_user.id,
+            form.current_password.data,
+            form.new_password.data,
+            get_audit_context(),
+        )
+    except ValidationError as exc:
+        flash(str(exc), "danger")
         return redirect(url_for("auth.setup_mfa"))
-
-    if user.check_password(form.new_password.data):
-        flash("Your new password must be different from your current password.", "danger")
-        return redirect(url_for("auth.setup_mfa"))
-
-    user.set_password(form.new_password.data)
-    execute(
-        """
-        UPDATE users
-        SET password_hash = %s, auth_version = auth_version + 1, updated_at = NOW()
-        WHERE id = %s
-        """,
-        (user.password_hash, current_user.id),
-    )
-    log_audit("password_changed", "User changed their own password")
     logout_user()
     session.clear()
     flash("Password changed. Please log in again on this device.", "success")
@@ -252,59 +211,3 @@ def redirect_after_login(user):
     if getattr(user, "is_admin", False):
         return redirect(url_for("dashboard.admin_dashboard"))
     return redirect(url_for("dashboard.user_dashboard"))
-
-
-def is_account_locked(user):
-    if not user.locked_until:
-        return False
-
-    locked_until = user.locked_until
-    if isinstance(locked_until, str):
-        try:
-            locked_until = datetime.fromisoformat(locked_until)
-        except ValueError:
-            return False
-
-    return locked_until > datetime.now()
-
-
-def record_failed_login(user, email):
-    next_failure_count = user.failed_login_count + 1
-    execute(
-        """
-        UPDATE users
-        SET failed_login_count = failed_login_count + 1,
-            last_failed_login_at = NOW(),
-            locked_until = CASE
-                WHEN failed_login_count + 1 >= %s THEN TIMESTAMPADD(MINUTE, %s, NOW())
-                ELSE locked_until
-            END,
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        (LOCKOUT_FAILURE_LIMIT, LOCKOUT_MINUTES, user.id),
-    )
-
-    if next_failure_count >= LOCKOUT_FAILURE_LIMIT:
-        log_audit(
-            "login_failed",
-            f"Failed login for {email}; account locked for {LOCKOUT_MINUTES} minutes after {next_failure_count} attempts",
-            user=user,
-        )
-        return
-
-    log_audit("login_failed", f"Failed login for {email}; failed attempts: {next_failure_count}", user=user)
-
-
-def reset_failed_logins(user):
-    execute(
-        """
-        UPDATE users
-        SET failed_login_count = 0,
-            last_failed_login_at = NULL,
-            locked_until = NULL,
-            updated_at = NOW()
-        WHERE id = %s
-        """,
-        (user.id,),
-    )

@@ -6,8 +6,9 @@ from app.models import Note
 from app.utils.database import db
 
 
-def find_owned(note_id, owner_id):
-    row = db.named_query(
+def find_owned(note_id, owner_id, database=None):
+    database = database or db
+    row = database.named_query(
         "owned_note",
         {"note_id": int(note_id), "owner_id": int(owner_id)},
         fetch="one",
@@ -40,9 +41,10 @@ def stats_for_user(owner_id):
     ) or {"total_notes": 0, "last_updated": None}
 
 
-def create(note):
+def create(note, database=None):
+    database = database or db
     now = datetime.now()
-    result = db.table(Note.TABLE_NAME).insert(
+    result = database.table(Note.TABLE_NAME).insert(
         {
             "title": note.title,
             "body": note.body,
@@ -57,9 +59,10 @@ def create(note):
     return note
 
 
-def update_owned(note, owner_id):
+def update_owned(note, owner_id, database=None):
+    database = database or db
     return (
-        db.table(Note.TABLE_NAME)
+        database.table(Note.TABLE_NAME)
         .where("id", "=", int(note.id))
         .where("owner_id", "=", int(owner_id))
         .where("is_deleted", "=", False)
@@ -74,9 +77,10 @@ def update_owned(note, owner_id):
     )
 
 
-def delete_owned(note_id, owner_id):
+def delete_owned(note_id, owner_id, database=None):
+    database = database or db
     return (
-        db.table(Note.TABLE_NAME)
+        database.table(Note.TABLE_NAME)
         .where("id", "=", int(note_id))
         .where("owner_id", "=", int(owner_id))
         .where("is_deleted", "=", False)

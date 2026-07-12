@@ -14,6 +14,7 @@ from app.utils.database.exceptions import (
 )
 from app.utils.database.named_queries import clear_named_query_cache, load_named_query
 from app.utils.database.query_builder import (
+    CursorDatabase,
     Database,
     InvalidIdentifierError,
     InvalidOperatorError,
@@ -33,6 +34,7 @@ __all__ = [
     "DatabaseQueryError",
     "DatabaseTransactionError",
     "Database",
+    "CursorDatabase",
     "InvalidIdentifierError",
     "InvalidNamedQueryNameError",
     "InvalidOperatorError",

@@ -15,9 +15,10 @@ def find_owned(topic_id, owner_id):
     return Topic.from_row(row)
 
 
-def exists_owned(topic_id, owner_id):
+def exists_owned(topic_id, owner_id, database=None):
+    database = database or db
     return (
-        db.table(Topic.TABLE_NAME)
+        database.table(Topic.TABLE_NAME)
         .where("id", "=", int(topic_id))
         .where("owner_id", "=", int(owner_id))
         .where("is_deleted", "=", False)

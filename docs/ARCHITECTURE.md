@@ -42,7 +42,7 @@ Services contain business workflows that coordinate multiple repositories or req
 
 ### Repositories
 
-Repositories perform feature-specific persistence through parameterized SQL. They return plain rows or plain Python models and do not read Flask request or session state.
+Repositories perform feature-specific persistence through the fluent query builder, named SQL reports, and explicit transaction blocks. They enforce ownership in lookup and mutation predicates, return plain models or clear aggregate dictionaries, and never read Flask request/session state or produce HTTP responses. Route and controller modules contain no runtime SQL.
 
 ### Models
 
@@ -77,7 +77,7 @@ with transaction() as cursor:
 `connection()` is for reads and always returns its connection to the pool.
 `transaction()` commits on success and rolls back on failure. Driver exceptions
 are converted to safe database-layer exceptions. Existing `utils/db.py` helpers
-remain temporarily for behavior-compatible, feature-by-feature migration.
+remain temporarily for setup scripts, migration compatibility, and database-backed tests. Application routes use repositories.
 
 ### SQL Migrations
 

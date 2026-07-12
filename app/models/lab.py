@@ -40,6 +40,8 @@ class LabReference(RowModel):
     owner_role: str | None = None
     is_completed: bool = False
     completion_count: int | None = None
+    title: str | None = None
+    detail: str | None = None
 
     def __post_init__(self):
         self.is_deleted = as_bool(self.is_deleted)

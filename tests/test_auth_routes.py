@@ -216,7 +216,7 @@ def test_logout_uses_post_request(monkeypatch, fake_auth_client):
         "app.repositories.user_repository.find_by_id",
         lambda user_id: User.from_row(make_user_row()),
     )
-    monkeypatch.setattr("app.routes.auth.log_audit", lambda *args, **kwargs: None)
+    monkeypatch.setattr("app.controllers.auth_controller.log_audit", lambda *args, **kwargs: None)
 
     with fake_auth_client.session_transaction() as session:
         session["_user_id"] = "42"

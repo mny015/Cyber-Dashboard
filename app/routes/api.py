@@ -1,8 +1,9 @@
-from flask import Blueprint, jsonify
+"""API URL mappings."""
+
+from flask import Blueprint
+
+from app.controllers import api_controller
+
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
-
-
-@api_bp.route("/ping")
-def ping():
-    return jsonify({"status": "ok", "message": "Cyber Dashboard API is online"})
+api_bp.add_url_rule("/ping", endpoint="ping", view_func=api_controller.ping, methods=["GET"])

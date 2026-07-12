@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app.utils.database import (
@@ -112,3 +114,12 @@ def test_named_query_rejects_unknown_fetch_modes():
         )
 
     assert database.calls == []
+
+
+def test_every_runtime_sql_file_loads_by_its_validated_name():
+    query_directory = Path(__file__).parents[1] / "app" / "database" / "queries"
+
+    for query_path in query_directory.glob("*.sql"):
+        query = load_named_query(query_path.stem)
+        assert query
+        assert query_path.name not in query

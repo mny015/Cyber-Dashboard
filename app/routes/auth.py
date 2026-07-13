@@ -3,7 +3,6 @@
 from flask import Blueprint
 
 from app.controllers import auth_controller
-from app.extensions import limiter
 
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
@@ -37,5 +36,3 @@ auth_bp.add_url_rule(
     view_func=auth_controller.change_password,
     methods=["POST"],
 )
-
-__all__ = ["auth_bp", "limiter"]

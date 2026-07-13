@@ -1,6 +1,7 @@
 """Architecture and Flask-client tests for the HTTP controller layer."""
 
 import ast
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -14,6 +15,22 @@ from app.routes import register_blueprints
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROUTES_DIR = PROJECT_ROOT / "app" / "routes"
 CONTROLLERS_DIR = PROJECT_ROOT / "app" / "controllers"
+EXPECTED_BLUEPRINTS = {
+    "admin",
+    "api",
+    "auth",
+    "backup",
+    "categories",
+    "contacts",
+    "dashboard",
+    "labs",
+    "notes",
+    "notifications",
+    "profile",
+    "security",
+    "tasks",
+    "topics",
+}
 
 
 @pytest.fixture()
@@ -72,6 +89,23 @@ def test_every_application_route_maps_directly_to_a_controller(app):
         assert view.__module__.startswith("app.controllers."), rule.endpoint
 
 
+def test_blueprints_are_registered_centrally(app):
+    assert set(app.blueprints) == EXPECTED_BLUEPRINTS
+
+
+def test_route_map_has_no_duplicate_endpoints_or_method_rules(app):
+    rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint != "static"]
+    endpoint_counts = Counter(rule.endpoint for rule in rules)
+    method_rule_counts = Counter(
+        (rule.rule, method)
+        for rule in rules
+        for method in rule.methods - {"HEAD", "OPTIONS"}
+    )
+
+    assert all(count == 1 for count in endpoint_counts.values())
+    assert all(count == 1 for count in method_rule_counts.values())
+
+
 def test_route_modules_only_define_blueprints_and_url_mappings():
     for path in ROUTES_DIR.glob("*.py"):
         if path.name == "__init__.py":
@@ -81,6 +115,31 @@ def test_route_modules_only_define_blueprints_and_url_mappings():
         source = path.read_text(encoding="utf-8")
         assert ".route(" not in source
         assert ".add_url_rule(" in source
+        assert "app.repositories" not in source
+        assert "app.services" not in source
+        assert "app.extensions" not in source
+
+        imports = [node for node in tree.body if isinstance(node, ast.ImportFrom)]
+        flask_imports = {
+            alias.name
+            for node in imports
+            if node.module == "flask"
+            for alias in node.names
+        }
+        app_imports = {
+            node.module
+            for node in imports
+            if node.module and node.module.startswith("app.")
+        }
+        assert flask_imports == {"Blueprint"}
+        assert app_imports == {"app.controllers"}
+
+        calls = [node.func for node in ast.walk(tree) if isinstance(node, ast.Call)]
+        assert all(
+            (isinstance(call, ast.Name) and call.id == "Blueprint")
+            or (isinstance(call, ast.Attribute) and call.attr == "add_url_rule")
+            for call in calls
+        )
 
 
 def test_controller_modules_have_no_blueprints_sql_or_database_connections():

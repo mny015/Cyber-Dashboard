@@ -1,0 +1,6 @@
+{% macro action_form(action, label, form_class="inline-form", button_class="", confirm=None) -%}
+<form class="{{ form_class }}" method="post" action="{{ action }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button{% if button_class %} class="{{ button_class }}"{% endif %} type="submit">{{ label }}</button>
+</form>
+{%- endmacro %}

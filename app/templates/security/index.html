@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Security Findings | Cyber Dashboard{% endblock %}
 
@@ -64,10 +65,7 @@
                         <div class="finding-actions">
                             <span class="status-badge">{{ finding.status|title }}</span>
                             <a class="text-link" href="{{ url_for('security.edit', finding_id=finding.id) }}">Edit</a>
-                            <form class="inline-form" method="post" action="{{ url_for('security.delete', finding_id=finding.id) }}" data-confirm="Delete this finding?">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button class="link-danger" type="submit">Delete</button>
-                            </form>
+                            {{ action_form(url_for('security.delete', finding_id=finding.id), "Delete", button_class="link-danger", confirm="Delete this finding?") }}
                         </div>
                     </article>
                 {% endfor %}
@@ -89,22 +87,16 @@
             </div>
         </div>
         <form method="post" action="{{ url_for('security.suggest_vulnerability') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label for="suggest_name">Name</label>
-            <input id="suggest_name" name="name" required>
-            <label for="suggest_category">Category</label>
-            <input id="suggest_category" name="category" placeholder="Example: Cloud, Mobile, Web">
-            <label for="suggest_severity">Default severity</label>
-            <select id="suggest_severity" name="default_severity">
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-                <option value="low">Low</option>
-                <option value="info">Info</option>
-            </select>
-            <label for="suggest_description">Notes</label>
-            <textarea id="suggest_description" name="description" placeholder="Why should this be in the shared catalog?"></textarea>
-            <button type="submit">Submit for review</button>
+            {{ suggestion_form.hidden_tag() }}
+            {{ suggestion_form.name.label(for="suggest_name") }}
+            {{ suggestion_form.name(id="suggest_name", required=true) }}
+            {{ suggestion_form.category.label(for="suggest_category") }}
+            {{ suggestion_form.category(id="suggest_category", placeholder="Example: Cloud, Mobile, Web") }}
+            {{ suggestion_form.default_severity.label(for="suggest_severity") }}
+            {{ suggestion_form.default_severity(id="suggest_severity") }}
+            {{ suggestion_form.description.label(for="suggest_description") }}
+            {{ suggestion_form.description(id="suggest_description", placeholder="Why should this be in the shared catalog?") }}
+            {{ suggestion_form.submit() }}
         </form>
         {% if pending_suggestions %}
             <h3>Pending suggestions</h3>

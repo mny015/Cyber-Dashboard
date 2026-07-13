@@ -66,7 +66,7 @@ def test_route_map_matches_frozen_contract(app):
         for route in expected
     ]
 
-    assert len(expected) == 70
+    assert len(expected) == 71
     assert {route["blueprint"] for route in expected} == EXPECTED_BLUEPRINTS
     assert actual == expected_route_map
 

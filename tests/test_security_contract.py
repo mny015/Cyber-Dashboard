@@ -12,21 +12,21 @@ def test_anonymous_users_cannot_access_private_dashboards(client):
 
 
 def test_normal_user_cannot_access_administrator_routes(authenticated_client):
-    admin_paths = (
-        "/admin/dashboard",
-        "/admin/users",
-        "/admin/topics",
-        "/admin/categories",
-        "/admin/note-requests",
-        "/admin/note-requests/1/note",
-        "/admin/audit-logs",
-        "/security/admin/vulnerabilities",
-        "/backup/admin.json",
-        "/backup/admin.zip",
+    admin_routes = (
+        ("GET", "/admin/dashboard"),
+        ("GET", "/admin/users"),
+        ("GET", "/admin/topics"),
+        ("GET", "/admin/categories"),
+        ("GET", "/admin/note-requests"),
+        ("GET", "/admin/note-requests/1/note"),
+        ("GET", "/admin/audit-logs"),
+        ("GET", "/security/admin/vulnerabilities"),
+        ("POST", "/backup/admin.json"),
+        ("POST", "/backup/admin.zip"),
     )
 
-    for path in admin_paths:
-        assert authenticated_client.get(path).status_code == 403
+    for method, path in admin_routes:
+        assert authenticated_client.open(path, method=method).status_code == 403
 
 
 def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, login_as):

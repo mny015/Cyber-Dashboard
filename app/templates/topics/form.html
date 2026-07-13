@@ -15,45 +15,32 @@
 
 <section class="card form-card">
     <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ form.hidden_tag() }}
 
-        <label for="title">Title</label>
-        <input id="title" type="text" name="title" value="{{ topic.title if topic else '' }}" required>
+        {{ form.title.label }}
+        {{ form.title(required=true) }}
 
-        <label for="category_id">Category</label>
-        <select id="category_id" name="category_id">
-            <option value="">No category</option>
-            {% for category in categories %}
-                <option value="{{ category.id }}" {% if topic and topic.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
-            {% endfor %}
-        </select>
+        {{ form.category_id.label }}
+        {{ form.category_id() }}
 
         <div class="form-grid">
             <div>
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    {% for status in ["planned", "learning", "practicing", "complete"] %}
-                        <option value="{{ status }}" {% if topic and topic.status == status %}selected{% endif %}>{{ status|title }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.status.label }}
+                {{ form.status() }}
             </div>
             <div>
-                <label for="priority">Priority</label>
-                <select id="priority" name="priority">
-                    {% for priority in ["low", "medium", "high"] %}
-                        <option value="{{ priority }}" {% if topic and topic.priority == priority %}selected{% endif %}>{{ priority|title }}</option>
-                    {% endfor %}
-                </select>
+                {{ form.priority.label }}
+                {{ form.priority() }}
             </div>
         </div>
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description">{{ topic.description if topic else '' }}</textarea>
+        {{ form.description.label }}
+        {{ form.description() }}
 
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes">{{ topic.notes if topic else '' }}</textarea>
+        {{ form.notes.label }}
+        {{ form.notes() }}
 
-        <button type="submit">Save topic</button>
+        {{ form.submit() }}
     </form>
 </section>
 {% endblock %}

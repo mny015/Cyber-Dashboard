@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Notifications - Cyber Dashboard{% endblock %}
 
@@ -27,23 +28,17 @@
                 {% if item.status == "pending" %}
                     {% set available_notes = notes_by_topic.get(item.topic_id, []) %}
                     {% if available_notes %}
+                        {% set approval_form = approval_forms[item.id] %}
                         <form method="post" action="{{ url_for('notifications.approve', request_id=item.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <label for="note_id_{{ item.id }}">Choose note to share</label>
-                            <select id="note_id_{{ item.id }}" name="note_id" required>
-                                {% for note in available_notes %}
-                                    <option value="{{ note.id }}">{{ note.title }}</option>
-                                {% endfor %}
-                            </select>
-                            <button type="submit">Approve selected note</button>
+                            {{ approval_form.hidden_tag() }}
+                            {{ approval_form.note_id.label(for="note_id_" ~ item.id) }}
+                            {{ approval_form.note_id(id="note_id_" ~ item.id, required=true) }}
+                            {{ approval_form.submit() }}
                         </form>
                     {% else %}
                         <p>No notes exist for this topic yet.</p>
                     {% endif %}
-                    <form class="inline-form" method="post" action="{{ url_for('notifications.deny', request_id=item.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button class="danger" type="submit">Deny</button>
-                    </form>
+                    {{ action_form(url_for('notifications.deny', request_id=item.id), "Deny", button_class="danger") }}
                 {% elif item.status == "approved" %}
                     <p class="success-inline">You approved one specific note for this request.</p>
                 {% else %}

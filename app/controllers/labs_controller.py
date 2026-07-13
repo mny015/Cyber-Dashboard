@@ -1,14 +1,13 @@
 """HTTP handlers for lab references and completion state."""
 
-from urllib.parse import urlparse
-
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.controllers.form_helpers import validate_action
+from app.forms.labs import LabForm
 from app.models import LabReference
 from app.repositories import lab_repository, topic_repository
 from utils.audit import log_audit
-from utils.helpers import clean_text
 
 
 @login_required
@@ -24,15 +23,11 @@ def index():
 
 @login_required
 def create():
-    if request.method != "POST":
-        return _render_form(None)
-    values = _read_form()
-    error = _validation_error(values)
-    if error:
-        flash(error, "danger")
-        return _render_form(values)
-    lab = lab_repository.create(_lab_model(values))
-    log_audit("lab_created", f"Created lab {values['name']}")
+    form, topics, platforms = _lab_form()
+    if not form.validate_on_submit():
+        return _render_form(None, form, topics, platforms)
+    lab = lab_repository.create(_lab_model(form))
+    log_audit("lab_created", f"Created lab {form.name.data}")
     flash("Lab added successfully.", "success")
     return redirect(url_for("labs.detail", lab_id=lab.id))
 
@@ -45,22 +40,19 @@ def detail(lab_id):
 @login_required
 def edit(lab_id):
     existing = _owned_lab_or_404(lab_id)
-    if request.method != "POST":
-        return _render_form(existing)
-    values = _read_form()
-    values["id"] = lab_id
-    error = _validation_error(values)
-    if error:
-        flash(error, "danger")
-        return _render_form(values)
-    lab_repository.update_owned(_lab_model(values), current_user.id)
-    log_audit("lab_updated", f"Updated lab {values['name']}")
+    form, topics, platforms = _lab_form(existing)
+    if not form.validate_on_submit():
+        return _render_form(existing, form, topics, platforms)
+    lab_repository.update_owned(_lab_model(form, lab_id=lab_id), current_user.id)
+    log_audit("lab_updated", f"Updated lab {form.name.data}")
     flash("Lab updated successfully.", "success")
     return redirect(url_for("labs.detail", lab_id=lab_id))
 
 
 @login_required
 def delete(lab_id):
+    if not validate_action():
+        return redirect(url_for("labs.index"))
     lab = _owned_lab_or_404(lab_id)
     lab_repository.delete_owned(lab_id, current_user.id)
     log_audit("lab_deleted", f"Deleted lab {lab.name}")
@@ -70,6 +62,8 @@ def delete(lab_id):
 
 @login_required
 def complete(lab_id):
+    if not validate_action():
+        return redirect(url_for("labs.detail", lab_id=lab_id))
     _visible_lab_or_404(lab_id)
     lab_repository.mark_completed_if_visible(lab_id, current_user.id)
     log_audit("lab_completed", f"Completed lab {lab_id}")
@@ -79,6 +73,8 @@ def complete(lab_id):
 
 @login_required
 def incomplete(lab_id):
+    if not validate_action():
+        return redirect(url_for("labs.detail", lab_id=lab_id))
     _visible_lab_or_404(lab_id)
     lab_repository.mark_incomplete(lab_id, current_user.id)
     flash("Lab marked incomplete.", "info")
@@ -99,52 +95,40 @@ def _owned_lab_or_404(lab_id):
     return lab
 
 
-def _render_form(lab):
+def _render_form(lab, form, topics, platforms):
     return render_template(
         "labs/form.html",
         lab=lab,
-        topics=topic_repository.list_active(current_user.id),
-        platforms=lab_repository.list_platforms(),
+        form=form,
+        topics=topics,
+        platforms=platforms,
     )
 
 
-def _read_form():
-    visibility = clean_text(request.form.get("visibility"))
-    if not current_user.is_admin or visibility not in {"personal", "public"}:
-        visibility = "personal"
-    return {
-        "name": clean_text(request.form.get("name")),
-        "platform_id": request.form.get("platform_id", type=int),
-        "url": clean_text(request.form.get("url")),
-        "notes": clean_text(request.form.get("notes")),
-        "topic_id": request.form.get("topic_id", type=int) or None,
-        "visibility": visibility,
-    }
+def _lab_form(lab=None):
+    topics = topic_repository.list_active(current_user.id)
+    platforms = lab_repository.list_platforms()
+    form = LabForm(obj=lab)
+    form.platform_id.choices = [(platform.id, platform.name) for platform in platforms]
+    form.topic_id.choices = [(None, "No topic")] + [
+        (topic.id, topic.title) for topic in topics
+    ]
+    form.visibility.choices = [("personal", "Personal")]
+    if current_user.is_admin:
+        form.visibility.choices.append(("public", "Public"))
+    if request.method == "GET" and not form.visibility.data:
+        form.visibility.data = "personal"
+    return form, topics, platforms
 
 
-def _validation_error(values):
-    if not values["name"]:
-        return "Lab name is required."
-    if not lab_repository.platform_exists(values["platform_id"]):
-        return "Choose a valid lab platform."
-    parsed_url = urlparse(values["url"])
-    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
-        return "Enter a valid HTTP or HTTPS lab URL."
-    if values["topic_id"] and not topic_repository.exists_owned(
-        values["topic_id"], current_user.id
-    ):
-        return "Choose one of your own topics."
-    return None
-
-
-def _lab_model(values):
+def _lab_model(form, lab_id=None):
     return LabReference(
-        id=values.get("id"),
-        name=values["name"],
-        platform_id=values["platform_id"],
-        url=values["url"],
-        notes=values["notes"],
-        topic_id=values["topic_id"],
+        id=lab_id,
+        name=form.name.data,
+        platform_id=form.platform_id.data,
+        url=form.url.data,
+        notes=form.notes.data or "",
+        topic_id=form.topic_id.data,
         owner_id=current_user.id,
-        visibility=values["visibility"],
+        visibility=form.visibility.data,
     )

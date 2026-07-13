@@ -1,14 +1,19 @@
 """HTTP handlers for findings and vulnerability catalog review."""
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
+from app.controllers.form_helpers import flash_form_errors, validate_action
+from app.forms.security import (
+    AdminVulnerabilityForm,
+    SecurityFindingForm,
+    VulnerabilitySuggestionForm,
+)
 from app.repositories import security_repository
 from app.services import security_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
 from utils.audit import get_audit_context
 from utils.decorators import admin_required
-from utils.helpers import clean_text
 from utils.security_catalog import ACTIVITY_TYPE_CHOICES, FINDING_STATUS_CHOICES, SEVERITY_CHOICES
 
 
@@ -19,26 +24,31 @@ def index():
         metrics=security_repository.metrics_for_user(current_user.id),
         findings=security_repository.list_for_user(current_user.id),
         pending_suggestions=security_repository.list_pending_for_creator(current_user.id),
+        suggestion_form=VulnerabilitySuggestionForm(),
     )
 
 
 @login_required
 def create():
-    if request.method == "POST":
-        return _save_finding()
-    return _render_finding_form({})
+    form, vulnerabilities, threats = _finding_form()
+    if form.validate_on_submit():
+        return _save_finding(form)
+    return _render_finding_form(None, form, vulnerabilities, threats)
 
 
 @login_required
 def edit(finding_id):
     finding = _finding_or_404(finding_id)
-    if request.method == "POST":
-        return _save_finding(finding_id)
-    return _render_finding_form(finding)
+    form, vulnerabilities, threats = _finding_form(finding)
+    if form.validate_on_submit():
+        return _save_finding(form, finding_id)
+    return _render_finding_form(finding, form, vulnerabilities, threats)
 
 
 @login_required
 def delete(finding_id):
+    if not validate_action():
+        return redirect(url_for("security.index"))
     try:
         security_service.delete_finding(finding_id, current_user.id, get_audit_context())
     except NotFoundError:
@@ -49,13 +59,17 @@ def delete(finding_id):
 
 @login_required
 def suggest_vulnerability():
+    form = VulnerabilitySuggestionForm()
+    if not form.validate_on_submit():
+        flash_form_errors(form)
+        return redirect(url_for("security.index", _anchor="suggest-vulnerability"))
     try:
         security_service.suggest_vulnerability(
             current_user.id,
-            clean_text(request.form.get("name")),
-            clean_text(request.form.get("category")) or "User submitted",
-            clean_text(request.form.get("default_severity")) or "medium",
-            clean_text(request.form.get("description")),
+            form.name.data,
+            form.category.data,
+            form.default_severity.data,
+            form.description.data or "",
             get_audit_context(),
         )
     except ValidationError as exc:
@@ -68,28 +82,24 @@ def suggest_vulnerability():
 @login_required
 @admin_required
 def admin_vulnerabilities():
-    if request.method != "POST":
-        return render_template(
-            "security/admin_vulnerabilities.html",
-            pending=security_repository.list_pending_vulnerabilities(),
-            vulnerabilities=security_repository.list_all_vulnerabilities(),
-            severities=SEVERITY_CHOICES,
-        )
+    form = AdminVulnerabilityForm()
+    if not form.validate_on_submit():
+        return _render_admin_vulnerabilities(form)
     try:
         security_service.save_admin_vulnerability(
             current_user.id,
             {
-                "code": clean_text(request.form.get("code")).upper(),
-                "name": clean_text(request.form.get("name")),
-                "category": clean_text(request.form.get("category")) or "Admin catalog",
-                "default_severity": clean_text(request.form.get("default_severity")) or "medium",
-                "description": clean_text(request.form.get("description")),
+                "code": form.code.data.upper(),
+                "name": form.name.data,
+                "category": form.category.data,
+                "default_severity": form.default_severity.data,
+                "description": form.description.data or "",
             },
             get_audit_context(),
         )
     except ValidationError as exc:
         flash(str(exc), "danger")
-        return redirect(url_for("security.admin_vulnerabilities"))
+        return _render_admin_vulnerabilities(form)
     flash("Vulnerability catalog entry saved.", "success")
     return redirect(url_for("security.admin_vulnerabilities"))
 
@@ -106,17 +116,17 @@ def reject_vulnerability(vulnerability_id):
     return _review_vulnerability(vulnerability_id, "rejected")
 
 
-def _save_finding(finding_id=None):
+def _save_finding(form, finding_id=None):
     values = {
-        "vulnerability_id": request.form.get("vulnerability_id", type=int) or None,
-        "threat_id": request.form.get("threat_id", type=int) or None,
-        "activity_type": clean_text(request.form.get("activity_type")),
-        "title": clean_text(request.form.get("title")),
-        "target": clean_text(request.form.get("target")),
-        "severity": clean_text(request.form.get("severity")),
-        "status": clean_text(request.form.get("status")),
-        "evidence": clean_text(request.form.get("evidence")),
-        "notes": clean_text(request.form.get("notes")),
+        "vulnerability_id": form.vulnerability_id.data,
+        "threat_id": form.threat_id.data,
+        "activity_type": form.activity_type.data,
+        "title": form.title.data,
+        "target": form.target.data or "",
+        "severity": form.severity.data,
+        "status": form.status.data,
+        "evidence": form.evidence.data or "",
+        "notes": form.notes.data or "",
     }
     try:
         security_service.save_finding(
@@ -124,7 +134,10 @@ def _save_finding(finding_id=None):
         )
     except ValidationError as exc:
         flash(str(exc), "danger")
-        return redirect(request.referrer or url_for("security.create"))
+        finding = _finding_or_404(finding_id) if finding_id else None
+        vulnerabilities = security_repository.list_approved_vulnerabilities()
+        threats = security_repository.list_active_threats()
+        return _render_finding_form(finding, form, vulnerabilities, threats)
     except PermissionDeniedError:
         abort(403)
     except NotFoundError:
@@ -143,12 +156,28 @@ def _finding_or_404(finding_id):
     return finding
 
 
-def _render_finding_form(finding):
+def _finding_form(finding=None):
+    vulnerabilities = security_repository.list_approved_vulnerabilities()
+    threats = security_repository.list_active_threats()
+    form = SecurityFindingForm(obj=finding)
+    form.vulnerability_id.choices = [(None, "Not linked")] + [
+        (item.id, f"{item.code} - {item.name} - {item.default_severity.title()}")
+        for item in vulnerabilities
+    ]
+    form.threat_id.choices = [(None, "Not linked")] + [
+        (item.id, f"{item.code} - {item.name} - {item.default_level.title()}")
+        for item in threats
+    ]
+    return form, vulnerabilities, threats
+
+
+def _render_finding_form(finding, form, vulnerabilities, threats):
     return render_template(
         "security/form.html",
         finding=finding,
-        vulnerabilities=security_repository.list_approved_vulnerabilities(),
-        threats=security_repository.list_active_threats(),
+        form=form,
+        vulnerabilities=vulnerabilities,
+        threats=threats,
         activity_types=ACTIVITY_TYPE_CHOICES,
         severities=SEVERITY_CHOICES,
         statuses=FINDING_STATUS_CHOICES,
@@ -156,6 +185,8 @@ def _render_finding_form(finding):
 
 
 def _review_vulnerability(vulnerability_id, status):
+    if not validate_action():
+        return redirect(url_for("security.admin_vulnerabilities"))
     try:
         security_service.review_vulnerability(
             vulnerability_id, current_user.id, status, get_audit_context()
@@ -170,3 +201,13 @@ def _review_vulnerability(vulnerability_id, status):
         )
         flash(message, "success" if status == "approved" else "info")
     return redirect(url_for("security.admin_vulnerabilities"))
+
+
+def _render_admin_vulnerabilities(form):
+    return render_template(
+        "security/admin_vulnerabilities.html",
+        pending=security_repository.list_pending_vulnerabilities(),
+        vulnerabilities=security_repository.list_all_vulnerabilities(),
+        severities=SEVERITY_CHOICES,
+        form=form,
+    )

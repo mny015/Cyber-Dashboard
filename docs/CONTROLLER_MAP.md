@@ -1,6 +1,6 @@
 # Controller Map
 
-All 70 application routes map directly to these plain controller functions. Route modules contain only Blueprint setup and `add_url_rule()` declarations. Authentication and administrator decorators are applied to the controller functions.
+All 71 application routes map directly to these plain controller functions. Route modules contain only Blueprint setup and `add_url_rule()` declarations. Authentication and administrator decorators are applied to the controller functions.
 
 ## Dashboard Controller
 
@@ -45,10 +45,11 @@ All 70 application routes map directly to these plain controller functions. Rout
 | Function | Calls | Template or response |
 |---|---|---|
 | `index` | None | `backup/index.html` |
-| `personal_json` | `export_service.personal_export`, `json_bytes` | JSON download |
-| `personal_csv` | `export_service.personal_export`, `csv_zip_bytes` | ZIP download |
-| `admin_json` | `export_service.admin_export`, `json_bytes` | JSON download |
-| `admin_csv` | `export_service.admin_export`, `csv_zip_bytes` | ZIP download |
+| `personal_json` | `ActionForm`, export audit, ticket creation | Redirects to `backup.download` |
+| `personal_csv` | `ActionForm`, export audit, ticket creation | Redirects to `backup.download` |
+| `admin_json` | `ActionForm`, export audit, ticket creation | Redirects to `backup.download` |
+| `admin_csv` | `ActionForm`, export audit, ticket creation | Redirects to `backup.download` |
+| `download` | Short-lived ticket validation, export service | JSON or ZIP download |
 
 ## API Controller
 

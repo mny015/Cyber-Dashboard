@@ -7,21 +7,21 @@
 <h1>{{ "Edit" if editing else "New" }} Contact</h1>
 
 <form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ form.hidden_tag() }}
 
-    <label for="name">Name</label>
-    <input id="name" type="text" name="name" value="{{ contact.name if contact else '' }}" required>
+    {{ form.name.label }}
+    {{ form.name(required=true) }}
 
-    <label for="email">Email</label>
-    <input id="email" type="email" name="email" value="{{ contact.email if contact else '' }}" required>
+    {{ form.email.label }}
+    {{ form.email(required=true) }}
 
-    <label for="phone">Phone</label>
-    <input id="phone" type="text" name="phone" value="{{ contact.phone if contact else '' }}" required>
+    {{ form.phone.label }}
+    {{ form.phone(required=true) }}
 
-    <label for="notes">Notes</label>
-    <textarea id="notes" name="notes">{{ contact.notes if contact else '' }}</textarea>
+    {{ form.notes.label }}
+    {{ form.notes() }}
 
-    <button type="submit">Save contact</button>
+    {{ form.submit() }}
 </form>
 
 <a href="{{ url_for('contacts.index') }}">Back to contacts</a>

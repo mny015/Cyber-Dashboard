@@ -15,8 +15,14 @@
         <h2>Personal Data</h2>
         <p>Your account details, categories, topics, notes, contacts, labs, completions, and note-access requests.</p>
         <div class="actions">
-            <a class="button" href="{{ url_for('backup.personal_json') }}">Download JSON</a>
-            <a class="button" href="{{ url_for('backup.personal_csv') }}">Download CSV ZIP</a>
+            <form class="inline-form" method="post" action="{{ url_for('backup.personal_json') }}">
+                {{ action_form.hidden_tag() }}
+                <button type="submit">Download JSON</button>
+            </form>
+            <form class="inline-form" method="post" action="{{ url_for('backup.personal_csv') }}">
+                {{ action_form.hidden_tag() }}
+                <button type="submit">Download CSV ZIP</button>
+            </form>
         </div>
     </section>
 
@@ -25,8 +31,14 @@
         <h2>Admin Data</h2>
         <p>System users, topic and category summaries, shared labs, audit events, and notes with approved access.</p>
         <div class="actions">
-            <a class="button" href="{{ url_for('backup.admin_json') }}">Download JSON</a>
-            <a class="button" href="{{ url_for('backup.admin_csv') }}">Download CSV ZIP</a>
+            <form class="inline-form" method="post" action="{{ url_for('backup.admin_json') }}">
+                {{ action_form.hidden_tag() }}
+                <button type="submit">Download JSON</button>
+            </form>
+            <form class="inline-form" method="post" action="{{ url_for('backup.admin_csv') }}">
+                {{ action_form.hidden_tag() }}
+                <button type="submit">Download CSV ZIP</button>
+            </form>
         </div>
     </section>
     {% endif %}

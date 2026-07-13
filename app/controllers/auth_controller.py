@@ -4,10 +4,12 @@ from io import BytesIO
 
 import pyotp
 import qrcode
-from flask import abort, flash, redirect, render_template, send_file, session, url_for
+from flask import abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.extensions import limiter
+from app.controllers.form_helpers import validate_action
+from app.forms.common import ActionForm
 from app.forms.auth import ChangePasswordForm, LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
 from app.repositories import user_repository
 from app.services import auth_service
@@ -87,6 +89,8 @@ def verify_mfa():
 
 @login_required
 def logout():
+    if not validate_action():
+        return redirect(url_for("dashboard.dashboard"))
     log_audit("logout", "User logged out")
     logout_user()
     session.clear()
@@ -97,16 +101,30 @@ def logout():
 @login_required
 def setup_mfa():
     form = MfaSetupForm()
+    start_form = ActionForm()
     password_form = ChangePasswordForm()
     if current_user.mfa_enabled:
         return render_template(
             "auth/setup_mfa.html",
             form=form,
+            start_form=start_form,
             password_form=password_form,
             provisioning_uri=None,
         )
 
-    auth_service.ensure_mfa_secret(current_user)
+    if not current_user.mfa_secret:
+        if request.method == "POST" and start_form.validate_on_submit():
+            auth_service.ensure_mfa_secret(current_user)
+            flash("MFA setup started. Scan the QR code to continue.", "success")
+            return redirect(url_for("auth.setup_mfa"))
+        return render_template(
+            "auth/setup_mfa.html",
+            form=form,
+            start_form=start_form,
+            password_form=password_form,
+            provisioning_uri=None,
+        )
+
     provisioning_uri = pyotp.TOTP(current_user.mfa_secret).provisioning_uri(
         name=current_user.email, issuer_name="Cyber Dashboard"
     )
@@ -114,6 +132,7 @@ def setup_mfa():
         return render_template(
             "auth/setup_mfa.html",
             form=form,
+            start_form=start_form,
             password_form=password_form,
             provisioning_uri=provisioning_uri,
         )
@@ -124,6 +143,7 @@ def setup_mfa():
         return render_template(
             "auth/setup_mfa.html",
             form=form,
+            start_form=start_form,
             password_form=password_form,
             provisioning_uri=provisioning_uri,
         )

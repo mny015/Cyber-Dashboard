@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Vulnerability Catalog | Cyber Dashboard{% endblock %}
 
@@ -31,14 +32,8 @@
                             {% if vuln.description %}<p>{{ vuln.description }}</p>{% endif %}
                         </div>
                         <div class="finding-actions">
-                            <form class="inline-form" method="post" action="{{ url_for('security.approve_vulnerability', vulnerability_id=vuln.id) }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit">Approve</button>
-                            </form>
-                            <form class="inline-form" method="post" action="{{ url_for('security.reject_vulnerability', vulnerability_id=vuln.id) }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button class="danger" type="submit">Reject</button>
-                            </form>
+                            {{ action_form(url_for('security.approve_vulnerability', vulnerability_id=vuln.id), "Approve") }}
+                            {{ action_form(url_for('security.reject_vulnerability', vulnerability_id=vuln.id), "Reject", button_class="danger") }}
                         </div>
                     </article>
                 {% endfor %}
@@ -56,22 +51,18 @@
             </div>
         </div>
         <form method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label for="code">Code</label>
-            <input id="code" name="code" placeholder="Example: CLOUD-IAM">
-            <label for="name">Name</label>
-            <input id="name" name="name" required>
-            <label for="category">Category</label>
-            <input id="category" name="category" required>
-            <label for="default_severity">Default severity</label>
-            <select id="default_severity" name="default_severity">
-                {% for item in severities %}
-                    <option value="{{ item }}">{{ item|title }}</option>
-                {% endfor %}
-            </select>
-            <label for="description">Description</label>
-            <textarea id="description" name="description"></textarea>
-            <button type="submit">Save to catalog</button>
+            {{ form.hidden_tag() }}
+            {{ form.code.label }}
+            {{ form.code(placeholder="Example: CLOUD-IAM") }}
+            {{ form.name.label }}
+            {{ form.name(required=true) }}
+            {{ form.category.label }}
+            {{ form.category(required=true) }}
+            {{ form.default_severity.label }}
+            {{ form.default_severity() }}
+            {{ form.description.label }}
+            {{ form.description() }}
+            {{ form.submit() }}
         </form>
     </aside>
 </div>

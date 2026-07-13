@@ -15,18 +15,18 @@
 
 <section class="card form-card">
     <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ form.hidden_tag() }}
 
-        <label for="name">Name</label>
-        <input id="name" type="text" name="name" value="{{ category.name if category else '' }}" required>
+        {{ form.name.label }}
+        {{ form.name(required=true) }}
 
-        <label for="description">Description</label>
-        <textarea id="description" name="description">{{ category.description if category else '' }}</textarea>
+        {{ form.description.label }}
+        {{ form.description() }}
 
-        <label for="color">Color</label>
-        <input id="color" type="text" name="color" value="{{ category.color if category else '#2563eb' }}">
+        {{ form.color.label }}
+        {{ form.color() }}
 
-        <button type="submit">Save category</button>
+        {{ form.submit() }}
     </form>
 </section>
 {% endblock %}

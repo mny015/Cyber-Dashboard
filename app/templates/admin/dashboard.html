@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Admin Dashboard | Cyber Dashboard{% endblock %}
 
@@ -228,10 +229,7 @@
                                         {% if item.detail %} &middot; {{ item.detail }}{% endif %}
                                     </small>
                                     {% if item.id %}
-                                        <form class="inline-form" method="post" action="{{ url_for('tasks.complete', task_id=item.id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit">Complete</button>
-                                        </form>
+                                        {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
                                     {% endif %}
                                 </div>
                             </article>

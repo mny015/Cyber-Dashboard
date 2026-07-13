@@ -1,0 +1,23 @@
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length, Optional, Regexp
+
+from utils.helpers import clean_text
+
+
+class CategoryForm(FlaskForm):
+    name = StringField(
+        "Name", filters=[clean_text], validators=[DataRequired(), Length(max=120)]
+    )
+    description = TextAreaField("Description", filters=[clean_text], validators=[Optional()])
+    color = StringField(
+        "Color",
+        default="#2563eb",
+        filters=[clean_text],
+        validators=[
+            DataRequired(),
+            Length(max=32),
+            Regexp(r"^#[0-9a-fA-F]{6}$", message="Enter a six-digit hexadecimal color."),
+        ],
+    )
+    submit = SubmitField("Save category")

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "ignored_methods": ["HEAD", "OPTIONS"],
   "blueprints": {
     "dashboard": [
@@ -33,10 +33,11 @@
     ],
     "backup": [
       {"endpoint": "backup.index", "rule": "/backup/", "methods": ["GET"], "auth": "authenticated"},
-      {"endpoint": "backup.personal_json", "rule": "/backup/personal.json", "methods": ["GET"], "auth": "authenticated"},
-      {"endpoint": "backup.personal_csv", "rule": "/backup/personal.zip", "methods": ["GET"], "auth": "authenticated"},
-      {"endpoint": "backup.admin_json", "rule": "/backup/admin.json", "methods": ["GET"], "auth": "admin"},
-      {"endpoint": "backup.admin_csv", "rule": "/backup/admin.zip", "methods": ["GET"], "auth": "admin"}
+      {"endpoint": "backup.personal_json", "rule": "/backup/personal.json", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "backup.personal_csv", "rule": "/backup/personal.zip", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "backup.admin_json", "rule": "/backup/admin.json", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "backup.admin_csv", "rule": "/backup/admin.zip", "methods": ["POST"], "auth": "admin"},
+      {"endpoint": "backup.download", "rule": "/backup/download/<token>", "methods": ["GET"], "auth": "authenticated"}
     ],
     "api": [
       {"endpoint": "api.ping", "rule": "/api/ping", "methods": ["GET"], "auth": "public"}

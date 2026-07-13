@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Labs - Cyber Dashboard{% endblock %}
 
@@ -38,15 +39,9 @@
                 <div class="actions">
                     <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer">Open lab</a>
                     {% if lab.is_completed %}
-                        <form class="inline-form" method="post" action="{{ url_for('labs.incomplete', lab_id=lab.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit">Mark incomplete</button>
-                        </form>
+                        {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark incomplete") }}
                     {% else %}
-                        <form class="inline-form" method="post" action="{{ url_for('labs.complete', lab_id=lab.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit">Mark complete</button>
-                        </form>
+                        {{ action_form(url_for('labs.complete', lab_id=lab.id), "Mark complete") }}
                     {% endif %}
                     {% if lab.owner_id == current_user.id %}
                         <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}">Edit</a>

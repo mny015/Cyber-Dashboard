@@ -3,6 +3,8 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.controllers.form_helpers import validate_action
+from app.forms.notes import NoteForm
 from app.repositories import note_repository, topic_repository
 from app.services import note_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
@@ -40,20 +42,23 @@ def index():
 @login_required
 def create():
     topic_id = request.args.get("topic_id", type=int)
-    if request.method != "POST":
-        return render_template("notes/form.html", note={"topic_id": topic_id}, topics=_topics())
-
+    topics = _topics()
+    form = _note_form(topics)
+    if request.method == "GET" and topic_id is not None:
+        form.topic_id.data = topic_id
+    if not form.validate_on_submit():
+        return render_template("notes/form.html", note=None, topics=topics, form=form)
     try:
         note = note_service.create_note(
             current_user.id,
-            clean_text(request.form.get("title")),
-            clean_text(request.form.get("body")),
-            request.form.get("topic_id", type=int) or None,
+            form.title.data,
+            form.body.data,
+            form.topic_id.data,
             get_audit_context(),
         )
     except ValidationError as exc:
         flash(str(exc), "danger")
-        return render_template("notes/form.html", note=request.form, topics=_topics())
+        return render_template("notes/form.html", note=None, topics=topics, form=form)
     except PermissionDeniedError:
         abort(403)
     flash("Note created successfully.", "success")
@@ -68,21 +73,22 @@ def detail(note_id):
 @login_required
 def edit(note_id):
     note = _get_note_or_404(note_id)
-    if request.method != "POST":
-        return render_template("notes/form.html", note=note, topics=_topics())
-
+    topics = _topics()
+    form = _note_form(topics, note)
+    if not form.validate_on_submit():
+        return render_template("notes/form.html", note=note, topics=topics, form=form)
     try:
         note_service.update_note(
             note_id,
             current_user.id,
-            clean_text(request.form.get("title")),
-            clean_text(request.form.get("body")),
-            request.form.get("topic_id", type=int) or None,
+            form.title.data,
+            form.body.data,
+            form.topic_id.data,
             get_audit_context(),
         )
     except ValidationError as exc:
         flash(str(exc), "danger")
-        return render_template("notes/form.html", note=request.form, topics=_topics())
+        return render_template("notes/form.html", note=note, topics=topics, form=form)
     except PermissionDeniedError:
         abort(403)
     except NotFoundError:
@@ -93,9 +99,19 @@ def edit(note_id):
 
 @login_required
 def delete(note_id):
+    if not validate_action():
+        return redirect(url_for("notes.index"))
     try:
         note_service.delete_note(note_id, current_user.id, get_audit_context())
     except NotFoundError:
         abort(404)
     flash("Note deleted successfully.", "info")
     return redirect(url_for("notes.index"))
+
+
+def _note_form(topics, note=None):
+    form = NoteForm(obj=note)
+    form.topic_id.choices = [(None, "No topic")] + [
+        (topic.id, topic.title) for topic in topics
+    ]
+    return form

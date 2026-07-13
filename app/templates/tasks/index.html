@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Scheduled Tasks | Cyber Dashboard{% endblock %}
 
@@ -15,40 +16,34 @@
     <section class="card form-card">
         <h2>Schedule a task</h2>
         <form method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {{ form.hidden_tag() }}
 
-            <label for="title">Title</label>
-            <input id="title" name="title" value="{{ task.title if task else '' }}" placeholder="Example: Review shared lab visibility" required>
+            {{ form.title.label }}
+            {{ form.title(placeholder="Example: Review shared lab visibility", required=true) }}
 
-            <label for="description">Description</label>
-            <textarea id="description" name="description" placeholder="Optional context or checklist">{{ task.description if task else '' }}</textarea>
+            {{ form.description.label }}
+            {{ form.description(placeholder="Optional context or checklist") }}
 
             <div class="form-grid">
                 <div>
-                    <label for="task_type">Task type</label>
-                    <select id="task_type" name="task_type">
-                        {% for item in task_types %}
-                            <option value="{{ item }}" {% if task and task.task_type == item %}selected{% endif %}>{{ item|title }}</option>
-                        {% endfor %}
-                    </select>
+                    {{ form.task_type.label }}
+                    {{ form.task_type() }}
                 </div>
                 <div>
-                    <label for="due_at">Due date</label>
-                    <input id="due_at" name="due_at" type="datetime-local">
+                    {{ form.due_at.label }}
+                    {{ form.due_at() }}
                 </div>
                 {% if current_user.is_admin %}
                     <div>
-                        <label for="scope">Scope</label>
-                        <select id="scope" name="scope">
-                            <option value="personal">Personal</option>
-                            <option value="admin">Admin</option>
-                            <option value="global">Global</option>
-                        </select>
+                        {{ form.scope.label }}
+                        {{ form.scope() }}
                     </div>
+                {% else %}
+                    <input type="hidden" name="scope" value="personal">
                 {% endif %}
             </div>
 
-            <button type="submit">Schedule task</button>
+            {{ form.submit() }}
         </form>
     </section>
 
@@ -77,14 +72,8 @@
                             {% endif %}
                             {% if item.status == "upcoming" %}
                                 <div class="actions">
-                                    <form class="inline-form" method="post" action="{{ url_for('tasks.complete', task_id=item.id) }}">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit">Complete</button>
-                                    </form>
-                                    <form class="inline-form" method="post" action="{{ url_for('tasks.cancel', task_id=item.id) }}" data-confirm="Cancel this scheduled task?">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button class="button-secondary" type="submit">Cancel</button>
-                                    </form>
+                                    {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
+                                    {{ action_form(url_for('tasks.cancel', task_id=item.id), "Cancel", button_class="button-secondary", confirm="Cancel this scheduled task?") }}
                                 </div>
                             {% endif %}
                         </div>

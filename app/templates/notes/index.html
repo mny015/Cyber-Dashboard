@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Notes | Cyber Dashboard{% endblock %}
 
@@ -72,10 +73,7 @@
                     <span>{{ note.body.split()|length }} words</span>
                     <div class="note-actions">
                         <a class="text-link" href="{{ url_for('notes.edit', note_id=note.id) }}">Edit</a>
-                        <form class="inline-form" method="post" action="{{ url_for('notes.delete', note_id=note.id) }}" data-confirm="Delete this note?">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button class="link-danger" type="submit">Delete</button>
-                        </form>
+                        {{ action_form(url_for('notes.delete', note_id=note.id), "Delete", button_class="link-danger", confirm="Delete this note?") }}
                     </div>
                 </div>
             </article>

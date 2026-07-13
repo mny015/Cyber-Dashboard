@@ -14,67 +14,41 @@
 </section>
 
 <form class="finding-form" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {{ form.hidden_tag() }}
 
-    <label for="title">Title</label>
-    <input id="title" name="title" value="{{ finding.title or '' }}" placeholder="Example: IDOR tested on profile endpoint" required>
+    {{ form.title.label }}
+    {{ form.title(placeholder="Example: IDOR tested on profile endpoint", required=true) }}
 
     <div class="form-grid">
         <div>
-            <label for="activity_type">Activity type</label>
-            <select id="activity_type" name="activity_type" required>
-                {% for item in activity_types %}
-                    <option value="{{ item }}" {% if finding.activity_type == item %}selected{% endif %}>{{ item|replace("_", " ")|title }}</option>
-                {% endfor %}
-            </select>
+            {{ form.activity_type.label }}
+            {{ form.activity_type(required=true) }}
         </div>
         <div>
-            <label for="severity">Severity</label>
-            <select id="severity" name="severity" required>
-                {% for item in severities %}
-                    <option value="{{ item }}" {% if finding.severity == item %}selected{% endif %}>{{ item|title }}</option>
-                {% endfor %}
-            </select>
+            {{ form.severity.label }}
+            {{ form.severity(required=true) }}
         </div>
         <div>
-            <label for="status">Status</label>
-            <select id="status" name="status" required>
-                {% for item in statuses %}
-                    <option value="{{ item }}" {% if finding.status == item %}selected{% endif %}>{{ item|title }}</option>
-                {% endfor %}
-            </select>
+            {{ form.status.label }}
+            {{ form.status(required=true) }}
         </div>
     </div>
 
-    <label for="vulnerability_id">Vulnerability tested or found</label>
-    <select id="vulnerability_id" name="vulnerability_id">
-        <option value="">Not linked</option>
-        {% for vuln in vulnerabilities %}
-            <option value="{{ vuln.id }}" {% if finding.vulnerability_id == vuln.id %}selected{% endif %}>
-                {{ vuln.code }} - {{ vuln.name }} - {{ vuln.default_severity|title }}
-            </option>
-        {% endfor %}
-    </select>
+    {{ form.vulnerability_id.label }}
+    {{ form.vulnerability_id() }}
 
-    <label for="threat_id">Threat tactic managed</label>
-    <select id="threat_id" name="threat_id">
-        <option value="">Not linked</option>
-        {% for threat in threats %}
-            <option value="{{ threat.id }}" {% if finding.threat_id == threat.id %}selected{% endif %}>
-                {{ threat.code }} - {{ threat.name }} - {{ threat.default_level|title }}
-            </option>
-        {% endfor %}
-    </select>
+    {{ form.threat_id.label }}
+    {{ form.threat_id() }}
 
-    <label for="target">Target or scope</label>
-    <input id="target" name="target" value="{{ finding.target or '' }}" placeholder="Application, endpoint, lab box, report, or system">
+    {{ form.target.label }}
+    {{ form.target(placeholder="Application, endpoint, lab box, report, or system") }}
 
-    <label for="evidence">Evidence</label>
-    <textarea id="evidence" name="evidence" placeholder="Requests, steps, screenshots reference, commands, or validation notes">{{ finding.evidence or '' }}</textarea>
+    {{ form.evidence.label }}
+    {{ form.evidence(placeholder="Requests, steps, screenshots reference, commands, or validation notes") }}
 
-    <label for="notes">Notes</label>
-    <textarea id="notes" name="notes" placeholder="Risk explanation, remediation idea, or learning reflection">{{ finding.notes or '' }}</textarea>
+    {{ form.notes.label }}
+    {{ form.notes(placeholder="Risk explanation, remediation idea, or learning reflection") }}
 
-    <button type="submit">Save finding</button>
+    {{ form.submit() }}
 </form>
 {% endblock %}

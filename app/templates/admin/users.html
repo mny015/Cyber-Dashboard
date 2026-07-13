@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_form %}
 
 {% block title %}Users - Cyber Dashboard{% endblock %}
 
@@ -72,20 +73,11 @@
 
                                 <div class="user-action-row">
                                     {% if user.is_banned %}
-                                        <form class="inline-form" method="post" action="{{ url_for('admin.unban_user', user_id=user.id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button class="button-secondary" type="submit">Unban</button>
-                                        </form>
+                                        {{ action_form(url_for('admin.unban_user', user_id=user.id), "Unban", button_class="button-secondary") }}
                                     {% else %}
-                                        <form class="inline-form" method="post" action="{{ url_for('admin.ban_user', user_id=user.id) }}" data-confirm="Ban this user?">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button class="button-secondary" type="submit">Ban</button>
-                                        </form>
+                                        {{ action_form(url_for('admin.ban_user', user_id=user.id), "Ban", button_class="button-secondary", confirm="Ban this user?") }}
                                     {% endif %}
-                                    <form class="inline-form" method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" data-confirm="Delete this user and their personal records? This cannot be undone.">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button class="danger" type="submit">Delete</button>
-                                    </form>
+                                    {{ action_form(url_for('admin.delete_user', user_id=user.id), "Delete", button_class="danger", confirm="Delete this user and their personal records? This cannot be undone.") }}
                                 </div>
                             </div>
                         </td>

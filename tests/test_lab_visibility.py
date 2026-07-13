@@ -33,7 +33,7 @@ def test_public_admin_lab_appears_on_user_dashboard(client, test_user, admin_use
 def test_admin_backup_exports_public_labs(admin_client, admin_user):
     _, lab_name = create_admin_public_lab(admin_user["id"])
 
-    response = admin_client.get("/backup/admin.json")
+    response = admin_client.post("/backup/admin.json", follow_redirects=True)
     payload = json.loads(response.get_data(as_text=True))
 
     assert response.status_code == 200

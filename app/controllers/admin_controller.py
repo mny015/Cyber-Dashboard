@@ -3,6 +3,7 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.controllers.form_helpers import validate_action
 from app.forms.admin import AdminPasswordResetForm, RoleForm
 from app.repositories import (
     audit_repository,
@@ -39,6 +40,8 @@ def topic_summaries():
 @login_required
 @admin_required
 def request_topic_notes(topic_id):
+    if not validate_action():
+        return redirect(url_for("admin.topic_summaries"))
     try:
         notification_service.request_note_access(
             topic_id, current_user.id, get_audit_context()
@@ -141,6 +144,8 @@ def reset_user_password(user_id):
 @login_required
 @admin_required
 def delete_user(user_id):
+    if not validate_action():
+        return redirect(url_for("admin.users"))
     user = user_repository.find_by_id(user_id)
     if not user:
         flash("User not found.", "danger")
@@ -164,6 +169,8 @@ def audit_logs():
 
 
 def _set_banned(user_id, banned):
+    if not validate_action():
+        return redirect(url_for("admin.users"))
     user = user_repository.find_by_id(user_id)
     if not user:
         return redirect(url_for("admin.users"))

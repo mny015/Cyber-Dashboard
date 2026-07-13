@@ -15,26 +15,17 @@
 
 <section class="note-editor-shell" data-note-editor>
     <form class="note-editor-form" method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ form.hidden_tag() }}
 
-        <label for="title">Title</label>
-        <input
-            class="note-title-input"
-            id="title"
-            type="text"
-            name="title"
-            value="{{ note.title if note else '' }}"
-            placeholder="Example: SQL injection checklist"
-            required
-        >
+        {{ form.title.label }}
+        {{ form.title(
+            class="note-title-input",
+            placeholder="Example: SQL injection checklist",
+            required=true
+        ) }}
 
-        <label for="topic_id">Topic</label>
-        <select id="topic_id" name="topic_id">
-            <option value="">No topic</option>
-            {% for topic in topics %}
-                <option value="{{ topic.id }}" {% if note and note.topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
-            {% endfor %}
-        </select>
+        {{ form.topic_id.label }}
+        {{ form.topic_id() }}
 
         <div class="note-toolbar" aria-label="Editor toolbar">
             <button type="button" data-note-action="bold">Bold</button>
@@ -44,19 +35,17 @@
             <button type="button" data-note-action="heading">Heading</button>
         </div>
 
-        <label for="body">Note body</label>
-        <textarea
-            class="note-body-input"
-            id="body"
-            name="body"
-            data-note-body
-            placeholder="Write observations, commands, steps, payloads, or reflections..."
-            required
-        >{{ note.body if note else '' }}</textarea>
+        {{ form.body.label }}
+        {{ form.body(
+            class="note-body-input",
+            data_note_body="",
+            placeholder="Write observations, commands, steps, payloads, or reflections...",
+            required=true
+        ) }}
 
         <div class="note-editor-footer">
             <span class="meta" data-note-stats>0 words · 0 characters</span>
-            <button type="submit">Save note</button>
+            {{ form.submit() }}
         </div>
     </form>
 

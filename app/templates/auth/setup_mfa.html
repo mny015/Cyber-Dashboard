@@ -35,6 +35,12 @@
         {% if current_user.mfa_enabled %}
             <p class="security-status security-status-enabled">MFA is enabled</p>
             <p class="meta">Your authenticator secret is hidden after activation.</p>
+        {% elif not current_user.mfa_secret %}
+            <p>Start setup to create an authenticator secret. You will scan the QR code on the next page.</p>
+            <form method="post">
+                {{ start_form.hidden_tag() }}
+                <button type="submit">Start MFA setup</button>
+            </form>
         {% else %}
             <p>Scan this QR code in your authenticator app, then enter the 6-digit code.</p>
             <img class="qr-code" src="{{ url_for('auth.mfa_qr') }}" alt="MFA QR code">

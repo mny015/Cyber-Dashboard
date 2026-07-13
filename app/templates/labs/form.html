@@ -15,41 +15,31 @@
 
 <section class="card form-card">
     <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {{ form.hidden_tag() }}
 
-        <label for="name">Lab or box name</label>
-        <input id="name" type="text" name="name" value="{{ lab.name if lab else '' }}" required>
+        {{ form.name.label }}
+        {{ form.name(required=true) }}
 
-        <label for="platform_id">Platform</label>
-        <select id="platform_id" name="platform_id" required>
-            {% for platform in platforms %}
-                <option value="{{ platform.id }}" {% if lab and lab.platform_id == platform.id %}selected{% endif %}>{{ platform.name }}</option>
-            {% endfor %}
-        </select>
+        {{ form.platform_id.label }}
+        {{ form.platform_id(required=true) }}
 
-        <label for="url">Lab URL</label>
-        <input id="url" type="url" name="url" value="{{ lab.url if lab else '' }}" placeholder="https://..." required>
+        {{ form.url.label }}
+        {{ form.url(type="url", placeholder="https://...", required=true) }}
 
-        <label for="topic_id">Related topic</label>
-        <select id="topic_id" name="topic_id">
-            <option value="">No topic</option>
-            {% for topic in topics %}
-                <option value="{{ topic.id }}" {% if lab and lab.topic_id == topic.id %}selected{% endif %}>{{ topic.title }}</option>
-            {% endfor %}
-        </select>
+        {{ form.topic_id.label }}
+        {{ form.topic_id() }}
 
         {% if current_user.is_admin %}
-            <label for="visibility">Visibility</label>
-            <select id="visibility" name="visibility">
-                <option value="personal" {% if not lab or lab.visibility == "personal" %}selected{% endif %}>Personal</option>
-                <option value="public" {% if lab and lab.visibility == "public" %}selected{% endif %}>Public</option>
-            </select>
+            {{ form.visibility.label }}
+            {{ form.visibility() }}
+        {% else %}
+            <input type="hidden" name="visibility" value="personal">
         {% endif %}
 
-        <label for="notes">Notes</label>
-        <textarea id="notes" name="notes">{{ lab.notes if lab else '' }}</textarea>
+        {{ form.notes.label }}
+        {{ form.notes() }}
 
-        <button type="submit">Save lab</button>
+        {{ form.submit() }}
     </form>
 </section>
 {% endblock %}

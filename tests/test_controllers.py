@@ -81,7 +81,7 @@ def authenticated_controller_client(controller_app):
 def test_every_application_route_maps_directly_to_a_controller(app):
     application_rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint != "static"]
 
-    assert len(application_rules) == 70
+    assert len(application_rules) == 71
     for rule in application_rules:
         view = app.view_functions[rule.endpoint]
         while hasattr(view, "__wrapped__"):
@@ -173,11 +173,16 @@ def test_category_controller_renders_repository_results(
     assert b"Categories" in response.data
 
 
-def test_note_controller_converts_validation_error_to_form_response(
+def test_note_controller_rejects_invalid_form_before_service_call(
     monkeypatch, authenticated_controller_client
 ):
+    writes = []
     monkeypatch.setattr(
         "app.controllers.notes_controller.topic_repository.list_active", lambda user_id: []
+    )
+    monkeypatch.setattr(
+        "app.controllers.notes_controller.note_service.create_note",
+        lambda *args: writes.append(args),
     )
 
     response = authenticated_controller_client.post(
@@ -185,4 +190,5 @@ def test_note_controller_converts_validation_error_to_form_response(
     )
 
     assert response.status_code == 200
-    assert b"Note title and body are required." in response.data
+    assert b"This field is required." in response.data
+    assert writes == []

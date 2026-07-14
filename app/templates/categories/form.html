@@ -1,32 +1,25 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = category and category.id %}
 {% block title %}{{ "Edit" if editing else "New" }} Category - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="page-header">
-    <div>
-        <p class="eyebrow">{{ "Update" if editing else "Create" }}</p>
-        <h1>{{ "Edit" if editing else "New" }} Category</h1>
-        <p class="meta">Organize topics by learning area, path, or practice focus.</p>
-    </div>
-    <a class="button button-secondary" href="{{ url_for('categories.index') }}">Back to categories</a>
-</section>
+{% call page_heading(
+    ("Edit" if editing else "New") ~ " Category",
+    "Organize topics by learning area, path, or practice focus.",
+    "Update" if editing else "Create"
+) %}
+    {{ action_link(url_for('categories.index'), "Back to categories", "button button-secondary") }}
+{% endcall %}
 
 <section class="card form-card">
-    <form method="post">
-        {{ form.hidden_tag() }}
-
-        {{ form.name.label }}
-        {{ form.name(required=true) }}
-
-        {{ form.description.label }}
-        {{ form.description() }}
-
-        {{ form.color.label }}
-        {{ form.color() }}
-
+    {% call csrf_form(form) %}
+        {{ form_field(form.name, required=true) }}
+        {{ form_field(form.description) }}
+        {{ form_field(form.color) }}
         {{ form.submit() }}
-    </form>
+    {% endcall %}
 </section>
 {% endblock %}

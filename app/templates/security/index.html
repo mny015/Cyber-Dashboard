@@ -1,20 +1,21 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, csrf_form, delete_form, form_field with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
 {% block title %}Security Findings | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="dashboard-heading">
-    <div>
-        <p class="eyebrow">VAPT and threat tracking</p>
-        <h1>Security findings</h1>
-        <p class="heading-copy">Track vulnerabilities found, tests performed, and threats managed.</p>
-    </div>
+{% call page_heading(
+    "Security findings",
+    "Track vulnerabilities found, tests performed, and threats managed.",
+    "VAPT and threat tracking",
+    "dashboard-heading"
+) %}
     <div class="heading-actions">
-        <a class="button button-secondary" href="#suggest-vulnerability">Suggest vulnerability</a>
-        <a class="button" href="{{ url_for('security.create') }}">Log finding</a>
+        {{ action_link("#suggest-vulnerability", "Suggest vulnerability", "button button-secondary") }}
+        {{ action_link(url_for('security.create'), "Log finding") }}
     </div>
-</section>
+{% endcall %}
 
 <section class="metric-grid" aria-label="Security finding metrics">
     <div class="metric-card">
@@ -53,7 +54,7 @@
                 {% for finding in findings %}
                     <article class="finding-row">
                         <div>
-                            <span class="status severity-{{ finding.severity }}">{{ finding.severity|title }}</span>
+                            {{ status_badge(finding.severity|title, class_name="status severity-" ~ finding.severity) }}
                             <h3>{{ finding.title }}</h3>
                             <p class="meta">
                                 {{ finding.activity_type|replace("_", " ")|title }}
@@ -63,19 +64,17 @@
                             {% if finding.target %}<p class="meta">Target: {{ finding.target }}</p>{% endif %}
                         </div>
                         <div class="finding-actions">
-                            <span class="status-badge">{{ finding.status|title }}</span>
+                            {{ status_badge(finding.status|title) }}
                             <a class="text-link" href="{{ url_for('security.edit', finding_id=finding.id) }}">Edit</a>
-                            {{ action_form(url_for('security.delete', finding_id=finding.id), "Delete", button_class="link-danger", confirm="Delete this finding?") }}
+                            {{ delete_form(url_for('security.delete', finding_id=finding.id), "Delete this finding?", button_class="link-danger") }}
                         </div>
                     </article>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="empty-state">
-                <h3>No findings yet</h3>
-                <p>Log a tested vulnerability or managed threat to start building your performance profile.</p>
-                <a class="button" href="{{ url_for('security.create') }}">Log first finding</a>
-            </div>
+            {% call empty_state("No findings yet", "Log a tested vulnerability or managed threat to start building your performance profile.") %}
+                {{ action_link(url_for('security.create'), "Log first finding") }}
+            {% endcall %}
         {% endif %}
     </section>
 
@@ -86,18 +85,13 @@
                 <h2>Suggest a vulnerability</h2>
             </div>
         </div>
-        <form method="post" action="{{ url_for('security.suggest_vulnerability') }}">
-            {{ suggestion_form.hidden_tag() }}
-            {{ suggestion_form.name.label(for="suggest_name") }}
-            {{ suggestion_form.name(id="suggest_name", required=true) }}
-            {{ suggestion_form.category.label(for="suggest_category") }}
-            {{ suggestion_form.category(id="suggest_category", placeholder="Example: Cloud, Mobile, Web") }}
-            {{ suggestion_form.default_severity.label(for="suggest_severity") }}
-            {{ suggestion_form.default_severity(id="suggest_severity") }}
-            {{ suggestion_form.description.label(for="suggest_description") }}
-            {{ suggestion_form.description(id="suggest_description", placeholder="Why should this be in the shared catalog?") }}
+        {% call csrf_form(suggestion_form, action=url_for('security.suggest_vulnerability')) %}
+            {{ form_field(suggestion_form.name, label_for="suggest_name", id="suggest_name", required=true) }}
+            {{ form_field(suggestion_form.category, label_for="suggest_category", id="suggest_category", placeholder="Example: Cloud, Mobile, Web") }}
+            {{ form_field(suggestion_form.default_severity, label_for="suggest_severity", id="suggest_severity") }}
+            {{ form_field(suggestion_form.description, label_for="suggest_description", id="suggest_description", placeholder="Why should this be in the shared catalog?") }}
             {{ suggestion_form.submit() }}
-        </form>
+        {% endcall %}
         {% if pending_suggestions %}
             <h3>Pending suggestions</h3>
             <div class="compact-list">

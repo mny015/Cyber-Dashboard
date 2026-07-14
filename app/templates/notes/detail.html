@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, delete_form with context %}
 
 {% block title %}{{ note.title }} | Cyber Dashboard{% endblock %}
 
@@ -12,9 +12,9 @@
             <p class="meta">Updated {{ note.updated_at|format_date }} · {{ note.body.split()|length }} words</p>
         </div>
         <div class="heading-actions">
-            <a class="button button-secondary" href="{{ url_for('notes.index') }}">All notes</a>
-            <a class="button" href="{{ url_for('notes.edit', note_id=note.id) }}">Edit</a>
-            {{ action_form(url_for('notes.delete', note_id=note.id), "Delete", button_class="danger", confirm="Delete this note?") }}
+            {{ action_link(url_for('notes.index'), "All notes", "button button-secondary") }}
+            {{ action_link(url_for('notes.edit', note_id=note.id), "Edit") }}
+            {{ delete_form(url_for('notes.delete', note_id=note.id), "Delete this note?") }}
         </div>
     </header>
 

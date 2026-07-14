@@ -191,4 +191,6 @@ def test_note_controller_rejects_invalid_form_before_service_call(
 
     assert response.status_code == 200
     assert b"This field is required." in response.data
+    assert b'role="alert"' in response.data
+    assert b'id="title-errors"' in response.data
     assert writes == []

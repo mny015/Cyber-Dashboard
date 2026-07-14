@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 import pytest
-from flask import Flask
+from flask import Flask, flash, render_template_string
 from flask_wtf.csrf import generate_csrf
 
 from app.extensions import csrf, login_manager
@@ -346,3 +346,83 @@ def test_every_literal_post_form_contains_csrf_markup():
         source = path.read_text(encoding="utf-8")
         for form_markup in post_form.findall(source):
             assert "csrf_token" in form_markup or ".hidden_tag()" in form_markup, path
+
+
+def test_shared_template_components_render_accessible_markup(action_app):
+    template = """
+        {% from "macros/feedback.html" import flash_messages with context %}
+        {% from "macros/forms.html" import csrf_form, delete_form with context %}
+        {% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
+        {% from "macros/tables.html" import data_table, pagination with context %}
+
+        {{ flash_messages() }}
+        {{ page_heading("Example page", "Example description", "Section") }}
+        {{ status_badge("Active", "success") }}
+        {% call empty_state("No records", "Create the first record.") %}<a href="/new">Create</a>{% endcall %}
+        {% call data_table(["Name", "Status"], caption="Example records") %}
+            <tr><td>Record</td><td>Active</td></tr>
+        {% endcall %}
+        {{ pagination(2, 3, true, "/page/1", true, "/page/3") }}
+        {{ delete_form("/records/1/delete", "Delete this record?") }}
+    """
+
+    with action_app.test_request_context("/components"):
+        flash("Saved successfully.", "success")
+        markup = render_template_string(template)
+
+    assert 'aria-live="polite"' in markup
+    assert 'role="status"' in markup
+    assert '<header class="page-header">' in markup
+    assert '<th scope="col">Name</th>' in markup
+    assert 'aria-label="Pagination"' in markup
+    assert 'name="csrf_token"' in markup
+    assert 'data-confirm="Delete this record?"' in markup
+
+
+def test_crud_list_renders_shared_delete_form_with_csrf(
+    monkeypatch, action_client
+):
+    category = type(
+        "CategoryView",
+        (),
+        {
+            "id": 14,
+            "name": "Web Security",
+            "description": "Application testing",
+            "color": "#2563eb",
+        },
+    )()
+    monkeypatch.setattr(
+        "app.controllers.categories_controller.category_repository.list_for_user",
+        lambda user_id: [category],
+    )
+
+    response = action_client.get("/categories/")
+    markup = response.get_data(as_text=True)
+    post_forms = re.findall(
+        r"<form\b(?=[^>]*\bmethod=[\"']post[\"'])[^>]*>.*?</form>",
+        markup,
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    assert response.status_code == 200
+    assert '<header class="page-header">' in markup
+    assert 'data-confirm="Delete this category?' in markup
+    assert post_forms
+    assert all('name="csrf_token"' in form_markup for form_markup in post_forms)
+
+
+def test_templates_only_keep_data_driven_inline_styles():
+    template_dir = PROJECT_ROOT / "app" / "templates"
+    allowed = {
+        template_dir / "categories" / "index.html",
+        template_dir / "admin" / "dashboard.html",
+        template_dir / "user" / "dashboard.html",
+    }
+
+    for path in template_dir.rglob("*.html"):
+        source = path.read_text(encoding="utf-8")
+        if "style=" not in source:
+            continue
+        assert path in allowed, path
+        assert "{{" in source, path

@@ -1,14 +1,11 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading, status_badge with context %}
 
 {% block title %}Profile - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Profile</h1>
-        <p class="meta">Keep your account identity, profile picture, and personal details current.</p>
-    </div>
-</div>
+{{ page_heading("Profile", "Keep your account identity, profile picture, and personal details current.") }}
 
 <div class="profile-layout">
     <section class="card profile-preview profile-card" data-profile-picture>
@@ -39,11 +36,11 @@
         <div class="profile-meta-grid">
             <div>
                 <span>Status</span>
-                <strong>{{ "Banned" if current_user.is_banned else "Active" }}</strong>
+                <strong>{{ status_badge("Banned" if current_user.is_banned else "Active", "danger" if current_user.is_banned else "success") }}</strong>
             </div>
             <div>
                 <span>MFA</span>
-                <strong>{{ "Enabled" if current_user.mfa_enabled else "Not enabled" }}</strong>
+                <strong>{{ status_badge("Enabled" if current_user.mfa_enabled else "Not enabled", "info" if current_user.mfa_enabled else None) }}</strong>
             </div>
             <div>
                 <span>Member since</span>
@@ -58,9 +55,7 @@
     </section>
 
     <div class="profile-main">
-        <form class="form-card profile-form-card" method="post" enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-
+        {% call csrf_form(form, form_class="form-card profile-form-card", enctype="multipart/form-data") %}
             <div class="form-section-heading">
                 <div>
                     <h2>Account Details</h2>
@@ -68,24 +63,18 @@
                 </div>
             </div>
 
-            {{ form.display_name.label }}
-            {{ form.display_name(autocomplete="name") }}
-
-            {{ form.email.label }}
-            {{ form.email(autocomplete="email") }}
-
-            {{ form.profile_bio.label }}
-            {{ form.profile_bio(rows="7", placeholder="Example: Junior security learner focused on web exploitation, GRC notes, and weekly lab practice.") }}
+            {{ form_field(form.display_name, autocomplete="name") }}
+            {{ form_field(form.email, autocomplete="email") }}
+            {{ form_field(form.profile_bio, rows="7", placeholder="Example: Junior security learner focused on web exploitation, GRC notes, and weekly lab practice.") }}
 
             <div class="visually-hidden">
-                {{ form.profile_image.label }}
-                {{ form.profile_image() }}
+                {{ form_field(form.profile_image) }}
             </div>
 
             <div class="form-actions">
                 {{ form.submit(class_="button") }}
             </div>
-        </form>
+        {% endcall %}
 
         <section class="card profile-security-panel">
             <div>
@@ -94,8 +83,8 @@
                 <p class="meta">Password changes and MFA setup stay in the dedicated security page so sensitive actions remain separated from profile edits.</p>
             </div>
             <div class="profile-security-actions">
-                <a class="button" href="{{ url_for('auth.setup_mfa') }}">Security settings</a>
-                <a class="button button-secondary" href="{{ url_for('backup.index') }}">Export data</a>
+                {{ action_link(url_for('auth.setup_mfa'), "Security settings") }}
+                {{ action_link(url_for('backup.index'), "Export data", "button button-secondary") }}
             </div>
         </section>
     </div>

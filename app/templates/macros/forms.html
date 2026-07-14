@@ -1,6 +1,62 @@
-{% macro action_form(action, label, form_class="inline-form", button_class="", confirm=None) -%}
-<form class="{{ form_class }}" method="post" action="{{ action }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button{% if button_class %} class="{{ button_class }}"{% endif %} type="submit">{{ label }}</button>
+{% macro field_errors(field) -%}
+    {% if field.errors %}
+        <ul class="form-errors" id="{{ field.id }}-errors" role="alert">
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{%- endmacro %}
+
+{% macro validation_errors(form) -%}
+    {% if form.form_errors %}
+        <div class="alert danger" role="alert">
+            {% for error in form.form_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+{%- endmacro %}
+
+{% macro form_field(field, label_text=None, label_for=None, help_text=None) -%}
+    {% if label_for %}
+        {{ field.label(label_text, for=label_for) }}
+    {% else %}
+        {{ field.label(label_text) }}
+    {% endif %}
+    {{ field(**kwargs) }}
+    {{ field_errors(field) }}
+    {% if help_text %}<p class="meta">{{ help_text }}</p>{% endif %}
+{%- endmacro %}
+
+{% macro csrf_form(form=None, action=None, form_class=None, confirm=None, enctype=None, autocomplete=None) -%}
+<form method="post"{% if action %} action="{{ action }}"{% endif %}{% if form_class %} class="{{ form_class }}"{% endif %}{% if confirm %} data-confirm="{{ confirm }}"{% endif %}{% if enctype %} enctype="{{ enctype }}"{% endif %}{% if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}>
+    {% if form %}
+        {{ form.hidden_tag() }}
+        {{ validation_errors(form) }}
+    {% else %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% endif %}
+    {{ caller() }}
 </form>
+{%- endmacro %}
+
+{% macro action_link(url, label, class_name="button") -%}
+<a class="{{ class_name }}" href="{{ url }}"{{ kwargs|xmlattr }}>{{ label }}</a>
+{%- endmacro %}
+
+{% macro action_button(label, class_name=None, button_type="submit") -%}
+<button type="{{ button_type }}"{% if class_name %} class="{{ class_name }}"{% endif %}{{ kwargs|xmlattr }}>{{ label }}</button>
+{%- endmacro %}
+
+{% macro action_form(action, label, form_class="inline-form", button_class="", confirm=None) -%}
+{% call csrf_form(None, action=action, form_class=form_class, confirm=confirm) %}
+    {{ action_button(label, class_name=button_class or None) }}
+{% endcall %}
+{%- endmacro %}
+
+{% macro confirmation_form(action, label, message, form_class="inline-form", button_class="button-secondary") -%}
+{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message) }}
+{%- endmacro %}
+
+{% macro delete_form(action, message, label="Delete", form_class="inline-form", button_class="danger") -%}
+{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message) }}
 {%- endmacro %}

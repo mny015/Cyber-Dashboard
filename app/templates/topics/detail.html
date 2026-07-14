@@ -1,23 +1,18 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, delete_form with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% block title %}{{ topic.title }} - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>{{ topic.title }}</h1>
-        <p class="meta">
-            {{ topic.status|title }} &middot; {{ topic.priority|title }}
-            {% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}
-        </p>
-    </div>
+{% set topic_meta %}{{ topic.status|title }} &middot; {{ topic.priority|title }}{% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}{% endset %}
+{% call page_heading(topic.title, topic_meta) %}
     <div class="actions">
-        <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
-        <a class="button" href="{{ url_for('notes.create', topic_id=topic.id) }}">Add note</a>
-        {{ action_form(url_for('topics.delete', topic_id=topic.id), "Delete", button_class="danger", confirm="Delete this topic?") }}
+        {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit") }}
+        {{ action_link(url_for('notes.create', topic_id=topic.id), "Add note") }}
+        {{ delete_form(url_for('topics.delete', topic_id=topic.id), "Delete this topic?") }}
     </div>
-</div>
+{% endcall %}
 
 <section class="card">
     <h2>Description</h2>

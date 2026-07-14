@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+{% from "macros/feedback.html" import flash_messages with context %}
+{% from "macros/forms.html" import action_form with context %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,10 +43,7 @@
                             <a href="{{ url_for('security.admin_vulnerabilities') }}">Vulnerability catalog</a>
                         {% endif %}
                         <a href="{{ url_for('auth.setup_mfa') }}">Security</a>
-                        <form method="post" action="{{ url_for('auth.logout') }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" style="display:block; width:100%; min-height:0; padding:9px 10px; border:0; border-radius:5px; background:transparent; color:var(--muted); box-shadow:none; font:inherit; font-weight:400; text-align:left; justify-content:flex-start;">Logout</button>
-                        </form>
+                        {{ action_form(url_for('auth.logout'), "Logout", form_class="account-logout-form", button_class="account-menu-action") }}
                     </div>
                 </details>
             {% else %}
@@ -57,25 +56,7 @@
         </nav>
     </header>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert-stack">
-                {% for category, message in messages %}
-                    <p class="alert {{ category }}">{{ message }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
-    {% if form and form.errors %}
-        <div>
-            {% for field_errors in form.errors.values() %}
-                {% for error in field_errors %}
-                    <p class="alert danger">{{ error }}</p>
-                {% endfor %}
-            {% endfor %}
-        </div>
-    {% endif %}
+    {{ flash_messages() }}
 
     <main class="page-shell content-shell">
         {% block content %}{% endblock %}

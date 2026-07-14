@@ -1,29 +1,17 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, action_link, confirmation_form, csrf_form, delete_form with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
+{% from "macros/tables.html" import data_table with context %}
 
 {% block title %}Users - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Users</h1>
-        <p class="meta">Manage account access, roles, password resets, and account status.</p>
-    </div>
-    <a class="button" href="{{ url_for('admin.audit_logs') }}">Audit logs</a>
-</div>
+{% call page_heading("Users", "Manage account access, roles, password resets, and account status.") %}
+    {{ action_link(url_for('admin.audit_logs'), "Audit logs") }}
+{% endcall %}
 
 {% if users %}
-    <div class="table-wrap admin-users-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>Account</th>
-                    <th>Access</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
+    {% call data_table(["Account", "Access", "Status", "Actions"], wrap_class="table-wrap admin-users-table") %}
                 {% for user in users %}
                     <tr class="admin-user-row">
                         <td>
@@ -37,59 +25,50 @@
                             </div>
                         </td>
                         <td>
-                            <form class="compact-form" method="post" action="{{ url_for('admin.update_role', user_id=user.id) }}">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            {% call csrf_form(None, action=url_for('admin.update_role', user_id=user.id), form_class="compact-form") %}
                                 <label class="visually-hidden" for="role-{{ user.id }}">Role</label>
                                 <select id="role-{{ user.id }}" name="role">
                                     <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
                                     <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
                                 </select>
                                 <button class="button-secondary" type="submit">Save role</button>
-                            </form>
+                            {% endcall %}
                         </td>
                         <td>
-                            <span class="status-badge {% if user.is_banned %}status-danger{% else %}status-success{% endif %}">
-                                {{ "Banned" if user.is_banned else "Active" }}
-                            </span>
+                            {{ status_badge("Banned" if user.is_banned else "Active", "danger" if user.is_banned else "success") }}
                             {% if user.mfa_enabled %}
-                                <span class="status-badge status-info">MFA enabled</span>
+                                {{ status_badge("MFA enabled", "info") }}
                             {% else %}
-                                <span class="status-badge">MFA off</span>
+                                {{ status_badge("MFA off") }}
                             {% endif %}
                         </td>
                         <td>
                             <div class="admin-user-actions">
                                 <details class="admin-action-panel">
                                     <summary>Reset password</summary>
-                                    <form class="mini-form" method="post" action="{{ url_for('admin.reset_user_password', user_id=user.id) }}" autocomplete="off">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    {% call csrf_form(None, action=url_for('admin.reset_user_password', user_id=user.id), form_class="mini-form", autocomplete="off") %}
                                         <label for="password-{{ user.id }}">New password</label>
                                         <input id="password-{{ user.id }}" type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password">
                                         <label for="confirm-password-{{ user.id }}">Confirm password</label>
                                         <input id="confirm-password-{{ user.id }}" type="password" name="confirm_password" minlength="12" maxlength="128" required autocomplete="new-password">
                                         <button type="submit">Change password</button>
-                                    </form>
+                                    {% endcall %}
                                 </details>
 
                                 <div class="user-action-row">
                                     {% if user.is_banned %}
                                         {{ action_form(url_for('admin.unban_user', user_id=user.id), "Unban", button_class="button-secondary") }}
                                     {% else %}
-                                        {{ action_form(url_for('admin.ban_user', user_id=user.id), "Ban", button_class="button-secondary", confirm="Ban this user?") }}
+                                        {{ confirmation_form(url_for('admin.ban_user', user_id=user.id), "Ban", "Ban this user?") }}
                                     {% endif %}
-                                    {{ action_form(url_for('admin.delete_user', user_id=user.id), "Delete", button_class="danger", confirm="Delete this user and their personal records? This cannot be undone.") }}
+                                    {{ delete_form(url_for('admin.delete_user', user_id=user.id), "Delete this user and their personal records? This cannot be undone.") }}
                                 </div>
                             </div>
                         </td>
                     </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endcall %}
 {% else %}
-    <section class="empty-state">
-        <h2>No users found</h2>
-        <p class="meta">New accounts will appear here after registration.</p>
-    </section>
+    {{ empty_state("No users found", "New accounts will appear here after registration.") }}
 {% endif %}
 {% endblock %}

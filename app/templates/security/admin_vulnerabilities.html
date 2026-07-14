@@ -1,17 +1,19 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
+{% from "macros/tables.html" import data_table with context %}
 
 {% block title %}Vulnerability Catalog | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="dashboard-heading">
-    <div>
-        <p class="eyebrow">Admin review</p>
-        <h1>Vulnerability catalog</h1>
-        <p class="heading-copy">Approve user suggestions or add shared vulnerability categories for everyone.</p>
-    </div>
-    <a class="button button-secondary" href="{{ url_for('security.index') }}">Findings</a>
-</section>
+{% call page_heading(
+    "Vulnerability catalog",
+    "Approve user suggestions or add shared vulnerability categories for everyone.",
+    "Admin review",
+    "dashboard-heading"
+) %}
+    {{ action_link(url_for('security.index'), "Findings", "button button-secondary") }}
+{% endcall %}
 
 <div class="dashboard-grid">
     <section class="panel panel-wide">
@@ -26,7 +28,7 @@
                 {% for vuln in pending %}
                     <article class="finding-row">
                         <div>
-                            <span class="status severity-{{ vuln.default_severity }}">{{ vuln.default_severity|title }}</span>
+                            {{ status_badge(vuln.default_severity|title, class_name="status severity-" ~ vuln.default_severity) }}
                             <h3>{{ vuln.name }}</h3>
                             <p class="meta">{{ vuln.category }} &middot; Suggested by {{ vuln.requested_by or "Unknown" }}</p>
                             {% if vuln.description %}<p>{{ vuln.description }}</p>{% endif %}
@@ -39,7 +41,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p class="meta">No pending suggestions.</p>
+            {{ empty_state("No pending suggestions", class_name="empty-state") }}
         {% endif %}
     </section>
 
@@ -50,20 +52,14 @@
                 <h2>New vulnerability</h2>
             </div>
         </div>
-        <form method="post">
-            {{ form.hidden_tag() }}
-            {{ form.code.label }}
-            {{ form.code(placeholder="Example: CLOUD-IAM") }}
-            {{ form.name.label }}
-            {{ form.name(required=true) }}
-            {{ form.category.label }}
-            {{ form.category(required=true) }}
-            {{ form.default_severity.label }}
-            {{ form.default_severity() }}
-            {{ form.description.label }}
-            {{ form.description() }}
+        {% call csrf_form(form) %}
+            {{ form_field(form.code, placeholder="Example: CLOUD-IAM") }}
+            {{ form_field(form.name, required=true) }}
+            {{ form_field(form.category, required=true) }}
+            {{ form_field(form.default_severity) }}
+            {{ form_field(form.description) }}
             {{ form.submit() }}
-        </form>
+        {% endcall %}
     </aside>
 </div>
 
@@ -74,19 +70,7 @@
             <h2>Approved and reviewed entries</h2>
         </div>
     </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Severity</th>
-                    <th>Status</th>
-                    <th>Source</th>
-                </tr>
-            </thead>
-            <tbody>
+    {% call data_table(["Code", "Name", "Category", "Severity", "Status", "Source"]) %}
                 {% for vuln in vulnerabilities %}
                     <tr>
                         <td>{{ vuln.code }}</td>
@@ -97,8 +81,6 @@
                         <td>{{ vuln.source }}</td>
                     </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endcall %}
 </section>
 {% endblock %}

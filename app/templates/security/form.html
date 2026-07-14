@@ -1,54 +1,41 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = finding and finding.id %}
 {% block title %}{{ "Edit" if editing else "Log" }} Security Finding | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="dashboard-heading">
-    <div>
-        <p class="eyebrow">{{ "Update" if editing else "New" }} finding</p>
-        <h1>{{ "Edit finding" if editing else "Log security work" }}</h1>
-        <p class="heading-copy">Record vulnerabilities found, tests completed, and threats managed with notes.</p>
-    </div>
-    <a class="button button-secondary" href="{{ url_for('security.index') }}">Back to findings</a>
-</section>
+{% call page_heading(
+    "Edit finding" if editing else "Log security work",
+    "Record vulnerabilities found, tests completed, and threats managed with notes.",
+    ("Update" if editing else "New") ~ " finding",
+    "dashboard-heading"
+) %}
+    {{ action_link(url_for('security.index'), "Back to findings", "button button-secondary") }}
+{% endcall %}
 
-<form class="finding-form" method="post">
-    {{ form.hidden_tag() }}
-
-    {{ form.title.label }}
-    {{ form.title(placeholder="Example: IDOR tested on profile endpoint", required=true) }}
+{% call csrf_form(form, form_class="finding-form") %}
+    {{ form_field(form.title, placeholder="Example: IDOR tested on profile endpoint", required=true) }}
 
     <div class="form-grid">
         <div>
-            {{ form.activity_type.label }}
-            {{ form.activity_type(required=true) }}
+            {{ form_field(form.activity_type, required=true) }}
         </div>
         <div>
-            {{ form.severity.label }}
-            {{ form.severity(required=true) }}
+            {{ form_field(form.severity, required=true) }}
         </div>
         <div>
-            {{ form.status.label }}
-            {{ form.status(required=true) }}
+            {{ form_field(form.status, required=true) }}
         </div>
     </div>
 
-    {{ form.vulnerability_id.label }}
-    {{ form.vulnerability_id() }}
-
-    {{ form.threat_id.label }}
-    {{ form.threat_id() }}
-
-    {{ form.target.label }}
-    {{ form.target(placeholder="Application, endpoint, lab box, report, or system") }}
-
-    {{ form.evidence.label }}
-    {{ form.evidence(placeholder="Requests, steps, screenshots reference, commands, or validation notes") }}
-
-    {{ form.notes.label }}
-    {{ form.notes(placeholder="Risk explanation, remediation idea, or learning reflection") }}
+    {{ form_field(form.vulnerability_id) }}
+    {{ form_field(form.threat_id) }}
+    {{ form_field(form.target, placeholder="Application, endpoint, lab box, report, or system") }}
+    {{ form_field(form.evidence, placeholder="Requests, steps, screenshots reference, commands, or validation notes") }}
+    {{ form_field(form.notes, placeholder="Risk explanation, remediation idea, or learning reflection") }}
 
     {{ form.submit() }}
-</form>
+{% endcall %}
 {% endblock %}

@@ -1,29 +1,17 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link with context %}
+{% from "macros/layout.html" import empty_state, page_heading with context %}
+{% from "macros/tables.html" import data_table, pagination with context %}
 
 {% block title %}Audit Logs - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Audit Logs</h1>
-        <p class="meta">Security and admin actions recorded by the app.</p>
-    </div>
-    <a class="button" href="{{ url_for('admin.users') }}">Users</a>
-</div>
+{% call page_heading("Audit Logs", "Security and admin actions recorded by the app.") %}
+    {{ action_link(url_for('admin.users'), "Users") }}
+{% endcall %}
 
 {% if logs.items %}
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Action</th>
-                    <th>User</th>
-                    <th>IP</th>
-                    <th>Details</th>
-                </tr>
-            </thead>
-            <tbody>
+    {% call data_table(["Time", "Action", "User", "IP", "Details"]) %}
                 {% for log in logs.items %}
                     <tr>
                         <td>{{ log.created_at|format_date }}</td>
@@ -33,20 +21,17 @@
                         <td>{{ log.details }}</td>
                     </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endcall %}
 
-    <div class="actions">
-        {% if logs.has_prev %}
-            <a class="button" href="{{ url_for('admin.audit_logs', page=logs.prev_num) }}">Previous</a>
-        {% endif %}
-        <span class="meta">Page {{ logs.page }} of {{ logs.pages }}</span>
-        {% if logs.has_next %}
-            <a class="button" href="{{ url_for('admin.audit_logs', page=logs.next_num) }}">Next</a>
-        {% endif %}
-    </div>
+    {{ pagination(
+        logs.page,
+        logs.pages,
+        logs.has_prev,
+        url_for('admin.audit_logs', page=logs.prev_num) if logs.has_prev else None,
+        logs.has_next,
+        url_for('admin.audit_logs', page=logs.next_num) if logs.has_next else None
+    ) }}
 {% else %}
-    <p>No audit logs yet.</p>
+    {{ empty_state("No audit logs yet", "Recorded application actions will appear here.") }}
 {% endif %}
 {% endblock %}

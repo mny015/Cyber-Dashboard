@@ -1,16 +1,13 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, delete_form with context %}
+{% from "macros/layout.html" import empty_state, page_heading with context %}
 
 {% block title %}Contacts - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Contacts</h1>
-        <p class="meta">Practice CRUD with a simple contact manager.</p>
-    </div>
-    <a class="button" href="{{ url_for('contacts.create') }}">New contact</a>
-</div>
+{% call page_heading("Contacts", "Practice CRUD with a simple contact manager.") %}
+    {{ action_link(url_for('contacts.create'), "New contact") }}
+{% endcall %}
 
 {% if contacts %}
     <div class="grid">
@@ -21,13 +18,13 @@
                 <p>{{ contact.phone }}</p>
                 <p>{{ contact.notes or "No notes." }}</p>
                 <div class="actions">
-                    <a class="button" href="{{ url_for('contacts.edit', contact_id=contact.id) }}">Edit</a>
-                    {{ action_form(url_for('contacts.delete', contact_id=contact.id), "Delete", button_class="danger", confirm="Delete this contact?") }}
+                    {{ action_link(url_for('contacts.edit', contact_id=contact.id), "Edit") }}
+                    {{ delete_form(url_for('contacts.delete', contact_id=contact.id), "Delete this contact?") }}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    <p>No contacts yet.</p>
+    {{ empty_state("No contacts yet", "Add a contact to begin practicing this CRUD workflow.") }}
 {% endif %}
 {% endblock %}

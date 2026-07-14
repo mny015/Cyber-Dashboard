@@ -1,0 +1,22 @@
+{% macro page_heading(title, description=None, eyebrow=None, class_name="page-header", description_class=None) -%}
+<header class="{{ class_name }}">
+    <div>
+        {% if eyebrow %}<p class="eyebrow">{{ eyebrow }}</p>{% endif %}
+        <h1>{{ title }}</h1>
+        {% if description %}<p class="{{ description_class or ('heading-copy' if class_name == 'dashboard-heading' else 'meta') }}">{{ description }}</p>{% endif %}
+    </div>
+    {% if caller is defined %}{{ caller() }}{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro status_badge(label, tone=None, class_name="status-badge") -%}
+<span class="{{ class_name }}{% if tone %} status-{{ tone }}{% endif %}">{{ label }}</span>
+{%- endmacro %}
+
+{% macro empty_state(title, message=None, class_name="empty-state") -%}
+<section class="{{ class_name }}">
+    <h2>{{ title }}</h2>
+    {% if message %}<p class="meta">{{ message }}</p>{% endif %}
+    {% if caller is defined %}{{ caller() }}{% endif %}
+</section>
+{%- endmacro %}

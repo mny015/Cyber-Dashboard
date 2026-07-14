@@ -1,20 +1,22 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, delete_form with context %}
+{% from "macros/layout.html" import empty_state, page_heading with context %}
 
 {% block title %}Notes | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="notes-hero">
-    <div>
-        <p class="eyebrow">Knowledge base</p>
-        <h1>Notes</h1>
-        <p class="heading-copy">Capture findings, commands, lab steps, and reflections in one private workspace.</p>
-    </div>
+{% call page_heading(
+    "Notes",
+    "Capture findings, commands, lab steps, and reflections in one private workspace.",
+    "Knowledge base",
+    "notes-hero",
+    "heading-copy"
+) %}
     <div class="notes-hero-actions">
-        <a class="button button-secondary" href="{{ url_for('topics.index') }}">Browse topics</a>
-        <a class="button" href="{{ url_for('notes.create') }}">New note</a>
+        {{ action_link(url_for('topics.index'), "Browse topics", "button button-secondary") }}
+        {{ action_link(url_for('notes.create'), "New note") }}
     </div>
-</section>
+{% endcall %}
 
 <section class="notes-overview" aria-label="Notes overview">
     <div>
@@ -73,20 +75,18 @@
                     <span>{{ note.body.split()|length }} words</span>
                     <div class="note-actions">
                         <a class="text-link" href="{{ url_for('notes.edit', note_id=note.id) }}">Edit</a>
-                        {{ action_form(url_for('notes.delete', note_id=note.id), "Delete", button_class="link-danger", confirm="Delete this note?") }}
+                        {{ delete_form(url_for('notes.delete', note_id=note.id), "Delete this note?", button_class="link-danger") }}
                     </div>
                 </div>
             </article>
         {% endfor %}
     </div>
 {% else %}
-    <section class="empty-state note-empty-state">
-        <h2>No matching notes</h2>
-        <p>Create a new note or clear the current search filters.</p>
+    {% call empty_state("No matching notes", "Create a new note or clear the current search filters.", "empty-state note-empty-state") %}
         <div class="heading-actions">
-            <a class="button" href="{{ url_for('notes.create') }}">Create note</a>
-            <a class="button button-secondary" href="{{ url_for('notes.index') }}">Reset filters</a>
+            {{ action_link(url_for('notes.create'), "Create note") }}
+            {{ action_link(url_for('notes.index'), "Reset filters", "button button-secondary") }}
         </div>
-    </section>
+    {% endcall %}
 {% endif %}
 {% endblock %}

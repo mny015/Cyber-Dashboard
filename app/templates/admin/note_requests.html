@@ -1,34 +1,22 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
+{% from "macros/tables.html" import data_table with context %}
 
 {% block title %}Note Requests - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Note Requests</h1>
-        <p class="meta">Admins can view notes only after the owner approves a specific note.</p>
-    </div>
-    <a class="button" href="{{ url_for('admin.topic_summaries') }}">Request from topics</a>
-</div>
+{% call page_heading("Note Requests", "Admins can view notes only after the owner approves a specific note.") %}
+    {{ action_link(url_for('admin.topic_summaries'), "Request from topics") }}
+{% endcall %}
 
 {% if requests %}
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Topic</th>
-                    <th>Owner</th>
-                    <th>Status</th>
-                    <th>Requested</th>
-                    <th>Result</th>
-                </tr>
-            </thead>
-            <tbody>
+    {% call data_table(["Topic", "Owner", "Status", "Requested", "Result"]) %}
                 {% for item in requests %}
                     <tr>
                         <td>{{ item.topic_title }}</td>
                         <td>{{ item.owner_name }}<br><span class="meta">{{ item.owner_email }}</span></td>
-                        <td>{{ item.status|title }}</td>
+                        <td>{{ status_badge(item.status|title) }}</td>
                         <td>{{ item.requested_at|format_date }}</td>
                         <td>
                             {% if item.status == "approved" %}
@@ -41,10 +29,8 @@
                         </td>
                     </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endcall %}
 {% else %}
-    <p>No note requests yet.</p>
+    {{ empty_state("No note requests yet", "Requests for owner-approved note access will appear here.") }}
 {% endif %}
 {% endblock %}

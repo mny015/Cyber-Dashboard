@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import csrf_form, form_field with context %}
 
 {% block title %}Register - Cyber Dashboard{% endblock %}
 
@@ -13,23 +14,13 @@
         <h1>Create account</h1>
         <p class="meta">Build a private learning workspace for topics, notes, labs, and progress.</p>
 
-        <form method="POST">
-            {{ form.hidden_tag() }}
-
-            {{ form.display_name.label }}
-            {{ form.display_name(placeholder="Display name") }}
-
-            {{ form.email.label }}
-            {{ form.email(placeholder="name@example.com") }}
-
-            {{ form.password.label }}
-            {{ form.password(placeholder="At least 12 characters") }}
-
-            {{ form.confirm_password.label }}
-            {{ form.confirm_password(placeholder="Repeat password") }}
-
+        {% call csrf_form(form) %}
+            {{ form_field(form.display_name, placeholder="Display name", autocomplete="name") }}
+            {{ form_field(form.email, placeholder="name@example.com", autocomplete="email") }}
+            {{ form_field(form.password, placeholder="At least 12 characters", autocomplete="new-password") }}
+            {{ form_field(form.confirm_password, placeholder="Repeat password", autocomplete="new-password") }}
             {{ form.submit() }}
-        </form>
+        {% endcall %}
         <p class="meta">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>.</p>
     </div>
 </section>

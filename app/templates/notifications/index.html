@@ -1,21 +1,17 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, csrf_form, form_field with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
 {% block title %}Notifications - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Notifications</h1>
-        <p class="meta">Approve or deny admin requests for specific note access.</p>
-    </div>
-</div>
+{{ page_heading("Notifications", "Approve or deny admin requests for specific note access.") }}
 
 {% if requests %}
     <div class="grid">
         {% for item in requests %}
             <section class="card">
-                <h2>{{ item.status|title }} request</h2>
+                <h2>{{ status_badge(item.status|title) }} request</h2>
                 <p>
                     {{ item.admin_name }} requested note access for topic
                     <strong>{{ item.topic_title }}</strong>.
@@ -29,12 +25,10 @@
                     {% set available_notes = notes_by_topic.get(item.topic_id, []) %}
                     {% if available_notes %}
                         {% set approval_form = approval_forms[item.id] %}
-                        <form method="post" action="{{ url_for('notifications.approve', request_id=item.id) }}">
-                            {{ approval_form.hidden_tag() }}
-                            {{ approval_form.note_id.label(for="note_id_" ~ item.id) }}
-                            {{ approval_form.note_id(id="note_id_" ~ item.id, required=true) }}
+                        {% call csrf_form(approval_form, action=url_for('notifications.approve', request_id=item.id)) %}
+                            {{ form_field(approval_form.note_id, label_for="note_id_" ~ item.id, id="note_id_" ~ item.id, required=true) }}
                             {{ approval_form.submit() }}
-                        </form>
+                        {% endcall %}
                     {% else %}
                         <p>No notes exist for this topic yet.</p>
                     {% endif %}
@@ -48,6 +42,6 @@
         {% endfor %}
     </div>
 {% else %}
-    <p>No notifications yet.</p>
+    {{ empty_state("No notifications yet", "Note-access requests will appear here.") }}
 {% endif %}
 {% endblock %}

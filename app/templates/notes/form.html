@@ -1,31 +1,30 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = note and note.id %}
 {% block title %}{{ "Edit" if editing else "New" }} Note | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="notes-hero">
-    <div>
-        <p class="eyebrow">{{ "Update note" if editing else "New note" }}</p>
-        <h1>{{ "Edit note" if editing else "Create a note" }}</h1>
-        <p class="heading-copy">Write fast, preview safely, and keep the note connected to your learning topics.</p>
-    </div>
-    <a class="button button-secondary" href="{{ url_for('notes.index') }}">Back to notes</a>
-</section>
+{% call page_heading(
+    "Edit note" if editing else "Create a note",
+    "Write fast, preview safely, and keep the note connected to your learning topics.",
+    "Update note" if editing else "New note",
+    "notes-hero",
+    "heading-copy"
+) %}
+    {{ action_link(url_for('notes.index'), "Back to notes", "button button-secondary") }}
+{% endcall %}
 
 <section class="note-editor-shell" data-note-editor>
-    <form class="note-editor-form" method="post">
-        {{ form.hidden_tag() }}
-
-        {{ form.title.label }}
-        {{ form.title(
+    {% call csrf_form(form, form_class="note-editor-form") %}
+        {{ form_field(form.title,
             class="note-title-input",
             placeholder="Example: SQL injection checklist",
             required=true
         ) }}
 
-        {{ form.topic_id.label }}
-        {{ form.topic_id() }}
+        {{ form_field(form.topic_id) }}
 
         <div class="note-toolbar" aria-label="Editor toolbar">
             <button type="button" data-note-action="bold">Bold</button>
@@ -35,8 +34,7 @@
             <button type="button" data-note-action="heading">Heading</button>
         </div>
 
-        {{ form.body.label }}
-        {{ form.body(
+        {{ form_field(form.body,
             class="note-body-input",
             data_note_body="",
             placeholder="Write observations, commands, steps, payloads, or reflections...",
@@ -47,7 +45,7 @@
             <span class="meta" data-note-stats>0 words · 0 characters</span>
             {{ form.submit() }}
         </div>
-    </form>
+    {% endcall %}
 
     <aside class="note-preview-panel" aria-label="Live preview">
         <div class="panel-header">

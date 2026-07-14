@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import csrf_form, form_field with context %}
 
 {% block title %}Verify MFA - Cyber Dashboard{% endblock %}
 
@@ -13,12 +14,10 @@
         <h1>Verify MFA</h1>
         <p class="meta">Enter the 6-digit code from your authenticator app.</p>
 
-        <form method="post">
-            {{ form.hidden_tag() }}
-            {{ form.token.label }}
-            {{ form.token(placeholder="123456") }}
+        {% call csrf_form(form) %}
+            {{ form_field(form.token, placeholder="123456", inputmode="numeric", autocomplete="one-time-code") }}
             {{ form.submit() }}
-        </form>
+        {% endcall %}
     </div>
 </section>
 {% endblock %}

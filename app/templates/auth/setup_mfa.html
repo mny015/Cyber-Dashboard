@@ -1,46 +1,41 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading, status_badge with context %}
 
 {% block title %}Privacy and Security | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <p class="eyebrow">Account settings</p>
-        <h1>Privacy and Security</h1>
-        <p class="meta">Manage your password and multi-factor authentication.</p>
-    </div>
-</div>
+{{ page_heading(
+    "Privacy and Security",
+    "Manage your password and multi-factor authentication.",
+    "Account settings"
+) }}
 
 <div class="security-grid">
     <section class="card">
         <h2>Change password</h2>
         <p class="meta">Changing your password signs this account out on every device.</p>
-        <form method="post" action="{{ url_for('auth.change_password') }}">
-            {{ password_form.hidden_tag() }}
-            {{ password_form.current_password.label }}
-            {{ password_form.current_password(autocomplete="current-password") }}
-            {{ password_form.new_password.label }}
-            {{ password_form.new_password(
+        {% call csrf_form(password_form, action=url_for('auth.change_password')) %}
+            {{ form_field(password_form.current_password, autocomplete="current-password") }}
+            {{ form_field(password_form.new_password,
                 autocomplete="new-password",
                 placeholder="At least 12 characters"
             ) }}
-            {{ password_form.confirm_password.label }}
-            {{ password_form.confirm_password(autocomplete="new-password") }}
+            {{ form_field(password_form.confirm_password, autocomplete="new-password") }}
             {{ password_form.submit() }}
-        </form>
+        {% endcall %}
     </section>
 
     <section class="card">
         <h2>Multi-factor authentication</h2>
         {% if current_user.mfa_enabled %}
-            <p class="security-status security-status-enabled">MFA is enabled</p>
+            {{ status_badge("MFA is enabled", "success", "security-status security-status-enabled") }}
             <p class="meta">Your authenticator secret is hidden after activation.</p>
         {% elif not current_user.mfa_secret %}
             <p>Start setup to create an authenticator secret. You will scan the QR code on the next page.</p>
-            <form method="post">
-                {{ start_form.hidden_tag() }}
+            {% call csrf_form(start_form) %}
                 <button type="submit">Start MFA setup</button>
-            </form>
+            {% endcall %}
         {% else %}
             <p>Scan this QR code in your authenticator app, then enter the 6-digit code.</p>
             <img class="qr-code" src="{{ url_for('auth.mfa_qr') }}" alt="MFA QR code">
@@ -48,12 +43,10 @@
                 <summary>Show manual setup URI</summary>
                 <p class="meta secret-value">{{ provisioning_uri }}</p>
             </details>
-            <form method="post">
-                {{ form.hidden_tag() }}
-                {{ form.token.label }}
-                {{ form.token(placeholder="123456", inputmode="numeric", autocomplete="one-time-code") }}
+            {% call csrf_form(form) %}
+                {{ form_field(form.token, placeholder="123456", inputmode="numeric", autocomplete="one-time-code") }}
                 {{ form.submit() }}
-            </form>
+            {% endcall %}
         {% endif %}
     </section>
 </div>

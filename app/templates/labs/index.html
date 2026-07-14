@@ -1,16 +1,13 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, action_link with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
 {% block title %}Labs - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Labs</h1>
-        <p class="meta">Track practice labs from picoCTF, TryHackMe, Hack The Box, and more.</p>
-    </div>
-    <a class="button" href="{{ url_for('labs.create') }}">Add lab</a>
-</div>
+{% call page_heading("Labs", "Track practice labs from picoCTF, TryHackMe, Hack The Box, and more.") %}
+    {{ action_link(url_for('labs.create'), "Add lab") }}
+{% endcall %}
 
 <form class="filters" method="get">
     <select name="platform_id">
@@ -28,7 +25,7 @@
             <section class="card">
                 <div class="page-header">
                     <h2><a href="{{ url_for('labs.detail', lab_id=lab.id) }}">{{ lab.name }}</a></h2>
-                    <span class="status-badge">{{ "Complete" if lab.is_completed else "Open" }}</span>
+                    {{ status_badge("Complete" if lab.is_completed else "Open", "success" if lab.is_completed else None) }}
                 </div>
                 <p class="meta">
                     {{ lab.platform_name }}
@@ -51,6 +48,6 @@
         {% endfor %}
     </div>
 {% else %}
-    <p>No labs found. Add a personal lab or wait for an admin to share one.</p>
+    {{ empty_state("No labs found", "Add a personal lab or wait for an admin to share one.") }}
 {% endif %}
 {% endblock %}

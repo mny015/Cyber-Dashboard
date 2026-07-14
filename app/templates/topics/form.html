@@ -1,46 +1,36 @@
 {% extends "base.html" %}
+{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = topic and topic.id %}
 {% block title %}{{ "Edit" if editing else "New" }} Topic - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="page-header">
-    <div>
-        <p class="eyebrow">{{ "Update" if editing else "Create" }}</p>
-        <h1>{{ "Edit" if editing else "New" }} Topic</h1>
-        <p class="meta">Plan learning goals, status, priority, and topic notes.</p>
-    </div>
-    <a class="button button-secondary" href="{{ url_for('topics.index') }}">Back to topics</a>
-</section>
+{% call page_heading(
+    ("Edit" if editing else "New") ~ " Topic",
+    "Plan learning goals, status, priority, and topic notes.",
+    "Update" if editing else "Create"
+) %}
+    {{ action_link(url_for('topics.index'), "Back to topics", "button button-secondary") }}
+{% endcall %}
 
 <section class="card form-card">
-    <form method="post">
-        {{ form.hidden_tag() }}
-
-        {{ form.title.label }}
-        {{ form.title(required=true) }}
-
-        {{ form.category_id.label }}
-        {{ form.category_id() }}
+    {% call csrf_form(form) %}
+        {{ form_field(form.title, required=true) }}
+        {{ form_field(form.category_id) }}
 
         <div class="form-grid">
             <div>
-                {{ form.status.label }}
-                {{ form.status() }}
+                {{ form_field(form.status) }}
             </div>
             <div>
-                {{ form.priority.label }}
-                {{ form.priority() }}
+                {{ form_field(form.priority) }}
             </div>
         </div>
 
-        {{ form.description.label }}
-        {{ form.description() }}
-
-        {{ form.notes.label }}
-        {{ form.notes() }}
-
+        {{ form_field(form.description) }}
+        {{ form_field(form.notes) }}
         {{ form.submit() }}
-    </form>
+    {% endcall %}
 </section>
 {% endblock %}

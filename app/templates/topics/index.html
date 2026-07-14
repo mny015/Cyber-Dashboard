@@ -1,16 +1,13 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_link, delete_form with context %}
+{% from "macros/layout.html" import empty_state, page_heading with context %}
 
 {% block title %}Topics - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Topics</h1>
-        <p class="meta">Track the cyber topics you are learning, practicing, and reviewing.</p>
-    </div>
-    <a class="button" href="{{ url_for('topics.create') }}">New topic</a>
-</div>
+{% call page_heading("Topics", "Track the cyber topics you are learning, practicing, and reviewing.") %}
+    {{ action_link(url_for('topics.create'), "New topic") }}
+{% endcall %}
 
 <form class="filters" method="get">
     <select name="category_id">
@@ -33,13 +30,13 @@
                     {% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}
                 </p>
                 <div class="actions">
-                    <a class="button" href="{{ url_for('topics.edit', topic_id=topic.id) }}">Edit</a>
-                    {{ action_form(url_for('topics.delete', topic_id=topic.id), "Delete", button_class="danger", confirm="Delete this topic?") }}
+                    {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit") }}
+                    {{ delete_form(url_for('topics.delete', topic_id=topic.id), "Delete this topic?") }}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    <p>No topics found. Add a topic to begin tracking your learning.</p>
+    {{ empty_state("No topics found", "Add a topic to begin tracking your learning.") }}
 {% endif %}
 {% endblock %}

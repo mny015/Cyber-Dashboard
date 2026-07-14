@@ -1,42 +1,33 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, confirmation_form, csrf_form, form_field with context %}
+{% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
 {% block title %}Scheduled Tasks | Cyber Dashboard{% endblock %}
 
 {% block content %}
-<section class="page-header">
-    <div>
-        <p class="eyebrow">Planning</p>
-        <h1>Scheduled Tasks</h1>
-        <p class="meta">Plan reviews, lab practice, exports, and learning work without leaving the dashboard.</p>
-    </div>
-</section>
+{{ page_heading(
+    "Scheduled Tasks",
+    "Plan reviews, lab practice, exports, and learning work without leaving the dashboard.",
+    "Planning"
+) }}
 
 <div class="task-layout">
     <section class="card form-card">
         <h2>Schedule a task</h2>
-        <form method="post">
-            {{ form.hidden_tag() }}
-
-            {{ form.title.label }}
-            {{ form.title(placeholder="Example: Review shared lab visibility", required=true) }}
-
-            {{ form.description.label }}
-            {{ form.description(placeholder="Optional context or checklist") }}
+        {% call csrf_form(form) %}
+            {{ form_field(form.title, placeholder="Example: Review shared lab visibility", required=true) }}
+            {{ form_field(form.description, placeholder="Optional context or checklist") }}
 
             <div class="form-grid">
                 <div>
-                    {{ form.task_type.label }}
-                    {{ form.task_type() }}
+                    {{ form_field(form.task_type) }}
                 </div>
                 <div>
-                    {{ form.due_at.label }}
-                    {{ form.due_at() }}
+                    {{ form_field(form.due_at) }}
                 </div>
                 {% if current_user.is_admin %}
                     <div>
-                        {{ form.scope.label }}
-                        {{ form.scope() }}
+                        {{ form_field(form.scope) }}
                     </div>
                 {% else %}
                     <input type="hidden" name="scope" value="personal">
@@ -44,7 +35,7 @@
             </div>
 
             {{ form.submit() }}
-        </form>
+        {% endcall %}
     </section>
 
     <section class="card task-card">
@@ -59,7 +50,7 @@
             <div class="dashboard-list">
                 {% for item in tasks %}
                     <article>
-                        <span class="dashboard-badge">{{ item.task_type|title }}</span>
+                        {{ status_badge(item.task_type|title, class_name="dashboard-badge") }}
                         <div>
                             <strong>{{ item.title }}</strong>
                             <small>
@@ -73,7 +64,7 @@
                             {% if item.status == "upcoming" %}
                                 <div class="actions">
                                     {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
-                                    {{ action_form(url_for('tasks.cancel', task_id=item.id), "Cancel", button_class="button-secondary", confirm="Cancel this scheduled task?") }}
+                                    {{ confirmation_form(url_for('tasks.cancel', task_id=item.id), "Cancel", "Cancel this scheduled task?") }}
                                 </div>
                             {% endif %}
                         </div>
@@ -81,10 +72,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="dashboard-empty">
-                <strong>No scheduled tasks yet</strong>
-                <p>Use the form to schedule a task.</p>
-            </div>
+            {{ empty_state("No scheduled tasks yet", "Use the form to schedule a task.", "dashboard-empty") }}
         {% endif %}
     </section>
 </div>

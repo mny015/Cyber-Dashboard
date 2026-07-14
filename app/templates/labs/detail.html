@@ -1,26 +1,20 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, action_link, delete_form with context %}
+{% from "macros/layout.html" import page_heading with context %}
 
 {% block title %}{{ lab.name }} - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>{{ lab.name }}</h1>
-        <p class="meta">
-            {{ lab.platform_name }}
-            &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}
-            {% if lab.topic_title %}&middot; Topic: {{ lab.topic_title }}{% endif %}
-        </p>
-    </div>
+{% set lab_meta %}{{ lab.platform_name }} &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}{% if lab.topic_title %} &middot; Topic: {{ lab.topic_title }}{% endif %}{% endset %}
+{% call page_heading(lab.name, lab_meta) %}
     <div class="actions">
-        <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer">Open lab</a>
+        {{ action_link(lab.url, "Open lab", target="_blank", rel="noopener noreferrer") }}
         {% if lab.owner_id == current_user.id %}
-            <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}">Edit</a>
-            {{ action_form(url_for('labs.delete', lab_id=lab.id), "Delete", button_class="danger", confirm="Delete this lab?") }}
+            {{ action_link(url_for('labs.edit', lab_id=lab.id), "Edit") }}
+            {{ delete_form(url_for('labs.delete', lab_id=lab.id), "Delete this lab?") }}
         {% endif %}
     </div>
-</div>
+{% endcall %}
 
 <section class="card">
     <h2>Notes</h2>

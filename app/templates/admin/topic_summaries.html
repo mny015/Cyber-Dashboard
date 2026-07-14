@@ -1,32 +1,17 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form %}
+{% from "macros/forms.html" import action_form, action_link with context %}
+{% from "macros/layout.html" import empty_state, page_heading with context %}
+{% from "macros/tables.html" import data_table with context %}
 
 {% block title %}Topic Summaries - Cyber Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1>Topic Summaries</h1>
-        <p class="meta">Admin overview without private descriptions or notes.</p>
-    </div>
-    <a class="button" href="{{ url_for('admin.category_summaries') }}">Category summaries</a>
-</div>
+{% call page_heading("Topic Summaries", "Admin overview without private descriptions or notes.") %}
+    {{ action_link(url_for('admin.category_summaries'), "Category summaries") }}
+{% endcall %}
 
 {% if topics %}
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Topic</th>
-                    <th>Owner</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Updated</th>
-                    <th>Note access</th>
-                </tr>
-            </thead>
-            <tbody>
+    {% call data_table(["Topic", "Owner", "Category", "Status", "Priority", "Updated", "Note access"]) %}
                 {% for topic in topics %}
                     <tr>
                         <td>{{ topic.title }}</td>
@@ -40,10 +25,8 @@
                         </td>
                     </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endcall %}
 {% else %}
-    <p>No active topics found.</p>
+    {{ empty_state("No active topics found", "User-owned topic summaries will appear here.") }}
 {% endif %}
 {% endblock %}

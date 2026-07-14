@@ -1,11 +1,10 @@
 """Administrative account changes with guard rules and atomic audit logs."""
 
-from werkzeug.security import generate_password_hash
-
 from app.repositories import user_repository
 from app.services import audit_service
 from app.services.exceptions import LastAdministratorError, NotFoundError, PermissionDeniedError
 from app.utils.database import db, transaction
+from app.utils.security import hash_password
 
 
 def change_role(target_id, actor_id, role, context):
@@ -50,7 +49,7 @@ def reset_password(target_id, actor_id, password, context):
         user = _require_user(target_id, database)
         user_repository.update_password(
             user.id,
-            generate_password_hash(password),
+            hash_password(password),
             user.auth_version + 1,
             reset_failures=True,
             database=database,

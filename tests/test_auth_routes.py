@@ -128,6 +128,34 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
     with fake_auth_client.session_transaction() as session:
         assert session["_user_id"] == "42"
         assert session["auth_version"] == 0
+        assert session["reauthenticated_auth_version"] == 0
+        assert session["reauthenticated_at"]
+
+
+def test_reconfirmation_accepts_current_password(monkeypatch, fake_auth_client):
+    user = User.from_row(make_user_row())
+    audit_calls = []
+    monkeypatch.setattr("app.repositories.user_repository.find_by_id", lambda _user_id: user)
+    monkeypatch.setattr(
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_calls.append(action),
+    )
+    with fake_auth_client.session_transaction() as session:
+        session["_user_id"] = "42"
+        session["_fresh"] = True
+        session["auth_version"] = 0
+        session["reauthentication_return_to"] = "/user/dashboard"
+
+    response = fake_auth_client.post(
+        "/auth/reconfirm",
+        data={"current_password": "CorrectPassword123!", "mfa_token": ""},
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/user/dashboard")
+    assert "reauthentication_succeeded" in audit_calls
+    with fake_auth_client.session_transaction() as session:
+        assert session["reauthenticated_auth_version"] == 0
 
 
 def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_client):

@@ -1,20 +1,20 @@
 """HTTP handlers for user-owned contacts."""
 
-from flask import abort, flash, redirect, render_template, url_for
+from flask import flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from app.controllers.form_helpers import validate_action
 from app.forms.contacts import ContactForm
 from app.models.contact import Contact
 from app.repositories import contact_repository
-from utils.audit import log_audit
+from app.utils.audit import log_audit
+from app.utils.decorators import require_owned_record
 
 
 def _get_contact_or_404(contact_id):
-    contact = contact_repository.find_owned(contact_id, current_user.id)
-    if not contact:
-        abort(404)
-    return contact
+    return require_owned_record(
+        contact_repository.find_owned(contact_id, current_user.id)
+    )
 
 
 @login_required

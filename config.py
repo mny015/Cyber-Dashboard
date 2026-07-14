@@ -1,6 +1,8 @@
 """Environment-driven configuration for every application runtime."""
 
 import os
+import base64
+import binascii
 from datetime import timedelta
 
 from dotenv import load_dotenv
@@ -41,18 +43,29 @@ class BaseConfig:
     DB_POOL_SIZE = os.getenv("DB_POOL_SIZE", "5").strip()
     DB_POOL_TIMEOUT = os.getenv("DB_POOL_TIMEOUT", "5").strip()
 
+    MFA_ENCRYPTION_KEY = os.getenv("MFA_ENCRYPTION_KEY", "").strip()
+    REAUTHENTICATION_MAX_AGE = os.getenv("REAUTHENTICATION_MAX_AGE", "600").strip()
+    TRUSTED_PROXY_HOPS = os.getenv("TRUSTED_PROXY_HOPS", "0").strip()
+
     WTF_CSRF_ENABLED = True
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = False
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SECURE = False
 
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
+    RATELIMIT_HEADERS_ENABLED = True
 
     LOG_FILE = os.getenv("LOG_FILE", "instance/cyber_dashboard.log")
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "app/static/uploads")
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024
+    PROFILE_IMAGE_MAX_BYTES = os.getenv(
+        "PROFILE_IMAGE_MAX_BYTES", str(2 * 1024 * 1024)
+    ).strip()
 
     TALISMAN_FORCE_HTTPS = False
     TALISMAN_STRICT_TRANSPORT_SECURITY = True
@@ -85,10 +98,19 @@ class BaseConfig:
         try:
             cls.DB_POOL_SIZE = int(cls.DB_POOL_SIZE)
             cls.DB_POOL_TIMEOUT = float(cls.DB_POOL_TIMEOUT)
+            cls.REAUTHENTICATION_MAX_AGE = int(cls.REAUTHENTICATION_MAX_AGE)
+            cls.TRUSTED_PROXY_HOPS = int(cls.TRUSTED_PROXY_HOPS)
+            cls.PROFILE_IMAGE_MAX_BYTES = int(cls.PROFILE_IMAGE_MAX_BYTES)
         except (TypeError, ValueError) as exc:
-            raise RuntimeError("DB_POOL_SIZE and DB_POOL_TIMEOUT must be numbers.") from exc
+            raise RuntimeError("Database and security numeric settings must be numbers.") from exc
         if cls.DB_POOL_SIZE < 1 or cls.DB_POOL_TIMEOUT <= 0:
             raise RuntimeError("DB_POOL_SIZE and DB_POOL_TIMEOUT must be positive.")
+        if cls.REAUTHENTICATION_MAX_AGE < 60:
+            raise RuntimeError("REAUTHENTICATION_MAX_AGE must be at least 60 seconds.")
+        if cls.TRUSTED_PROXY_HOPS < 0:
+            raise RuntimeError("TRUSTED_PROXY_HOPS cannot be negative.")
+        if cls.PROFILE_IMAGE_MAX_BYTES < 1024:
+            raise RuntimeError("PROFILE_IMAGE_MAX_BYTES must be at least 1024 bytes.")
 
 
 class DevelopmentConfig(BaseConfig):
@@ -112,6 +134,7 @@ class ProductionConfig(BaseConfig):
 
     DEBUG = False
     SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
     TALISMAN_FORCE_HTTPS = True
 
     @classmethod
@@ -121,6 +144,18 @@ class ProductionConfig(BaseConfig):
             raise RuntimeError("Production SECRET_KEY must be a non-placeholder value of at least 32 characters.")
         if cls.DB_PASSWORD.lower().startswith("replace-with"):
             raise RuntimeError("Production DB_PASSWORD must not be a placeholder value.")
+        try:
+            decoded_mfa_key = base64.urlsafe_b64decode(cls.MFA_ENCRYPTION_KEY.encode("ascii"))
+        except (ValueError, UnicodeError, binascii.Error):
+            decoded_mfa_key = b""
+        if len(decoded_mfa_key) != 32:
+            raise RuntimeError(
+                "Production MFA_ENCRYPTION_KEY must be a Fernet key stored in the environment."
+            )
+        if cls.RATELIMIT_STORAGE_URI.strip().lower() == "memory://":
+            raise RuntimeError(
+                "Production RATELIMIT_STORAGE_URI must use shared storage such as Redis."
+            )
 
 
 CONFIGURATIONS = {

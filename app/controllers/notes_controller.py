@@ -8,15 +8,13 @@ from app.forms.notes import NoteForm
 from app.repositories import note_repository, topic_repository
 from app.services import note_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
-from utils.audit import get_audit_context
-from utils.helpers import clean_text
+from app.utils.audit import get_audit_context
+from app.utils.decorators import require_owned_record
+from app.utils.validation import clean_text
 
 
 def _get_note_or_404(note_id):
-    note = note_repository.find_owned(note_id, current_user.id)
-    if not note:
-        abort(404)
-    return note
+    return require_owned_record(note_repository.find_owned(note_id, current_user.id))
 
 
 def _topics():

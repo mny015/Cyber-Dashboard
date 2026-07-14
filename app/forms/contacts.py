@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import EmailField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, Optional, ValidationError
 
-from utils.helpers import clean_text, is_valid_phone
+from app.utils.validation import clean_text, is_valid_phone
 
 
 def valid_phone(_form, field):

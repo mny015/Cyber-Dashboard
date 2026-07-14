@@ -1,10 +1,11 @@
 """Flask extension instances and application-factory initialization."""
 
 from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_login import LoginManager
 from flask_talisman import Talisman
 from flask_wtf import CSRFProtect
+
+from app.utils.security import get_client_address
 
 
 CONTENT_SECURITY_POLICY = {
@@ -16,7 +17,7 @@ CONTENT_SECURITY_POLICY = {
 
 login_manager = LoginManager()
 csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_client_address)
 talisman = Talisman()
 
 login_manager.login_view = "auth.login"

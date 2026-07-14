@@ -1,6 +1,6 @@
 """HTTP handlers for user-owned learning topics."""
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app.controllers.form_helpers import validate_action
@@ -8,15 +8,13 @@ from app.forms.topics import TopicForm
 from app.models.topic import Topic
 from app.repositories import category_repository, topic_repository
 from app.utils.database import DatabaseIntegrityError
-from utils.audit import log_audit
-from utils.helpers import slugify
+from app.utils.audit import log_audit
+from app.utils.decorators import require_owned_record
+from app.utils.validation import slugify
 
 
 def _get_topic_or_404(topic_id):
-    topic = topic_repository.find_owned(topic_id, current_user.id)
-    if not topic:
-        abort(404)
-    return topic
+    return require_owned_record(topic_repository.find_owned(topic_id, current_user.id))
 
 
 def _categories():

@@ -1,6 +1,6 @@
 """HTTP handlers for user-owned categories."""
 
-from flask import abort, flash, redirect, render_template, url_for
+from flask import flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from app.controllers.form_helpers import validate_action
@@ -8,14 +8,14 @@ from app.forms.categories import CategoryForm
 from app.models.category import Category
 from app.repositories import category_repository
 from app.utils.database import DatabaseIntegrityError
-from utils.audit import log_audit
+from app.utils.audit import log_audit
+from app.utils.decorators import require_owned_record
 
 
 def _get_category_or_404(category_id):
-    category = category_repository.find_owned(category_id, current_user.id)
-    if not category:
-        abort(404)
-    return category
+    return require_owned_record(
+        category_repository.find_owned(category_id, current_user.id)
+    )
 
 
 @login_required

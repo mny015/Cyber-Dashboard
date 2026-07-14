@@ -69,7 +69,7 @@ def execute(query, params=None, commit=True, **overrides):
         if commit:
             connection.commit()
         return affected, lastrowid
-    except Exception:
+    except (pymysql.MySQLError, OSError):
         if commit:
             connection.rollback()
         raise

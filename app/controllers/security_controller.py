@@ -12,8 +12,14 @@ from app.forms.security import (
 from app.repositories import security_repository
 from app.services import security_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
-from utils.audit import get_audit_context
-from utils.decorators import admin_required
+from app.utils.audit import get_audit_context
+from app.utils.decorators import (
+    admin_required,
+    recent_reauthentication_required,
+    recent_reauthentication_required_for_writes,
+    require_owned_record,
+)
+from app.utils.rate_limits import sensitive_action_rate_limited
 from utils.security_catalog import ACTIVITY_TYPE_CHOICES, FINDING_STATUS_CHOICES, SEVERITY_CHOICES
 
 
@@ -81,6 +87,7 @@ def suggest_vulnerability():
 
 @login_required
 @admin_required
+@recent_reauthentication_required_for_writes
 def admin_vulnerabilities():
     form = AdminVulnerabilityForm()
     if not form.validate_on_submit():
@@ -106,12 +113,16 @@ def admin_vulnerabilities():
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def approve_vulnerability(vulnerability_id):
     return _review_vulnerability(vulnerability_id, "approved")
 
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def reject_vulnerability(vulnerability_id):
     return _review_vulnerability(vulnerability_id, "rejected")
 
@@ -150,10 +161,9 @@ def _save_finding(form, finding_id=None):
 
 
 def _finding_or_404(finding_id):
-    finding = security_repository.find_owned(finding_id, current_user.id)
-    if not finding:
-        abort(404)
-    return finding
+    return require_owned_record(
+        security_repository.find_owned(finding_id, current_user.id)
+    )
 
 
 def _finding_form(finding=None):

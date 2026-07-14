@@ -9,7 +9,7 @@ class RoleForm(FlaskForm):
 
 
 class AdminPasswordResetForm(FlaskForm):
-    password = PasswordField("New password", validators=[DataRequired(), Length(min=8, max=128)])
+    password = PasswordField("New password", validators=[DataRequired(), Length(min=12, max=128)])
     confirm_password = PasswordField(
         "Confirm password",
         validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],

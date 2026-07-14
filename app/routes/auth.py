@@ -36,3 +36,9 @@ auth_bp.add_url_rule(
     view_func=auth_controller.change_password,
     methods=["POST"],
 )
+auth_bp.add_url_rule(
+    "/reconfirm",
+    endpoint="reconfirm",
+    view_func=auth_controller.reconfirm,
+    methods=["GET", "POST"],
+)

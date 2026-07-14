@@ -1,6 +1,7 @@
 """HTTP safety contracts for every state-changing workflow."""
 
 import re
+import time
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ FORM_PAGE_ENDPOINTS = {
     "admin.reset_user_password",
     "auth.register",
     "auth.login",
+    "auth.reconfirm",
     "auth.verify_mfa",
     "auth.setup_mfa",
     "categories.create",
@@ -115,6 +117,8 @@ def action_client(action_app):
         session["_user_id"] = "7"
         session["_fresh"] = True
         session["auth_version"] = 0
+        session["reauthenticated_at"] = int(time.time())
+        session["reauthenticated_auth_version"] = 0
     return client
 
 
@@ -165,6 +169,26 @@ def test_get_mfa_page_does_not_create_secret(monkeypatch, action_client):
     response = action_client.get("/auth/profile/mfa")
 
     assert response.status_code == 200
+    assert writes == []
+
+
+def test_stale_session_cannot_start_sensitive_export(monkeypatch, action_client):
+    writes = []
+    monkeypatch.setattr(
+        "app.controllers.backup_controller.export_service.record_personal_export",
+        lambda *args: writes.append(args),
+    )
+    with action_client.session_transaction() as session:
+        session.pop("reauthenticated_at", None)
+        session.pop("reauthenticated_auth_version", None)
+
+    response = action_client.post(
+        "/backup/personal.json",
+        data={"csrf_token": csrf_token(action_client)},
+    )
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/auth/reconfirm")
     assert writes == []
 
 

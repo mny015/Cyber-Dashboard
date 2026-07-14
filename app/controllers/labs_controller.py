@@ -1,13 +1,14 @@
 """HTTP handlers for lab references and completion state."""
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app.controllers.form_helpers import validate_action
 from app.forms.labs import LabForm
 from app.models import LabReference
 from app.repositories import lab_repository, topic_repository
-from utils.audit import log_audit
+from app.utils.audit import log_audit
+from app.utils.decorators import require_owned_record
 
 
 @login_required
@@ -82,17 +83,11 @@ def incomplete(lab_id):
 
 
 def _visible_lab_or_404(lab_id):
-    lab = lab_repository.find_visible(lab_id, current_user.id)
-    if not lab:
-        abort(404)
-    return lab
+    return require_owned_record(lab_repository.find_visible(lab_id, current_user.id))
 
 
 def _owned_lab_or_404(lab_id):
-    lab = lab_repository.find_owned(lab_id, current_user.id)
-    if not lab:
-        abort(404)
-    return lab
+    return require_owned_record(lab_repository.find_owned(lab_id, current_user.id))
 
 
 def _render_form(lab, form, topics, platforms):

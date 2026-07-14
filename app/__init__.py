@@ -9,8 +9,13 @@ from config import get_config
 from app.extensions import init_extensions, login_manager
 from app.repositories import user_repository
 from app.routes import register_blueprints
-from app.utils.database import init_database
-from utils.helpers import format_date
+from app.utils.datetime_helpers import format_date
+from app.utils.database import (
+    DatabaseConnectionError,
+    DatabaseError,
+    init_database,
+)
+from app.utils.security import configure_trusted_proxy
 
 
 @login_manager.user_loader
@@ -22,6 +27,7 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(get_config(config_name))
 
+    configure_trusted_proxy(app)
     init_extensions(app)
     init_database(app)
 
@@ -58,6 +64,16 @@ def configure_logging(app):
 
 
 def register_error_handlers(app):
+    @app.errorhandler(DatabaseConnectionError)
+    def database_unavailable(error):
+        app.logger.error("Database connection unavailable: %s", type(error).__name__)
+        return render_template("errors/500.html"), 503
+
+    @app.errorhandler(DatabaseError)
+    def database_failure(error):
+        app.logger.error("Database operation failed: %s", type(error).__name__)
+        return render_template("errors/500.html"), 500
+
     @app.errorhandler(403)
     def forbidden(error):
         return render_template("errors/403.html", error=error), 403

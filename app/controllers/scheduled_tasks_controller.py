@@ -8,7 +8,7 @@ from app.forms.scheduled_tasks import ScheduledTaskForm
 from app.repositories import scheduled_task_repository
 from app.services import scheduled_task_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
-from utils.audit import get_audit_context
+from app.utils.audit import get_audit_context
 
 
 TASK_TYPES = scheduled_task_service.TASK_TYPES

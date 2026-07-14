@@ -81,7 +81,7 @@ def authenticated_controller_client(controller_app):
 def test_every_application_route_maps_directly_to_a_controller(app):
     application_rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint != "static"]
 
-    assert len(application_rules) == 71
+    assert len(application_rules) == 72
     for rule in application_rules:
         view = app.view_functions[rule.endpoint]
         while hasattr(view, "__wrapped__"):

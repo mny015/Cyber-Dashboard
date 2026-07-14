@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import pytest
+from cryptography.fernet import Fernet
+from flask import Flask
 
 from app.models import Category, Contact, Note, User
 from app.repositories import (
@@ -45,6 +47,23 @@ def test_user_repository_returns_user_models(monkeypatch):
         "SELECT * FROM `users` WHERE `email` = %s LIMIT %s",
         ("user@example.com", 1),
     )
+
+
+def test_user_repository_encrypts_mfa_secret_before_write(monkeypatch):
+    app = Flask(__name__)
+    app.config.update(
+        SECRET_KEY="repository-secret",
+        MFA_ENCRYPTION_KEY=Fernet.generate_key().decode("ascii"),
+    )
+    database = RecordingDatabase()
+
+    with app.app_context():
+        user_repository.set_mfa_secret(4, "JBSWY3DPEHPK3PXP", database=database)
+
+    _kind, sql, params = database.calls[0]
+    assert sql.startswith("UPDATE `users` SET")
+    assert params[0].startswith("mfa:v1:")
+    assert "JBSWY3DPEHPK3PXP" not in params[0]
 
 
 @pytest.mark.parametrize(

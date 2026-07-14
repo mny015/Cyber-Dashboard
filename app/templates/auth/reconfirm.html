@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Identity - Cyber Dashboard{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <a class="auth-logo brand-link" href="{{ url_for('dashboard.dashboard') }}" aria-label="Cyber Dashboard">
+            <img class="brand-logo brand-logo-light" src="{{ url_for('static', filename='image/logo-light.png') }}" alt="Cyber Dashboard">
+            <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
+        </a>
+        <p class="eyebrow">Sensitive action</p>
+        <h1>Confirm your identity</h1>
+        <p class="meta">Enter your account password or, if enabled, a current MFA code.</p>
+
+        <form method="post" autocomplete="off">
+            {{ form.hidden_tag() }}
+
+            {{ form.current_password.label }}
+            {{ form.current_password(autocomplete="current-password") }}
+
+            {{ form.mfa_token.label }}
+            {{ form.mfa_token(inputmode="numeric", autocomplete="one-time-code") }}
+
+            {{ form.submit() }}
+        </form>
+    </div>
+</section>
+{% endblock %}

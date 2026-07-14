@@ -24,6 +24,14 @@ class AuditPage:
     def has_prev(self):
         return self.page > 1
 
+    @property
+    def next_num(self):
+        return self.page + 1 if self.has_next else None
+
+    @property
+    def prev_num(self):
+        return self.page - 1 if self.has_prev else None
+
 
 def create(action, details, ip_address, user_id=None, database=None):
     database = database or db

@@ -1,7 +1,9 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
+from flask_wtf.file import FileField
 from wtforms import EmailField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Email, Length, Optional
+
+from app.utils.uploads import ProfileImageUploadValidator
 
 
 class ProfileForm(FlaskForm):
@@ -10,6 +12,6 @@ class ProfileForm(FlaskForm):
     profile_bio = TextAreaField("Profile details", validators=[Optional(), Length(max=1000)])
     profile_image = FileField(
         "Profile picture",
-        validators=[FileAllowed(["jpg", "jpeg", "png", "gif", "webp"], "Upload an image file.")],
+        validators=[ProfileImageUploadValidator()],
     )
     submit = SubmitField("Update profile")

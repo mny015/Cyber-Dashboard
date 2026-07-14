@@ -4,7 +4,7 @@ from flask import redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from app.services import dashboard_service
-from utils.decorators import admin_required
+from app.utils.decorators import admin_required
 
 
 def index():

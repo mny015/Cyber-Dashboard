@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import DateTimeLocalField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
-from utils.helpers import clean_text
+from app.utils.validation import clean_text
 
 
 class ScheduledTaskForm(FlaskForm):

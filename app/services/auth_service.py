@@ -1,7 +1,7 @@
 """Registration, account lockout, password, and MFA business workflows."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pyotp
 
@@ -10,6 +10,8 @@ from app.repositories import user_repository
 from app.services import audit_service
 from app.services.exceptions import ConflictError, ValidationError
 from app.utils.database import db, transaction
+from app.utils.datetime_helpers import parse_datetime
+from app.utils.security import verify_reauthentication
 
 
 LOCKOUT_FAILURE_LIMIT = 5
@@ -77,7 +79,7 @@ def record_login(user, context, used_mfa=False):
 
 
 def record_failed_login(user, email, context):
-    next_count = user.failed_login_count + 1
+    next_count = _next_failure_count(user)
     with transaction() as cursor:
         user_repository.record_failed_login(
             user.id, LOCKOUT_FAILURE_LIMIT, LOCKOUT_MINUTES, cursor=cursor
@@ -102,7 +104,7 @@ def is_account_locked(user, now=None):
     locked_until = user.locked_until
     if isinstance(locked_until, str):
         try:
-            locked_until = datetime.fromisoformat(locked_until)
+            locked_until = parse_datetime(locked_until)
         except ValueError:
             return False
     return locked_until > (now or datetime.now())
@@ -163,6 +165,35 @@ def change_password(user_id, current_password, new_password, context):
         )
 
 
+def reconfirm_identity(user, current_password, mfa_token, context):
+    if not verify_reauthentication(user, current_password, mfa_token):
+        audit_service.record(
+            "reauthentication_failed",
+            "Sensitive-action identity confirmation failed",
+            _as_actor(context, user.id),
+        )
+        raise ValidationError("Password or MFA code is incorrect.")
+    audit_service.record(
+        "reauthentication_succeeded",
+        "Identity confirmed for a sensitive action",
+        _as_actor(context, user.id),
+    )
+
+
 def _as_actor(context, actor_id):
     context = context or audit_service.AuditContext()
     return audit_service.AuditContext(actor_id=actor_id, ip_address=context.ip_address)
+
+
+def _next_failure_count(user, now=None):
+    last_failed = user.last_failed_login_at
+    if isinstance(last_failed, str):
+        try:
+            last_failed = parse_datetime(last_failed)
+        except ValueError:
+            last_failed = None
+    if not last_failed or last_failed < (now or datetime.now()) - timedelta(
+        minutes=LOCKOUT_MINUTES
+    ):
+        return 1
+    return user.failed_login_count + 1

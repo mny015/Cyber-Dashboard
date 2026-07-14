@@ -5,9 +5,8 @@ from datetime import datetime
 from typing import ClassVar
 
 from flask_login import UserMixin
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from app.models.base import RowModel, as_bool
+from app.utils.security import hash_password, verify_password
 
 
 @dataclass(slots=True)
@@ -44,10 +43,10 @@ class User(UserMixin, RowModel):
         self.failed_login_count = int(self.failed_login_count or 0)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = hash_password(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return verify_password(self.password_hash, password)
 
     @property
     def is_admin(self):

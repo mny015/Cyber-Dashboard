@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import EmailField, PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 
 class RegisterForm(FlaskForm):
@@ -41,3 +41,16 @@ class ChangePasswordForm(FlaskForm):
         validators=[DataRequired(), EqualTo("new_password", message="New passwords must match.")],
     )
     submit = SubmitField("Change password")
+
+
+class ReconfirmationForm(FlaskForm):
+    current_password = PasswordField("Current password", validators=[Optional()])
+    mfa_token = StringField("MFA code", validators=[Optional(), Length(min=6, max=6)])
+    submit = SubmitField("Confirm identity")
+
+    def validate(self, extra_validators=None):
+        valid = super().validate(extra_validators=extra_validators)
+        if not self.current_password.data and not self.mfa_token.data:
+            self.current_password.errors.append("Enter your password or current MFA code.")
+            return False
+        return valid

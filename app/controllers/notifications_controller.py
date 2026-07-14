@@ -8,7 +8,8 @@ from app.forms.notifications import NoteApprovalForm
 from app.repositories import notification_repository
 from app.services import notification_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError
-from utils.audit import get_audit_context
+from app.utils.audit import get_audit_context
+from app.utils.decorators import recent_reauthentication_required
 
 
 def _get_pending_request_or_404(request_id):
@@ -46,6 +47,7 @@ def index():
 
 
 @login_required
+@recent_reauthentication_required
 def approve(request_id):
     access_request = _get_pending_request_or_404(request_id)
     form = NoteApprovalForm()

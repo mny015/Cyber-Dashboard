@@ -4,6 +4,11 @@ from datetime import datetime
 
 from app.models import ProfileImage, User
 from app.utils.database import db, transaction
+from app.utils.security import (
+    decrypt_mfa_secret,
+    encrypt_mfa_secret,
+    is_encrypted_mfa_secret,
+)
 
 
 def find_by_id(user_id, database=None):
@@ -12,18 +17,39 @@ def find_by_id(user_id, database=None):
     except (TypeError, ValueError):
         return None
     database = database or db
-    return User.from_row(database.table(User.TABLE_NAME).where("id", "=", normalized_id).first())
+    return _user_from_row(
+        database.table(User.TABLE_NAME).where("id", "=", normalized_id).first(),
+        database,
+    )
 
 
 def find_by_email(email, database=None):
     database = database or db
-    return User.from_row(
-        database.table(User.TABLE_NAME).where("email", "=", email).first()
+    return _user_from_row(
+        database.table(User.TABLE_NAME).where("email", "=", email).first(),
+        database,
     )
 
 
 def list_all():
-    rows = db.table(User.TABLE_NAME).order_by("created_at", "DESC").all()
+    rows = (
+        db.table(User.TABLE_NAME)
+        .select(
+            "id",
+            "email",
+            "display_name",
+            "role",
+            "is_banned",
+            "mfa_enabled",
+            "auth_version",
+            "profile_bio",
+            "profile_image",
+            "created_at",
+            "updated_at",
+        )
+        .order_by("created_at", "DESC")
+        .all()
+    )
     return User.from_rows(rows)
 
 
@@ -44,7 +70,7 @@ def create(user, database=None):
             "display_name": user.display_name,
             "role": user.role,
             "is_banned": user.is_banned,
-            "mfa_secret": user.mfa_secret,
+            "mfa_secret": encrypt_mfa_secret(user.mfa_secret),
             "mfa_enabled": user.mfa_enabled,
             "created_at": now,
             "updated_at": now,
@@ -65,7 +91,9 @@ def set_banned(user_id, is_banned, database=None):
 
 
 def set_mfa_secret(user_id, secret, database=None):
-    return _update_user(user_id, {"mfa_secret": secret}, database=database)
+    return _update_user(
+        user_id, {"mfa_secret": encrypt_mfa_secret(secret)}, database=database
+    )
 
 
 def set_mfa_enabled(user_id, enabled, database=None):
@@ -104,17 +132,35 @@ def _record_failed_login(cursor, user_id, failure_limit, lockout_minutes):
     cursor.execute(
             """
             UPDATE users
-            SET failed_login_count = failed_login_count + 1,
-                last_failed_login_at = NOW(),
-                locked_until = CASE
-                    WHEN failed_login_count + 1 >= %s
+            SET locked_until = CASE
+                    WHEN (
+                        CASE
+                            WHEN last_failed_login_at IS NULL
+                              OR last_failed_login_at < TIMESTAMPADD(MINUTE, %s, NOW())
+                            THEN 1
+                            ELSE failed_login_count + 1
+                        END
+                    ) >= %s
                     THEN TIMESTAMPADD(MINUTE, %s, NOW())
-                    ELSE locked_until
+                    ELSE NULL
                 END,
+                failed_login_count = CASE
+                    WHEN last_failed_login_at IS NULL
+                      OR last_failed_login_at < TIMESTAMPADD(MINUTE, %s, NOW())
+                    THEN 1
+                    ELSE failed_login_count + 1
+                END,
+                last_failed_login_at = NOW(),
                 updated_at = NOW()
             WHERE id = %s
             """,
-            (int(failure_limit), int(lockout_minutes), int(user_id)),
+            (
+                -int(lockout_minutes),
+                int(failure_limit),
+                int(lockout_minutes),
+                -int(lockout_minutes),
+                int(user_id),
+            ),
     )
     return cursor.rowcount
 
@@ -206,3 +252,15 @@ def _update_user(user_id, values, database=None):
     database = database or db
     values = {**values, "updated_at": datetime.now()}
     return database.table(User.TABLE_NAME).where("id", "=", int(user_id)).update(values)
+
+
+def _user_from_row(row, database):
+    user = User.from_row(row)
+    if not user or not user.mfa_secret:
+        return user
+
+    stored_secret = user.mfa_secret
+    user.mfa_secret = decrypt_mfa_secret(stored_secret)
+    if not is_encrypted_mfa_secret(stored_secret):
+        set_mfa_secret(user.id, user.mfa_secret, database=database)
+    return user

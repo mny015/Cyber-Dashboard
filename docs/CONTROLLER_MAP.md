@@ -1,6 +1,6 @@
 # Controller Map
 
-All 71 application routes map directly to these plain controller functions. Route modules contain only Blueprint setup and `add_url_rule()` declarations. Authentication and administrator decorators are applied to the controller functions.
+All 72 application routes map directly to these plain controller functions. Route modules contain only Blueprint setup and `add_url_rule()` declarations. Authentication and administrator decorators are applied to the controller functions.
 
 ## Dashboard Controller
 
@@ -22,6 +22,7 @@ All 71 application routes map directly to these plain controller functions. Rout
 | `setup_mfa` | `MfaSetupForm`, `ChangePasswordForm`, MFA service functions | `auth/setup_mfa.html` or `dashboard.dashboard` |
 | `mfa_qr` | `pyotp`, `qrcode` | PNG response, `auth.setup_mfa`, or 404 |
 | `change_password` | `ChangePasswordForm`, `auth_service.change_password` | `auth.setup_mfa` or `auth.login` |
+| `reconfirm` | `ReconfirmationForm`, `auth_service.reconfirm_identity` | `auth/reconfirm.html` or the saved same-origin return page |
 
 ## Administrator Controller
 

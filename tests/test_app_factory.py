@@ -1,4 +1,5 @@
 import pytest
+from cryptography.fernet import Fernet
 
 from app import create_app
 from app.extensions import csrf, limiter, login_manager, talisman
@@ -42,6 +43,18 @@ def test_production_configuration_rejects_weak_secret(monkeypatch):
     monkeypatch.setattr(ProductionConfig, "DB_PASSWORD", "dedicated-production-password")
 
     with pytest.raises(RuntimeError, match="Production SECRET_KEY"):
+        ProductionConfig.validate()
+
+
+def test_production_configuration_requires_external_security_services(monkeypatch):
+    monkeypatch.setattr(ProductionConfig, "SECRET_KEY", "x" * 48)
+    monkeypatch.setattr(ProductionConfig, "DB_PASSWORD", "dedicated-production-password")
+    monkeypatch.setattr(
+        ProductionConfig, "MFA_ENCRYPTION_KEY", Fernet.generate_key().decode("ascii")
+    )
+    monkeypatch.setattr(ProductionConfig, "RATELIMIT_STORAGE_URI", "memory://")
+
+    with pytest.raises(RuntimeError, match="RATELIMIT_STORAGE_URI"):
         ProductionConfig.validate()
 
 

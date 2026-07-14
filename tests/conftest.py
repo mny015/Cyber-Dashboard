@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 
 import pytest
@@ -112,6 +113,8 @@ def login_as():
             session["_user_id"] = str(user["id"])
             session["_fresh"] = True
             session["auth_version"] = int(user.get("auth_version") or 0)
+            session["reauthenticated_at"] = int(time.time())
+            session["reauthenticated_auth_version"] = int(user.get("auth_version") or 0)
 
     return authenticate
 

@@ -5,7 +5,7 @@ from wtforms import SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional, ValidationError
 
 from app.forms.common import optional_int
-from utils.helpers import clean_text
+from app.utils.validation import clean_text
 
 
 def valid_http_url(_form, field):

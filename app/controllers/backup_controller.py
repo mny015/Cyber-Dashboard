@@ -10,8 +10,9 @@ from flask_login import current_user, login_required
 from app.controllers.form_helpers import validate_action
 from app.forms.common import ActionForm
 from app.services import export_service
-from utils.audit import get_audit_context
-from utils.decorators import admin_required
+from app.utils.audit import get_audit_context
+from app.utils.decorators import admin_required, recent_reauthentication_required
+from app.utils.rate_limits import sensitive_action_rate_limited
 from utils.export_utils import csv_zip_bytes, export_filename, json_bytes
 
 
@@ -21,23 +22,31 @@ def index():
 
 
 @login_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def personal_json():
     return _start_export("personal", "json")
 
 
 @login_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def personal_csv():
     return _start_export("personal", "zip")
 
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def admin_json():
     return _start_export("admin", "json")
 
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def admin_csv():
     return _start_export("admin", "zip")
 

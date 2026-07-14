@@ -3,7 +3,7 @@ from wtforms import SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
 from app.forms.common import optional_int
-from utils.helpers import clean_text
+from app.utils.validation import clean_text
 
 
 class NoteForm(FlaskForm):

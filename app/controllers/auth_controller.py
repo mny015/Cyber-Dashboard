@@ -7,21 +7,35 @@ import qrcode
 from flask import abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
-from app.extensions import limiter
 from app.controllers.form_helpers import validate_action
 from app.forms.common import ActionForm
-from app.forms.auth import ChangePasswordForm, LoginForm, MfaSetupForm, MfaTokenForm, RegisterForm
+from app.forms.auth import (
+    ChangePasswordForm,
+    LoginForm,
+    MfaSetupForm,
+    MfaTokenForm,
+    ReconfirmationForm,
+    RegisterForm,
+)
 from app.repositories import user_repository
 from app.services import auth_service
 from app.services.exceptions import ConflictError, ValidationError
-from utils.audit import get_audit_context, log_audit
+from app.utils.audit import get_audit_context, log_audit
+from app.utils.decorators import (
+    pop_reauthentication_return,
+    recent_reauthentication_required,
+)
+from app.utils.rate_limits import (
+    login_rate_limited,
+    mfa_rate_limited,
+    password_rate_limited,
+    registration_rate_limited,
+)
+from app.utils.redirects import redirect_to_safe_target, safe_local_path
+from app.utils.security import mark_reauthenticated
 
 
-login_rate_limit = limiter.limit("5 per minute")
-password_rate_limit = limiter.limit("5 per 15 minutes")
-
-
-@login_rate_limit
+@registration_rate_limited
 def register():
     form = RegisterForm()
     if not form.validate_on_submit():
@@ -40,8 +54,12 @@ def register():
     return redirect(url_for("auth.login"))
 
 
-@login_rate_limit
+@login_rate_limited
 def login():
+    if request.method == "GET":
+        return_target = safe_local_path(request.args.get("next"))
+        if return_target:
+            session["login_return_to"] = return_target
     form = LoginForm()
     if not form.validate_on_submit():
         return render_template("auth/login.html", form=form)
@@ -65,7 +83,7 @@ def login():
     return _complete_login(decision.user)
 
 
-@login_rate_limit
+@mfa_rate_limited
 def verify_mfa():
     user_id = session.get("pending_mfa_user_id")
     if not user_id:
@@ -99,6 +117,7 @@ def logout():
 
 
 @login_required
+@recent_reauthentication_required
 def setup_mfa():
     form = MfaSetupForm()
     start_form = ActionForm()
@@ -152,6 +171,7 @@ def setup_mfa():
 
 
 @login_required
+@recent_reauthentication_required
 def mfa_qr():
     if current_user.mfa_enabled:
         abort(404)
@@ -169,7 +189,7 @@ def mfa_qr():
 
 
 @login_required
-@password_rate_limit
+@password_rate_limited
 def change_password():
     form = ChangePasswordForm()
     if not form.validate_on_submit():
@@ -193,13 +213,38 @@ def change_password():
     return redirect(url_for("auth.login"))
 
 
+@login_required
+@password_rate_limited
+def reconfirm():
+    form = ReconfirmationForm()
+    if not form.validate_on_submit():
+        return render_template("auth/reconfirm.html", form=form)
+    try:
+        auth_service.reconfirm_identity(
+            current_user,
+            form.current_password.data or "",
+            form.mfa_token.data or "",
+            get_audit_context(),
+        )
+    except ValidationError as exc:
+        flash(str(exc), "danger")
+        return render_template("auth/reconfirm.html", form=form)
+
+    mark_reauthenticated(current_user)
+    flash("Identity confirmed.", "success")
+    return redirect_to_safe_target(
+        pop_reauthentication_return(), "dashboard.dashboard"
+    )
+
+
 def _complete_login(user, used_mfa=False):
     login_user(user)
     session.permanent = True
     session["auth_version"] = user.auth_version
+    mark_reauthenticated(user)
     auth_service.record_login(user, get_audit_context(user), used_mfa=used_mfa)
     flash("Logged in successfully.", "success")
     endpoint = (
         "dashboard.admin_dashboard" if user.is_admin else "dashboard.user_dashboard"
     )
-    return redirect(url_for(endpoint))
+    return redirect_to_safe_target(session.pop("login_return_to", None), endpoint)

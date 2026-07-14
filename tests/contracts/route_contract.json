@@ -15,7 +15,8 @@
       {"endpoint": "auth.logout", "rule": "/auth/logout", "methods": ["POST"], "auth": "authenticated"},
       {"endpoint": "auth.setup_mfa", "rule": "/auth/profile/mfa", "methods": ["GET", "POST"], "auth": "authenticated"},
       {"endpoint": "auth.mfa_qr", "rule": "/auth/profile/mfa/qr", "methods": ["GET"], "auth": "authenticated"},
-      {"endpoint": "auth.change_password", "rule": "/auth/profile/password", "methods": ["POST"], "auth": "authenticated"}
+      {"endpoint": "auth.change_password", "rule": "/auth/profile/password", "methods": ["POST"], "auth": "authenticated"},
+      {"endpoint": "auth.reconfirm", "rule": "/auth/reconfirm", "methods": ["GET", "POST"], "auth": "authenticated"}
     ],
     "admin": [
       {"endpoint": "admin.users", "rule": "/admin/users", "methods": ["GET"], "auth": "admin"},

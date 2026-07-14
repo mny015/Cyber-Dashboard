@@ -19,8 +19,10 @@ from app.services.exceptions import (
     NotFoundError,
     PermissionDeniedError,
 )
-from utils.audit import get_audit_context
-from utils.decorators import admin_required
+from app.utils.audit import get_audit_context
+from app.utils.decorators import admin_required, recent_reauthentication_required
+from app.utils.pagination import pagination_from_request
+from app.utils.rate_limits import sensitive_action_rate_limited
 
 
 @login_required
@@ -87,6 +89,8 @@ def category_summaries():
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def update_role(user_id):
     user = user_repository.find_by_id(user_id)
     if not user:
@@ -108,18 +112,24 @@ def update_role(user_id):
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def ban_user(user_id):
     return _set_banned(user_id, True)
 
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def unban_user(user_id):
     return _set_banned(user_id, False)
 
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def reset_user_password(user_id):
     user = user_repository.find_by_id(user_id)
     if not user:
@@ -143,6 +153,8 @@ def reset_user_password(user_id):
 
 @login_required
 @admin_required
+@recent_reauthentication_required
+@sensitive_action_rate_limited
 def delete_user(user_id):
     if not validate_action():
         return redirect(url_for("admin.users"))
@@ -164,8 +176,11 @@ def delete_user(user_id):
 @login_required
 @admin_required
 def audit_logs():
-    page = request.args.get("page", 1, type=int)
-    return render_template("admin/audit_logs.html", logs=audit_repository.paginate(page))
+    pagination = pagination_from_request(default_per_page=25, max_per_page=100)
+    return render_template(
+        "admin/audit_logs.html",
+        logs=audit_repository.paginate(pagination.page, pagination.per_page),
+    )
 
 
 def _set_banned(user_id, banned):

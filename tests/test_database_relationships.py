@@ -14,7 +14,6 @@ from tests.test_migrations_integration import (
     require_test_name,
 )
 
-
 CONTRACT_PATH = Path(__file__).parent / "contracts" / "relationship_contract.json"
 PERFORMANCE_INDEXES = {
     ("users", "ix_users_role_banned"),

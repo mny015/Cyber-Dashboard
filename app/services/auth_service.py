@@ -13,7 +13,6 @@ from app.utils.database import db, transaction
 from app.utils.datetime_helpers import parse_datetime
 from app.utils.security import verify_reauthentication
 
-
 LOCKOUT_FAILURE_LIMIT = 5
 LOCKOUT_MINUTES = 15
 

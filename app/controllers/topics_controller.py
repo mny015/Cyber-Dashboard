@@ -7,8 +7,8 @@ from app.controllers.form_helpers import validate_action
 from app.forms.topics import TopicForm
 from app.models.topic import Topic
 from app.repositories import category_repository, topic_repository
-from app.utils.database import DatabaseIntegrityError
 from app.utils.audit import log_audit
+from app.utils.database import DatabaseIntegrityError
 from app.utils.decorators import require_owned_record
 from app.utils.validation import slugify
 

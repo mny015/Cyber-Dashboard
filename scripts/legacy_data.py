@@ -3,7 +3,6 @@
 import hashlib
 from pathlib import Path, PurePosixPath
 
-
 IMAGE_MIME_BY_TYPE = {
     "jpeg": "image/jpeg",
     "png": "image/png",
@@ -37,15 +36,36 @@ def prepare_legacy_profile_images(connection, project_root, output=print):
 
 
 def _import_embedded_images(connection, columns):
-    mime_expression = "profile_image_mime" if "profile_image_mime" in columns else "NULL"
-    size_expression = "profile_image_size" if "profile_image_size" in columns else "NULL"
-    query = f"""
-        SELECT id, profile_image, profile_image_data,
-               {mime_expression} AS profile_image_mime,
-               {size_expression} AS profile_image_size
-        FROM users
-        WHERE profile_image_data IS NOT NULL
-    """
+    has_mime = "profile_image_mime" in columns
+    has_size = "profile_image_size" in columns
+    if has_mime and has_size:
+        query = """
+            SELECT id, profile_image, profile_image_data,
+                   profile_image_mime, profile_image_size
+            FROM users
+            WHERE profile_image_data IS NOT NULL
+        """
+    elif has_mime:
+        query = """
+            SELECT id, profile_image, profile_image_data,
+                   profile_image_mime, NULL AS profile_image_size
+            FROM users
+            WHERE profile_image_data IS NOT NULL
+        """
+    elif has_size:
+        query = """
+            SELECT id, profile_image, profile_image_data,
+                   NULL AS profile_image_mime, profile_image_size
+            FROM users
+            WHERE profile_image_data IS NOT NULL
+        """
+    else:
+        query = """
+            SELECT id, profile_image, profile_image_data,
+                   NULL AS profile_image_mime, NULL AS profile_image_size
+            FROM users
+            WHERE profile_image_data IS NOT NULL
+        """
     imported = 0
     with connection.cursor() as cursor:
         cursor.execute(query)

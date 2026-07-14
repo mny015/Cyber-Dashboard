@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 from app import create_app
-from utils.db import execute
 
 
 def test_anonymous_users_cannot_access_private_dashboards(client):
@@ -29,12 +28,14 @@ def test_normal_user_cannot_access_administrator_routes(authenticated_client):
         assert authenticated_client.open(path, method=method).status_code == 403
 
 
-def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, login_as):
+def test_owner_scoped_records_are_hidden_from_other_users(
+    client, user_factory, login_as, database
+):
     owner = user_factory(display_name="Contract Owner")
     viewer = user_factory(display_name="Contract Viewer")
     suffix = uuid4().hex[:10]
 
-    _, category_id = execute(
+    _, category_id = database.execute(
         """
         INSERT INTO categories
             (name, description, color, is_deleted, owner_id, created_at, updated_at)
@@ -42,7 +43,7 @@ def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, 
         """,
         (f"Contract Category {suffix}", owner["id"]),
     )
-    _, topic_id = execute(
+    _, topic_id = database.execute(
         """
         INSERT INTO topics
             (title, slug, description, status, priority, notes, is_deleted,
@@ -51,7 +52,7 @@ def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, 
         """,
         (f"Contract Topic {suffix}", f"contract-topic-{suffix}", category_id, owner["id"]),
     )
-    _, contact_id = execute(
+    _, contact_id = database.execute(
         """
         INSERT INTO contacts
             (name, email, phone, notes, is_deleted, owner_id, created_at, updated_at)
@@ -59,7 +60,7 @@ def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, 
         """,
         (f"Contract Contact {suffix}", f"contract-{suffix}@example.com", owner["id"]),
     )
-    _, note_id = execute(
+    _, note_id = database.execute(
         """
         INSERT INTO notes
             (title, body, topic_id, owner_id, is_deleted, created_at, updated_at)
@@ -67,7 +68,7 @@ def test_owner_scoped_records_are_hidden_from_other_users(client, user_factory, 
         """,
         (f"Contract Note {suffix}", topic_id, owner["id"]),
     )
-    _, finding_id = execute(
+    _, finding_id = database.execute(
         """
         INSERT INTO security_findings
             (owner_id, vulnerability_id, threat_id, activity_type, title,
@@ -111,4 +112,18 @@ def test_production_csrf_protection_is_enabled():
             "confirm_password": "MissingCsrfPassword123!",
         },
     )
+    assert response.status_code == 400
+
+
+def test_csrf_enabled_client_rejects_missing_token(csrf_enabled_client):
+    response = csrf_enabled_client.post(
+        "/auth/register",
+        data={
+            "display_name": "Missing CSRF",
+            "email": "missing-csrf@example.com",
+            "password": "MissingCsrfPassword123!",
+            "confirm_password": "MissingCsrfPassword123!",
+        },
+    )
+
     assert response.status_code == 400

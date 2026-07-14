@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+exclude = [".git", ".venv", ".venv313", "instance"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", ".venv313"]
+skips = ["B101"]
+
+[tool.radon]
+exclude = ".venv/*,.venv313/*,tests/*"

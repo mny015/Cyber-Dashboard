@@ -12,7 +12,6 @@ from app.utils.database.exceptions import (
     NamedQueryParameterError,
 )
 
-
 QUERY_NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 PARAMETER_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 NAMED_PLACEHOLDER_PATTERN = re.compile(r"%\(([A-Za-z_][A-Za-z0-9_]*)\)s")

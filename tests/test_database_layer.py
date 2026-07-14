@@ -14,7 +14,6 @@ from app.utils.database import (
 )
 from app.utils.database.connection import MySQLConnectionPool, connection_settings
 
-
 TEST_SETTINGS = {
     "host": "127.0.0.1",
     "port": 3306,

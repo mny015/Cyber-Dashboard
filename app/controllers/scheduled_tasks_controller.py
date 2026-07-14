@@ -10,7 +10,6 @@ from app.services import scheduled_task_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
 from app.utils.audit import get_audit_context
 
-
 TASK_TYPES = scheduled_task_service.TASK_TYPES
 
 

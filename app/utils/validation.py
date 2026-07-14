@@ -2,7 +2,6 @@
 
 import re
 
-
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PHONE_PATTERN = re.compile(r"^[0-9+\-\s()]{7,20}$")
 

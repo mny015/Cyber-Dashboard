@@ -1,3 +1,5 @@
+"""Safe JSON and CSV serialization helpers for downloadable backups."""
+
 import csv
 import json
 from datetime import date, datetime
@@ -25,8 +27,8 @@ def csv_zip_bytes(sections):
     return archive_buffer
 
 
-def export_filename(scope, extension):
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+def export_filename(scope, extension, now=None):
+    timestamp = (now or datetime.now()).strftime("%Y%m%d-%H%M%S")
     return f"cyber-dashboard-{scope}-{timestamp}.{extension}"
 
 

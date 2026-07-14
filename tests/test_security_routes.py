@@ -1,14 +1,12 @@
 from uuid import uuid4
 
-from utils.db import execute, fetch_one
+
+def get_vulnerability(database):
+    return database.fetch_one("SELECT id FROM vulnerability_catalog ORDER BY id LIMIT 1")
 
 
-def get_vulnerability():
-    return fetch_one("SELECT id FROM vulnerability_catalog ORDER BY id LIMIT 1")
-
-
-def get_threat():
-    return fetch_one("SELECT id FROM threat_catalog ORDER BY id LIMIT 1")
+def get_threat(database):
+    return database.fetch_one("SELECT id FROM threat_catalog ORDER BY id LIMIT 1")
 
 
 def test_security_dashboard_renders_for_user(authenticated_client):
@@ -19,9 +17,9 @@ def test_security_dashboard_renders_for_user(authenticated_client):
     assert b"Vulnerabilities found" in response.data
 
 
-def test_user_can_create_security_finding(client, test_user, login_as):
-    vulnerability = get_vulnerability()
-    threat = get_threat()
+def test_user_can_create_security_finding(client, test_user, login_as, database):
+    vulnerability = get_vulnerability(database)
+    threat = get_threat(database)
     login_as(client, test_user)
 
     response = client.post(
@@ -40,7 +38,7 @@ def test_user_can_create_security_finding(client, test_user, login_as):
     )
 
     assert response.status_code == 302
-    finding = fetch_one(
+    finding = database.fetch_one(
         """
         SELECT title, owner_id, severity, activity_type
         FROM security_findings
@@ -52,9 +50,11 @@ def test_user_can_create_security_finding(client, test_user, login_as):
     assert finding["activity_type"] == "vulnerability_tested"
 
 
-def test_admin_cannot_edit_user_private_security_finding(client, test_user, admin_user, login_as):
-    vulnerability = get_vulnerability()
-    _, finding_id = execute(
+def test_admin_cannot_edit_user_private_security_finding(
+    client, test_user, admin_user, login_as, database
+):
+    vulnerability = get_vulnerability(database)
+    _, finding_id = database.execute(
         """
         INSERT INTO security_findings
             (owner_id, vulnerability_id, threat_id, activity_type, title,
@@ -72,7 +72,9 @@ def test_admin_cannot_edit_user_private_security_finding(client, test_user, admi
     assert response.status_code == 404
 
 
-def test_user_suggestion_waits_for_admin_approval(client, test_user, login_as):
+def test_user_suggestion_waits_for_admin_approval(
+    client, test_user, login_as, database
+):
     suggestion_name = f"Suggested vuln {uuid4().hex[:8]}"
     login_as(client, test_user)
 
@@ -87,7 +89,7 @@ def test_user_suggestion_waits_for_admin_approval(client, test_user, login_as):
     )
 
     assert response.status_code == 302
-    suggestion = fetch_one(
+    suggestion = database.fetch_one(
         """
         SELECT approval_status, is_active
         FROM vulnerability_catalog

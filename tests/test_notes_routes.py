@@ -1,11 +1,9 @@
 from uuid import uuid4
 
-from utils.db import execute
 
-
-def create_topic(user_id):
+def create_topic(database, user_id):
     slug = f"notes-topic-{uuid4().hex[:10]}"
-    _, topic_id = execute(
+    _, topic_id = database.execute(
         """
         INSERT INTO topics
             (title, slug, description, status, priority, notes, is_deleted,
@@ -17,8 +15,10 @@ def create_topic(user_id):
     return topic_id
 
 
-def create_note(user_id, topic_id, title="Professional Notes", body="payload checklist"):
-    _, note_id = execute(
+def create_note(
+    database, user_id, topic_id, title="Professional Notes", body="payload checklist"
+):
+    _, note_id = database.execute(
         """
         INSERT INTO notes
             (title, body, topic_id, owner_id, is_deleted, created_at, updated_at)
@@ -29,9 +29,16 @@ def create_note(user_id, topic_id, title="Professional Notes", body="payload che
     return note_id
 
 
-def test_notes_index_supports_search_and_topic_filter(client, test_user, login_as):
-    topic_id = create_topic(test_user["id"])
-    create_note(test_user["id"], topic_id, body="payload checklist and commands")
+def test_notes_index_supports_search_and_topic_filter(
+    client, test_user, login_as, database
+):
+    topic_id = create_topic(database, test_user["id"])
+    create_note(
+        database,
+        test_user["id"],
+        topic_id,
+        body="payload checklist and commands",
+    )
     login_as(client, test_user)
 
     response = client.get(f"/notes/?q=payload&topic_id={topic_id}")
@@ -49,9 +56,14 @@ def test_note_editor_renders_live_preview_shell(authenticated_client):
     assert b"data-note-preview" in response.data
 
 
-def test_note_detail_renders_reader_hook(client, test_user, login_as):
-    topic_id = create_topic(test_user["id"])
-    note_id = create_note(test_user["id"], topic_id, body="## Finding\\n- Validate output")
+def test_note_detail_renders_reader_hook(client, test_user, login_as, database):
+    topic_id = create_topic(database, test_user["id"])
+    note_id = create_note(
+        database,
+        test_user["id"],
+        topic_id,
+        body="## Finding\\n- Validate output",
+    )
     login_as(client, test_user)
 
     response = client.get(f"/notes/{note_id}")

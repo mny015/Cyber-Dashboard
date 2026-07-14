@@ -10,8 +10,8 @@ def register_blueprints(app):
     from app.routes.notes import notes_bp
     from app.routes.notifications import notifications_bp
     from app.routes.profile import profile_bp
-    from app.routes.security import security_bp
     from app.routes.scheduled_tasks import tasks_bp
+    from app.routes.security import security_bp
     from app.routes.topics import topics_bp
 
     app.register_blueprint(admin_bp)

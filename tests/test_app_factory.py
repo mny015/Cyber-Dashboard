@@ -19,7 +19,7 @@ def test_testing_factory_initializes_security_extensions():
     assert app.debug is False
     assert app.login_manager is login_manager
     assert app.extensions["csrf"] is csrf
-    assert "limiter" in app.extensions
+    assert app.config["RATELIMIT_ENABLED"] is False
 
     response = app.test_client().get("/api/ping")
     assert response.status_code == 200
@@ -27,13 +27,23 @@ def test_testing_factory_initializes_security_extensions():
     assert "default-src 'self'" in response.headers["Content-Security-Policy"]
 
 
+def test_development_factory_registers_rate_limiting():
+    app = create_app("development")
+
+    assert app.config["RATELIMIT_ENABLED"] is True
+    assert "limiter" in app.extensions
+
+
 def test_environment_configuration_profiles_are_explicit():
     assert get_config("development") is DevelopmentConfig
     assert get_config("testing") is TestingConfig
     assert DevelopmentConfig.DEBUG is True
+    assert DevelopmentConfig.RATELIMIT_ENABLED is True
     assert TestingConfig.TESTING is True
     assert TestingConfig.DEBUG is False
+    assert TestingConfig.RATELIMIT_ENABLED is False
     assert ProductionConfig.DEBUG is False
+    assert ProductionConfig.RATELIMIT_ENABLED is True
     assert ProductionConfig.SESSION_COOKIE_SECURE is True
     assert ProductionConfig.TALISMAN_FORCE_HTTPS is True
 

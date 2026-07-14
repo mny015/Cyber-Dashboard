@@ -6,7 +6,6 @@ from app.services import audit_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
 from app.utils.database import db, transaction
 
-
 TASK_TYPES = ("general", "lab", "note", "backup", "review", "roadmap")
 TASK_STATUSES = ("upcoming", "completed", "cancelled")
 TASK_SCOPES = ("personal", "admin", "global")

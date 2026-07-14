@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import ClassVar
 
 from flask_login import UserMixin
+
 from app.models.base import RowModel, as_bool
 from app.utils.security import hash_password, verify_password
 

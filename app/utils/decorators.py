@@ -8,7 +8,6 @@ from flask_login import current_user
 from app.utils.redirects import safe_local_path
 from app.utils.security import is_reauthentication_fresh
 
-
 REAUTHENTICATION_RETURN_KEY = "reauthentication_return_to"
 
 

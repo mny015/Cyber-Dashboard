@@ -6,15 +6,14 @@ from flask_login import current_user
 from app.extensions import limiter
 from app.utils.security import get_client_address, pseudonymous_rate_key
 
-
 LOGIN_PER_IP = "10 per minute"
 LOGIN_PER_ACCOUNT = "8 per 15 minutes"
 REGISTRATION_PER_IP = "5 per hour"
 REGISTRATION_PER_ACCOUNT = "3 per hour"
 MFA_PER_IP = "10 per 10 minutes"
 MFA_PER_ACCOUNT = "5 per 5 minutes"
-PASSWORD_PER_IP = "10 per hour"
-PASSWORD_PER_ACCOUNT = "5 per 15 minutes"
+PASSWORD_PER_IP = "10 per hour"  # nosec B105 - rate policy, not a credential.
+PASSWORD_PER_ACCOUNT = "5 per 15 minutes"  # nosec B105 - rate policy.
 SENSITIVE_PER_IP = "20 per hour"
 SENSITIVE_PER_ACCOUNT = "10 per 15 minutes"
 

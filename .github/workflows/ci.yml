@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, test]
+  pull_request:
+    branches: [main, test]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cyber_dashboard_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: testing
+      SECRET_KEY: ci-test-secret-key-with-at-least-32-characters
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: cyber_dashboard_test
+      DB_CHARSET: utf8mb4
+      TEST_DB_NAME: cyber_dashboard_test
+      MIGRATION_TEST_DB_NAME: cyber_dashboard_migration_test
+      MIGRATION_DB_HOST: 127.0.0.1
+      MIGRATION_DB_PORT: 3306
+      MIGRATION_DB_USER: root
+      MIGRATION_DB_PASSWORD: root
+      MIGRATION_DB_CHARSET: utf8mb4
+      MFA_ENCRYPTION_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
+      RATELIMIT_STORAGE_URI: memory://
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Apply schema migrations
+        run: python scripts/migrate.py
+
+      - name: Seed reference catalogs
+        run: python scripts/seed.py
+
+      - name: Compile Python
+        run: python -m compileall -q app scripts tests config.py run.py wsgi.py
+
+      - name: Ruff
+        run: ruff check app scripts tests config.py run.py wsgi.py
+
+      - name: Bandit
+        run: bandit -r app scripts config.py run.py wsgi.py -c pyproject.toml
+
+      - name: Complexity report
+        run: radon cc app scripts -s -a
+
+      - name: Test
+        run: python -m pytest tests -v

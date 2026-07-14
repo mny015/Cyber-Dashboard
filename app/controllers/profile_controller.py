@@ -3,9 +3,9 @@
 from flask import Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.controllers.form_helpers import flash_form_errors
 from app.forms.profile import ProfileForm
 from app.repositories import user_repository
-from app.controllers.form_helpers import flash_form_errors
 from app.utils.audit import log_audit
 from app.utils.decorators import recent_reauthentication_required_for_writes
 

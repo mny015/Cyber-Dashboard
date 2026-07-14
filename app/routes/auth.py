@@ -4,7 +4,6 @@ from flask import Blueprint
 
 from app.controllers import auth_controller
 
-
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 auth_bp.add_url_rule(
     "/register", endpoint="register", view_func=auth_controller.register, methods=["GET", "POST"]

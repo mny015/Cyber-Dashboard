@@ -12,8 +12,7 @@ from flask import current_app, request, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
-
-MFA_SECRET_PREFIX = "mfa:v1:"
+MFA_SECRET_PREFIX = "mfa:v1:"  # nosec B105 - ciphertext format marker.
 REAUTHENTICATED_AT_KEY = "reauthenticated_at"
 REAUTHENTICATED_VERSION_KEY = "reauthenticated_auth_version"
 
@@ -92,7 +91,7 @@ def is_encrypted_mfa_secret(value):
     return isinstance(value, str) and value.startswith(MFA_SECRET_PREFIX)
 
 
-def verify_reauthentication(user, password="", mfa_token=""):
+def verify_reauthentication(user, password=None, mfa_token=None):
     """Accept the account password or, when enabled, a valid current TOTP token."""
 
     if password and user.check_password(password):

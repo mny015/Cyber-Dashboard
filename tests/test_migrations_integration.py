@@ -1,30 +1,29 @@
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 
 import pymysql
 import pytest
-from dotenv import dotenv_values
 from pymysql.cursors import DictCursor
 
 from scripts.migrate import run_migrations
 
-
 CONTRACT_PATH = Path(__file__).parent / "contracts" / "schema_contract.json"
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-LOCAL_DATABASE_ENV = dotenv_values(PROJECT_ROOT / ".env")
 SAFE_TEST_NAME = re.compile(r"^[A-Za-z0-9_]*migration_test[A-Za-z0-9_]*$", re.IGNORECASE)
 
 
 def migration_config(database_name):
     required = {
-        "DB_HOST": os.getenv("MIGRATION_DB_HOST") or LOCAL_DATABASE_ENV.get("DB_HOST"),
-        "DB_PORT": os.getenv("MIGRATION_DB_PORT") or LOCAL_DATABASE_ENV.get("DB_PORT", "3306"),
-        "DB_USER": os.getenv("MIGRATION_DB_USER") or LOCAL_DATABASE_ENV.get("DB_USER"),
-        "DB_PASSWORD": os.getenv("MIGRATION_DB_PASSWORD") or LOCAL_DATABASE_ENV.get("DB_PASSWORD"),
-        "DB_CHARSET": os.getenv("MIGRATION_DB_CHARSET") or LOCAL_DATABASE_ENV.get("DB_CHARSET", "utf8mb4"),
+        "DB_HOST": os.getenv("MIGRATION_DB_HOST") or os.getenv("DB_HOST"),
+        "DB_PORT": os.getenv("MIGRATION_DB_PORT") or os.getenv("DB_PORT", "3306"),
+        "DB_USER": os.getenv("MIGRATION_DB_USER") or os.getenv("DB_USER"),
+        "DB_PASSWORD": os.getenv("MIGRATION_DB_PASSWORD") or os.getenv("DB_PASSWORD"),
+        "DB_CHARSET": os.getenv("MIGRATION_DB_CHARSET")
+        or os.getenv("DB_CHARSET", "utf8mb4"),
     }
     missing = [name for name, value in required.items() if value is None]
     if missing:
@@ -223,6 +222,65 @@ def fetch_row_counts(config, table_names):
         connection.close()
 
 
+def fetch_legacy_fixture(config):
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT users.email, categories.name AS category_name,
+                       topics.title AS topic_title, topics.slug AS topic_slug
+                FROM users
+                JOIN categories ON categories.owner_id = users.id
+                JOIN topics
+                  ON topics.owner_id = users.id
+                 AND topics.category_id = categories.id
+                WHERE users.email = %s
+                """,
+                ("legacy-migration@example.com",),
+            )
+            return cursor.fetchone()
+    finally:
+        connection.close()
+
+
+def seed_existing_database(config):
+    connection = database_connection(config)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO users
+                    (email, password_hash, display_name, role, is_banned,
+                     mfa_enabled, auth_version, created_at, updated_at)
+                VALUES ('legacy-migration@example.com', 'legacy-test-hash',
+                        'Legacy Migration User', 'user', 0, 0, 0, NOW(), NOW())
+                """
+            )
+            user_id = cursor.lastrowid
+            cursor.execute(
+                """
+                INSERT INTO categories
+                    (name, description, color, is_deleted, owner_id, created_at, updated_at)
+                VALUES ('Legacy Category', '', '#2563eb', 0, %s, NOW(), NOW())
+                """,
+                (user_id,),
+            )
+            category_id = cursor.lastrowid
+            cursor.execute(
+                """
+                INSERT INTO topics
+                    (title, slug, description, status, priority, notes, is_deleted,
+                     category_id, owner_id, created_at, updated_at)
+                VALUES ('Legacy Topic', 'legacy-topic', '', 'planned', 'medium', '', 0,
+                        %s, %s, NOW(), NOW())
+                """,
+                (category_id, user_id),
+            )
+    finally:
+        connection.close()
+
+
 def explain_important_queries(config):
     queries = {
         "topics_list": (
@@ -297,21 +355,30 @@ def test_migrations_build_clean_database_and_never_rerun():
 
 
 @pytest.mark.integration
-def test_migrations_preserve_copy_of_existing_database():
+def test_migrations_preserve_copy_of_existing_database(tmp_path):
     base_name = os.getenv("MIGRATION_TEST_DB_NAME", "").strip()
-    source_name = (
-        os.getenv("MIGRATION_EXISTING_SOURCE_DB_NAME")
-        or LOCAL_DATABASE_ENV.get("DB_NAME", "")
-    ).strip()
-    if not base_name or not source_name:
-        pytest.skip(
-            "Set MIGRATION_TEST_DB_NAME and MIGRATION_EXISTING_SOURCE_DB_NAME "
-            "to test an existing database copy."
-        )
+    if not base_name:
+        pytest.skip("Set MIGRATION_TEST_DB_NAME to run destructive migration integration tests.")
+    source_name = f"{base_name}_legacy_source"
+    source_config = migration_config(source_name)
     config = migration_config(f"{base_name}_existing")
+    require_test_name(source_config.DB_NAME)
     require_test_name(config.DB_NAME)
+    drop_test_database(source_config)
     drop_test_database(config)
     try:
+        legacy_migrations = tmp_path / "legacy_migrations"
+        legacy_migrations.mkdir()
+        for migration_path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
+            if int(migration_path.name[:3]) <= 17:
+                shutil.copy2(migration_path, legacy_migrations / migration_path.name)
+        run_migrations(
+            config=source_config,
+            migrations_dir=legacy_migrations,
+            output=lambda _message: None,
+        )
+        seed_existing_database(source_config)
+
         server = server_connection(config)
         try:
             with server.cursor() as cursor:
@@ -326,7 +393,17 @@ def test_migrations_preserve_copy_of_existing_database():
         run_migrations(config=config, output=lambda _message: None)
         after_counts = fetch_row_counts(config, before_counts)
 
-        assert after_counts == before_counts
+        assert all(
+            after_counts[table_name] >= before_count
+            for table_name, before_count in before_counts.items()
+        )
+        assert after_counts["lab_platforms"] == 5
+        assert fetch_legacy_fixture(config) == {
+            "email": "legacy-migration@example.com",
+            "category_name": "Legacy Category",
+            "topic_title": "Legacy Topic",
+            "topic_slug": "legacy-topic",
+        }
         assert "alembic_version" not in fetch_table_names(config)
         assert_schema_contract(config)
         plans = explain_important_queries(config)
@@ -335,3 +412,4 @@ def test_migrations_preserve_copy_of_existing_database():
             print(json.dumps(plans, indent=2, default=str))
     finally:
         drop_test_database(config)
+        drop_test_database(source_config)

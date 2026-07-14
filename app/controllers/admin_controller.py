@@ -1,6 +1,6 @@
 """HTTP handlers for administrator account and privacy workflows."""
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from app.controllers.form_helpers import validate_action

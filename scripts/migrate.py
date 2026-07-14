@@ -17,7 +17,6 @@ from pymysql.cursors import DictCursor
 from config import get_config
 from scripts.legacy_data import prepare_legacy_profile_images
 
-
 DEFAULT_MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
 MIGRATION_PATTERN = re.compile(r"^(?P<version>\d{3})_[a-z0-9_]+\.sql$")
 DATABASE_PATTERN = re.compile(r"^[A-Za-z0-9_]+$")

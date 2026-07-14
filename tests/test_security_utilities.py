@@ -20,8 +20,8 @@ from app.utils.security import (
     get_client_address,
     hash_password,
     is_encrypted_mfa_secret,
-    mark_reauthenticated,
     is_reauthentication_fresh,
+    mark_reauthenticated,
     verify_password,
     verify_reauthentication,
 )

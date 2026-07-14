@@ -8,7 +8,6 @@ from flask import abort, flash, redirect, render_template, request, send_file, s
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.controllers.form_helpers import validate_action
-from app.forms.common import ActionForm
 from app.forms.auth import (
     ChangePasswordForm,
     LoginForm,
@@ -17,6 +16,7 @@ from app.forms.auth import (
     ReconfirmationForm,
     RegisterForm,
 )
+from app.forms.common import ActionForm
 from app.repositories import user_repository
 from app.services import auth_service
 from app.services.exceptions import ConflictError, ValidationError

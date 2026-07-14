@@ -7,7 +7,11 @@ from app.repositories import security_repository
 from app.services import audit_service
 from app.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
 from app.utils.database import db, transaction
-from utils.security_catalog import ACTIVITY_TYPE_CHOICES, FINDING_STATUS_CHOICES, SEVERITY_CHOICES
+from app.utils.security_catalog import (
+    ACTIVITY_TYPE_CHOICES,
+    FINDING_STATUS_CHOICES,
+    SEVERITY_CHOICES,
+)
 
 
 def save_finding(owner_id, values, context, finding_id=None):

@@ -7,7 +7,6 @@ from flask_wtf import CSRFProtect
 
 from app.utils.security import get_client_address
 
-
 CONTENT_SECURITY_POLICY = {
     "default-src": "'self'",
     "style-src": ["'self'", "'unsafe-inline'"],

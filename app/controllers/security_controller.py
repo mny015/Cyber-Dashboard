@@ -20,7 +20,11 @@ from app.utils.decorators import (
     require_owned_record,
 )
 from app.utils.rate_limits import sensitive_action_rate_limited
-from utils.security_catalog import ACTIVITY_TYPE_CHOICES, FINDING_STATUS_CHOICES, SEVERITY_CHOICES
+from app.utils.security_catalog import (
+    ACTIVITY_TYPE_CHOICES,
+    FINDING_STATUS_CHOICES,
+    SEVERITY_CHOICES,
+)
 
 
 @login_required

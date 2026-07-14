@@ -1,6 +1,8 @@
 # Cyber Dashboard Architecture
 
-This document defines the intended layered structure. The current feature modules remain in `app/routes/` until each feature is migrated and its compatibility tests pass.
+This document defines the final layered structure. All registered feature routes map directly
+to controller functions, and compatibility contracts protect the public route and database
+surfaces from accidental changes.
 
 ## Request Flow
 
@@ -76,14 +78,17 @@ with transaction() as cursor:
 
 `connection()` is for reads and always returns its connection to the pool.
 `transaction()` commits on success and rolls back on failure. Driver exceptions
-are converted to safe database-layer exceptions. Existing `utils/db.py` helpers
-remain temporarily for setup scripts, migration compatibility, and database-backed tests. Application routes use repositories.
+are converted to safe database-layer exceptions. There is no second root-level database helper;
+scripts and tests use the same pooled infrastructure or an explicitly isolated migration connection.
 
 ### SQL Migrations
 
-Numbered plain-SQL schema migrations in `migrations/` are the only authoritative schema history. `scripts/migrate.py` applies them explicitly through PyMySQL; normal web requests never run migrations. Seed data is handled separately by `scripts/seed.py`, and `init_db.py` is only a compatibility entry point. No ORM or Alembic runtime is used.
+Numbered plain-SQL schema migrations in `migrations/` are the only authoritative schema history.
+`scripts/migrate.py` applies them explicitly through PyMySQL; normal web requests never run
+migrations. Seed data is handled separately by `scripts/seed.py`. The old `init_db.py` and Alembic
+compatibility path have been removed, and no ORM is used.
 
-## Compatibility Gates
+## Architecture Freeze Gates
 
 A feature is migrated only when all of the following remain unchanged:
 
@@ -93,4 +98,6 @@ A feature is migrated only when all of the following remain unchanged:
 4. `tests/contracts/route_contract.json` and `tests/contracts/schema_contract.json`.
 5. Existing and feature-specific tests.
 
-Old and new Blueprints must never be registered simultaneously.
+The route and schema contracts, architecture tests, static analysis, and dedicated MySQL tests are
+required gates. Major backend restructuring is frozen; future changes should be feature work or
+targeted defect fixes within these established boundaries.

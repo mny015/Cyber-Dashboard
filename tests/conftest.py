@@ -14,10 +14,11 @@ os.environ.setdefault("DB_PASSWORD", "replace-with-test-password")
 TEST_DB_NAME = os.getenv("TEST_DB_NAME", "").strip()
 os.environ["DB_NAME"] = TEST_DB_NAME or "cyber_dashboard_test_unconfigured"
 os.environ.setdefault("DB_CHARSET", "utf8mb4")
+os.environ.setdefault("RATELIMIT_STORAGE_URI", "memory://")
 
 from app import create_app
-from utils.db import execute, fetch_one
-
+from app.extensions import limiter
+from tests.support.database import TestDatabase
 
 SYSTEM_DATABASES = {"information_schema", "mysql", "performance_schema", "sys"}
 
@@ -45,6 +46,13 @@ def app():
     return test_app
 
 
+@pytest.fixture(scope="session")
+def database(app, dedicated_test_database):
+    test_database = TestDatabase(app, dedicated_test_database)
+    test_database.assert_connected_to_test_database()
+    return test_database
+
+
 @pytest.fixture()
 def client(app):
     return app.test_client()
@@ -56,7 +64,46 @@ def runner(app):
 
 
 @pytest.fixture()
-def user_factory(dedicated_test_database):
+def csrf_app():
+    test_app = create_app("testing")
+    test_app.config.update(
+        TESTING=True,
+        WTF_CSRF_ENABLED=True,
+        RATELIMIT_ENABLED=False,
+    )
+    return test_app
+
+
+@pytest.fixture()
+def csrf_enabled_client(csrf_app):
+    return csrf_app.test_client()
+
+
+@pytest.fixture()
+def rate_limited_app():
+    # Flask-Limiter disables itself when TESTING is already true during init.
+    # Bind it under the development profile, then enable test exception handling.
+    test_app = create_app("development")
+    test_app.config.update(
+        TESTING=True,
+        DEBUG=False,
+        WTF_CSRF_ENABLED=False,
+        RATELIMIT_ENABLED=True,
+    )
+    with test_app.app_context():
+        limiter.reset()
+    yield test_app
+    with test_app.app_context():
+        limiter.reset()
+
+
+@pytest.fixture()
+def rate_limited_client(rate_limited_app):
+    return rate_limited_app.test_client()
+
+
+@pytest.fixture()
+def user_factory(database):
     created_user_ids = []
 
     def create_user(
@@ -68,7 +115,7 @@ def user_factory(dedicated_test_database):
         mfa_enabled=False,
     ):
         email = email or f"{role}-{uuid.uuid4().hex}@example.com"
-        _, user_id = execute(
+        _, user_id = database.execute(
             """
             INSERT INTO users
                 (email, password_hash, display_name, role, is_banned,
@@ -86,14 +133,14 @@ def user_factory(dedicated_test_database):
         )
         created_user_ids.append(user_id)
 
-        user = fetch_one("SELECT * FROM users WHERE id = %s", (user_id,))
+        user = database.fetch_one("SELECT * FROM users WHERE id = %s", (user_id,))
         user["plain_password"] = password
         return user
 
     yield create_user
 
     for user_id in reversed(created_user_ids):
-        cleanup_user_records(user_id)
+        cleanup_user_records(database, user_id)
 
 
 @pytest.fixture()
@@ -102,8 +149,18 @@ def test_user(user_factory):
 
 
 @pytest.fixture()
+def user(test_user):
+    return test_user
+
+
+@pytest.fixture()
 def admin_user(user_factory):
     return user_factory(role="admin", display_name="Admin User")
+
+
+@pytest.fixture()
+def administrator(admin_user):
+    return admin_user
 
 
 @pytest.fixture()
@@ -126,16 +183,29 @@ def authenticated_client(client, test_user, login_as):
 
 
 @pytest.fixture()
+def logged_in_user_client(authenticated_client):
+    return authenticated_client
+
+
+@pytest.fixture()
 def admin_client(client, admin_user, login_as):
     login_as(client, admin_user)
     return client
 
 
-def cleanup_user_records(user_id):
-    execute("DELETE FROM scheduled_tasks WHERE user_id = %s OR created_by = %s", (user_id, user_id))
-    execute("DELETE FROM audit_logs WHERE user_id = %s", (user_id,))
-    execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
-    execute(
+@pytest.fixture()
+def logged_in_admin_client(admin_client):
+    return admin_client
+
+
+def cleanup_user_records(database, user_id):
+    database.execute(
+        "DELETE FROM scheduled_tasks WHERE user_id = %s OR created_by = %s",
+        (user_id, user_id),
+    )
+    database.execute("DELETE FROM audit_logs WHERE user_id = %s", (user_id,))
+    database.execute("DELETE FROM security_findings WHERE owner_id = %s", (user_id,))
+    database.execute(
         """
         DELETE FROM security_findings
         WHERE vulnerability_id IN (
@@ -146,14 +216,14 @@ def cleanup_user_records(user_id):
         """,
         (user_id, user_id),
     )
-    execute(
+    database.execute(
         """
         DELETE FROM vulnerability_catalog
         WHERE created_by_user_id = %s OR reviewed_by_user_id = %s
         """,
         (user_id, user_id),
     )
-    execute(
+    database.execute(
         """
         DELETE FROM note_access_requests
         WHERE requester_admin_id = %s
@@ -162,7 +232,7 @@ def cleanup_user_records(user_id):
         """,
         (user_id, user_id, user_id),
     )
-    execute(
+    database.execute(
         """
         DELETE FROM lab_completions
         WHERE user_id = %s
@@ -170,9 +240,9 @@ def cleanup_user_records(user_id):
         """,
         (user_id, user_id),
     )
-    execute("DELETE FROM notes WHERE owner_id = %s", (user_id,))
-    execute("DELETE FROM lab_references WHERE owner_id = %s", (user_id,))
-    execute("DELETE FROM topics WHERE owner_id = %s", (user_id,))
-    execute("DELETE FROM contacts WHERE owner_id = %s", (user_id,))
-    execute("DELETE FROM categories WHERE owner_id = %s", (user_id,))
-    execute("DELETE FROM users WHERE id = %s", (user_id,))
+    database.execute("DELETE FROM notes WHERE owner_id = %s", (user_id,))
+    database.execute("DELETE FROM lab_references WHERE owner_id = %s", (user_id,))
+    database.execute("DELETE FROM topics WHERE owner_id = %s", (user_id,))
+    database.execute("DELETE FROM contacts WHERE owner_id = %s", (user_id,))
+    database.execute("DELETE FROM categories WHERE owner_id = %s", (user_id,))
+    database.execute("DELETE FROM users WHERE id = %s", (user_id,))

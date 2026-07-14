@@ -12,7 +12,6 @@ from app.extensions import csrf, login_manager
 from app.models import User
 from app.routes import register_blueprints
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 FORM_PAGE_ENDPOINTS = {

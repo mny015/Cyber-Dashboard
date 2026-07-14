@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 
-
 DATETIME_INPUT_FORMATS = ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S")
 
 

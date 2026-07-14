@@ -1,6 +1,3 @@
-from utils.db import execute
-
-
 def test_authenticated_user_can_load_user_dashboard(authenticated_client):
     response = authenticated_client.get("/user/dashboard")
 
@@ -49,13 +46,15 @@ def test_admin_dashboard_contains_requested_panels(admin_client):
     assert b"Audit Logs" in response.data
 
 
-def test_user_dashboard_does_not_expose_other_users_private_note_content(client, user_factory, login_as):
+def test_user_dashboard_does_not_expose_other_users_private_note_content(
+    client, user_factory, login_as, database
+):
     note_owner = user_factory(display_name="Private Note Owner")
     viewer = user_factory(display_name="Dashboard Viewer")
     private_body = "PRIVATE-NOTE-BODY-SHOULD-NOT-APPEAR"
     private_title = "Private Dashboard Note"
 
-    execute(
+    database.execute(
         """
         INSERT INTO notes (title, body, topic_id, owner_id, is_deleted, created_at, updated_at)
         VALUES (%s, %s, NULL, %s, 0, NOW(), NOW())
@@ -70,12 +69,14 @@ def test_user_dashboard_does_not_expose_other_users_private_note_content(client,
     assert private_body.encode() not in user_response.data
 
 
-def test_admin_dashboard_does_not_expose_private_note_bodies(admin_client, user_factory):
+def test_admin_dashboard_does_not_expose_private_note_bodies(
+    admin_client, user_factory, database
+):
     note_owner = user_factory(display_name="Private Note Owner")
     private_body = "PRIVATE-NOTE-BODY-SHOULD-NOT-APPEAR"
     private_title = "Private Dashboard Note"
 
-    execute(
+    database.execute(
         """
         INSERT INTO notes (title, body, topic_id, owner_id, is_deleted, created_at, updated_at)
         VALUES (%s, %s, NULL, %s, 0, NOW(), NOW())

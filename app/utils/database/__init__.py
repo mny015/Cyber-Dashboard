@@ -26,7 +26,6 @@ from app.utils.database.query_builder import (
 )
 from app.utils.database.transaction import transaction
 
-
 __all__ = [
     "DatabaseConnectionError",
     "DatabaseError",

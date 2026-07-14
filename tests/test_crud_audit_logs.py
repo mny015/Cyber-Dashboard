@@ -1,11 +1,10 @@
 from uuid import uuid4
 
-from utils.db import execute, fetch_all, fetch_one
-from utils.helpers import slugify
+from app.utils.validation import slugify
 
 
-def audit_rows_for(user_id, prefix):
-    return fetch_all(
+def audit_rows_for(database, user_id, prefix):
+    return database.fetch_all(
         """
         SELECT action, details
         FROM audit_logs
@@ -16,7 +15,7 @@ def audit_rows_for(user_id, prefix):
     )
 
 
-def test_topic_crud_writes_audit_logs(authenticated_client, test_user):
+def test_topic_crud_writes_audit_logs(authenticated_client, test_user, database):
     suffix = uuid4().hex[:10]
     title = f"Audit Topic {suffix}"
 
@@ -31,7 +30,10 @@ def test_topic_crud_writes_audit_logs(authenticated_client, test_user):
             "category_id": "",
         },
     )
-    topic = fetch_one("SELECT id FROM topics WHERE owner_id = %s AND title = %s", (test_user["id"], title))
+    topic = database.fetch_one(
+        "SELECT id FROM topics WHERE owner_id = %s AND title = %s",
+        (test_user["id"], title),
+    )
 
     update_response = authenticated_client.post(
         f"/topics/{topic['id']}/edit",
@@ -46,7 +48,9 @@ def test_topic_crud_writes_audit_logs(authenticated_client, test_user):
     )
     delete_response = authenticated_client.post(f"/topics/{topic['id']}/delete")
 
-    actions = [row["action"] for row in audit_rows_for(test_user["id"], "topic")]
+    actions = [
+        row["action"] for row in audit_rows_for(database, test_user["id"], "topic")
+    ]
 
     assert create_response.status_code == 302
     assert update_response.status_code == 302
@@ -54,7 +58,7 @@ def test_topic_crud_writes_audit_logs(authenticated_client, test_user):
     assert actions[-3:] == ["topic_created", "topic_updated", "topic_deleted"]
 
 
-def test_category_crud_writes_audit_logs(authenticated_client, test_user):
+def test_category_crud_writes_audit_logs(authenticated_client, test_user, database):
     suffix = uuid4().hex[:10]
     name = f"Audit Category {suffix}"
 
@@ -66,7 +70,10 @@ def test_category_crud_writes_audit_logs(authenticated_client, test_user):
             "color": "#1677ff",
         },
     )
-    category = fetch_one("SELECT id FROM categories WHERE owner_id = %s AND name = %s", (test_user["id"], name))
+    category = database.fetch_one(
+        "SELECT id FROM categories WHERE owner_id = %s AND name = %s",
+        (test_user["id"], name),
+    )
 
     update_response = authenticated_client.post(
         f"/categories/{category['id']}/edit",
@@ -78,7 +85,9 @@ def test_category_crud_writes_audit_logs(authenticated_client, test_user):
     )
     delete_response = authenticated_client.post(f"/categories/{category['id']}/delete")
 
-    actions = [row["action"] for row in audit_rows_for(test_user["id"], "category")]
+    actions = [
+        row["action"] for row in audit_rows_for(database, test_user["id"], "category")
+    ]
 
     assert create_response.status_code == 302
     assert update_response.status_code == 302
@@ -86,10 +95,12 @@ def test_category_crud_writes_audit_logs(authenticated_client, test_user):
     assert actions[-3:] == ["category_created", "category_updated", "category_deleted"]
 
 
-def test_note_crud_writes_audit_logs_without_leaking_note_content(authenticated_client, test_user):
+def test_note_crud_writes_audit_logs_without_leaking_note_content(
+    authenticated_client, test_user, database
+):
     suffix = uuid4().hex[:10]
     topic_title = f"Note Audit Topic {suffix}"
-    _, topic_id = execute(
+    _, topic_id = database.execute(
         """
         INSERT INTO topics
             (title, slug, description, status, priority, notes, is_deleted,
@@ -107,7 +118,10 @@ def test_note_crud_writes_audit_logs_without_leaking_note_content(authenticated_
             "topic_id": topic_id,
         },
     )
-    note = fetch_one("SELECT id FROM notes WHERE owner_id = %s AND topic_id = %s", (test_user["id"], topic_id))
+    note = database.fetch_one(
+        "SELECT id FROM notes WHERE owner_id = %s AND topic_id = %s",
+        (test_user["id"], topic_id),
+    )
 
     update_response = authenticated_client.post(
         f"/notes/{note['id']}/edit",
@@ -119,7 +133,7 @@ def test_note_crud_writes_audit_logs_without_leaking_note_content(authenticated_
     )
     delete_response = authenticated_client.post(f"/notes/{note['id']}/delete")
 
-    rows = audit_rows_for(test_user["id"], "note")
+    rows = audit_rows_for(database, test_user["id"], "note")
     actions = [row["action"] for row in rows]
     details = " ".join(row["details"] for row in rows)
 
@@ -131,7 +145,9 @@ def test_note_crud_writes_audit_logs_without_leaking_note_content(authenticated_
     assert "Secret note body" not in details
 
 
-def test_contact_crud_writes_audit_logs_without_leaking_contact_details(authenticated_client, test_user):
+def test_contact_crud_writes_audit_logs_without_leaking_contact_details(
+    authenticated_client, test_user, database
+):
     suffix = uuid4().hex[:10]
     email = f"audit-contact-{suffix}@example.com"
 
@@ -144,7 +160,10 @@ def test_contact_crud_writes_audit_logs_without_leaking_contact_details(authenti
             "notes": "Private contact note",
         },
     )
-    contact = fetch_one("SELECT id FROM contacts WHERE owner_id = %s AND email = %s", (test_user["id"], email))
+    contact = database.fetch_one(
+        "SELECT id FROM contacts WHERE owner_id = %s AND email = %s",
+        (test_user["id"], email),
+    )
 
     update_response = authenticated_client.post(
         f"/contacts/{contact['id']}/edit",
@@ -157,7 +176,7 @@ def test_contact_crud_writes_audit_logs_without_leaking_contact_details(authenti
     )
     delete_response = authenticated_client.post(f"/contacts/{contact['id']}/delete")
 
-    rows = audit_rows_for(test_user["id"], "contact")
+    rows = audit_rows_for(database, test_user["id"], "contact")
     actions = [row["action"] for row in rows]
     details = " ".join(row["details"] for row in rows)
 

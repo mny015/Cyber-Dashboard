@@ -1,6 +1,3 @@
-from utils.db import execute, fetch_one
-
-
 def test_user_can_create_and_view_own_scheduled_task(authenticated_client):
     response = authenticated_client.post(
         "/scheduled-tasks/",
@@ -17,10 +14,12 @@ def test_user_can_create_and_view_own_scheduled_task(authenticated_client):
     assert b"Review notes" in response.data
 
 
-def test_user_cannot_modify_another_users_private_task(client, user_factory, login_as):
+def test_user_cannot_modify_another_users_private_task(
+    client, user_factory, login_as, database
+):
     owner = user_factory(display_name="Task Owner")
     viewer = user_factory(display_name="Task Viewer")
-    _, task_id = execute(
+    _, task_id = database.execute(
         """
         INSERT INTO scheduled_tasks
             (user_id, created_by, title, description, task_type, due_at,
@@ -35,12 +34,12 @@ def test_user_cannot_modify_another_users_private_task(client, user_factory, log
     response = client.post(f"/scheduled-tasks/{task_id}/complete")
 
     assert response.status_code == 403
-    task = fetch_one("SELECT status FROM scheduled_tasks WHERE id = %s", (task_id,))
+    task = database.fetch_one("SELECT status FROM scheduled_tasks WHERE id = %s", (task_id,))
     assert task["status"] == "upcoming"
 
 
-def test_admin_can_view_global_scheduled_tasks(admin_client, admin_user):
-    execute(
+def test_admin_can_view_global_scheduled_tasks(admin_client, admin_user, database):
+    database.execute(
         """
         INSERT INTO scheduled_tasks
             (user_id, created_by, title, description, task_type, due_at,
@@ -57,8 +56,8 @@ def test_admin_can_view_global_scheduled_tasks(admin_client, admin_user):
     assert b"Review shared labs" in response.data
 
 
-def test_mark_scheduled_task_completed(authenticated_client, test_user):
-    _, task_id = execute(
+def test_mark_scheduled_task_completed(authenticated_client, test_user, database):
+    _, task_id = database.execute(
         """
         INSERT INTO scheduled_tasks
             (user_id, created_by, title, description, task_type, due_at,
@@ -73,5 +72,5 @@ def test_mark_scheduled_task_completed(authenticated_client, test_user):
 
     assert response.status_code == 200
     assert b"Task marked complete." in response.data
-    task = fetch_one("SELECT status FROM scheduled_tasks WHERE id = %s", (task_id,))
+    task = database.fetch_one("SELECT status FROM scheduled_tasks WHERE id = %s", (task_id,))
     assert task["status"] == "completed"

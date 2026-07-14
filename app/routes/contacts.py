@@ -4,7 +4,6 @@ from flask import Blueprint
 
 from app.controllers import contacts_controller
 
-
 contacts_bp = Blueprint("contacts", __name__, url_prefix="/contacts")
 contacts_bp.add_url_rule("/", endpoint="index", view_func=contacts_controller.index, methods=["GET"])
 contacts_bp.add_url_rule(

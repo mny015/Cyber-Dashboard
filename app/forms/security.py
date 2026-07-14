@@ -3,8 +3,12 @@ from wtforms import SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
 from app.forms.common import optional_int
+from app.utils.security_catalog import (
+    ACTIVITY_TYPE_CHOICES,
+    FINDING_STATUS_CHOICES,
+    SEVERITY_CHOICES,
+)
 from app.utils.validation import clean_text
-from utils.security_catalog import ACTIVITY_TYPE_CHOICES, FINDING_STATUS_CHOICES, SEVERITY_CHOICES
 
 
 def labeled_choices(values):

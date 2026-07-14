@@ -4,7 +4,6 @@ from flask import Blueprint
 
 from app.controllers import security_controller
 
-
 security_bp = Blueprint("security", __name__, url_prefix="/security")
 security_bp.add_url_rule("/", endpoint="index", view_func=security_controller.index, methods=["GET"])
 security_bp.add_url_rule(

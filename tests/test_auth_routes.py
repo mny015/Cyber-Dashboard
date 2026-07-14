@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import pyotp
 import pytest
 from flask import Blueprint, redirect, render_template, url_for
 from werkzeug.security import generate_password_hash
@@ -231,6 +232,77 @@ def test_locked_account_blocks_login_before_password_check(monkeypatch, fake_aut
 
     with fake_auth_client.session_transaction() as session:
         assert "_user_id" not in session
+
+
+def test_mfa_login_handoff_verifies_totp_and_completes_session(
+    monkeypatch, fake_auth_client
+):
+    secret = pyotp.random_base32()
+    user_row = make_user_row(mfa_enabled=True)
+    user_row["mfa_secret"] = secret
+    user = User.from_row(user_row)
+    audit_actions = []
+
+    monkeypatch.setattr(
+        "app.repositories.user_repository.find_by_email", lambda _email: user
+    )
+    monkeypatch.setattr("app.repositories.user_repository.find_by_id", lambda _user_id: user)
+    monkeypatch.setattr(
+        "app.repositories.user_repository.reset_failed_logins", lambda _user_id: None
+    )
+    monkeypatch.setattr(
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_actions.append(action),
+    )
+
+    login_response = fake_auth_client.post(
+        "/auth/login",
+        data={"email": user.email, "password": "CorrectPassword123!"},
+    )
+
+    assert login_response.status_code == 302
+    assert login_response.headers["Location"].endswith("/auth/mfa/verify")
+    with fake_auth_client.session_transaction() as session:
+        assert session["pending_mfa_user_id"] == user.id
+        assert "_user_id" not in session
+
+    verify_response = fake_auth_client.post(
+        "/auth/mfa/verify",
+        data={"token": pyotp.TOTP(secret).now()},
+    )
+
+    assert verify_response.status_code == 302
+    assert verify_response.headers["Location"].endswith("/user/dashboard")
+    with fake_auth_client.session_transaction() as session:
+        assert session["_user_id"] == str(user.id)
+        assert "pending_mfa_user_id" not in session
+    assert "login" in audit_actions
+
+
+def test_invalid_mfa_token_is_audited_without_logging_user_in(
+    monkeypatch, fake_auth_client
+):
+    user_row = make_user_row(mfa_enabled=True)
+    user_row["mfa_secret"] = pyotp.random_base32()
+    user = User.from_row(user_row)
+    audit_actions = []
+
+    monkeypatch.setattr("app.repositories.user_repository.find_by_id", lambda _user_id: user)
+    monkeypatch.setattr(
+        "app.services.audit_service.record",
+        lambda action, details="", context=None, database=None: audit_actions.append(action),
+    )
+    with fake_auth_client.session_transaction() as session:
+        session["pending_mfa_user_id"] = user.id
+
+    response = fake_auth_client.post("/auth/mfa/verify", data={"token": "abcdef"})
+
+    assert response.status_code == 200
+    assert b"Invalid MFA code." in response.data
+    with fake_auth_client.session_transaction() as session:
+        assert "_user_id" not in session
+        assert session["pending_mfa_user_id"] == user.id
+    assert "mfa_failed" in audit_actions
 
 
 def test_logout_rejects_get_requests(fake_auth_client):

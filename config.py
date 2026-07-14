@@ -1,12 +1,11 @@
 """Environment-driven configuration for every application runtime."""
 
-import os
 import base64
 import binascii
+import os
 from datetime import timedelta
 
 from dotenv import load_dotenv
-
 
 load_dotenv()
 
@@ -59,6 +58,7 @@ class BaseConfig:
 
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_HEADERS_ENABLED = True
+    RATELIMIT_ENABLED = True
 
     LOG_FILE = os.getenv("LOG_FILE", "instance/cyber_dashboard.log")
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "app/static/uploads")
@@ -127,6 +127,7 @@ class TestingConfig(BaseConfig):
     DEBUG = False
     SESSION_COOKIE_SECURE = False
     TALISMAN_FORCE_HTTPS = False
+    RATELIMIT_ENABLED = False
 
 
 class ProductionConfig(BaseConfig):
@@ -174,7 +175,3 @@ def get_config(name=None):
         raise RuntimeError(f"Unknown APP_ENV '{config_name}'. Choose one of: {choices}.") from exc
     config_class.validate()
     return config_class
-
-
-# Compatibility alias for scripts and the existing database helper.
-Config = get_config()

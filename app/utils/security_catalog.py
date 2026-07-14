@@ -1,4 +1,6 @@
-APP_VULNERABILITIES = [
+"""Shared catalog seed values and validated security-choice constants."""
+
+APP_VULNERABILITIES = (
     ("A01:2025", "Broken Access Control", "Web Application", "critical", "OWASP Top 10:2025"),
     ("A02:2025", "Security Misconfiguration", "Web Application", "high", "OWASP Top 10:2025"),
     ("A03:2025", "Software Supply Chain Failures", "Web Application", "critical", "OWASP Top 10:2025"),
@@ -24,10 +26,9 @@ APP_VULNERABILITIES = [
     ("VAPT-PATH", "Path Traversal", "Common VAPT", "high", "Common web security testing category"),
     ("VAPT-FILE", "Unrestricted File Upload", "Common VAPT", "high", "Common web security testing category"),
     ("VAPT-DESER", "Insecure Deserialization", "Common VAPT", "critical", "Common web security testing category"),
-]
+)
 
-
-THREAT_TACTICS = [
+THREAT_TACTICS = (
     ("TA0043", "Reconnaissance", "medium"),
     ("TA0042", "Resource Development", "medium"),
     ("TA0001", "Initial Access", "critical"),
@@ -43,9 +44,12 @@ THREAT_TACTICS = [
     ("TA0011", "Command and Control", "critical"),
     ("TA0010", "Exfiltration", "critical"),
     ("TA0040", "Impact", "critical"),
-]
-
+)
 
 SEVERITY_CHOICES = ("info", "low", "medium", "high", "critical")
 FINDING_STATUS_CHOICES = ("open", "testing", "managed", "resolved")
-ACTIVITY_TYPE_CHOICES = ("vulnerability_found", "vulnerability_tested", "threat_managed")
+ACTIVITY_TYPE_CHOICES = (
+    "vulnerability_found",
+    "vulnerability_tested",
+    "threat_managed",
+)

@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 CONTRACT_PATH = Path(__file__).parent / "contracts" / "route_contract.json"
 EXPECTED_BLUEPRINTS = {
     "dashboard",

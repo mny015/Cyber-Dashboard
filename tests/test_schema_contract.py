@@ -2,9 +2,6 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from utils.db import get_connection
-
-
 CONTRACT_PATH = Path(__file__).parent / "contracts" / "schema_contract.json"
 
 
@@ -13,10 +10,9 @@ def load_contract():
         return json.load(contract_file)
 
 
-def fetch_schema_rows(database_name):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
+def fetch_schema_rows(database, database_name):
+    with database.connect() as raw_connection:
+        with raw_connection.cursor() as cursor:
             cursor.execute("SELECT DATABASE() AS database_name")
             connected_database = cursor.fetchone()["database_name"]
             assert connected_database == database_name
@@ -60,9 +56,6 @@ def fetch_schema_rows(database_name):
                 (database_name,),
             )
             foreign_keys = cursor.fetchall()
-    finally:
-        connection.close()
-
     return columns, indexes, foreign_keys
 
 
@@ -95,9 +88,11 @@ def group_foreign_keys(rows):
     return grouped
 
 
-def test_mysql_schema_matches_frozen_contract(dedicated_test_database):
+def test_mysql_schema_matches_frozen_contract(dedicated_test_database, database):
     contract = load_contract()["tables"]
-    column_rows, index_rows, foreign_key_rows = fetch_schema_rows(dedicated_test_database)
+    column_rows, index_rows, foreign_key_rows = fetch_schema_rows(
+        database, dedicated_test_database
+    )
     columns = group_columns(column_rows)
     indexes, uniqueness = group_indexes(index_rows)
     foreign_keys = group_foreign_keys(foreign_key_rows)

@@ -15,7 +15,6 @@ from app.utils.database.exceptions import (
     DatabaseQueryError,
 )
 
-
 DEFAULT_POOL_SIZE = 5
 DEFAULT_POOL_TIMEOUT = 5.0
 POOL_EXTENSION_KEY = "mysql_connection_pool"

@@ -12,7 +12,6 @@ from scripts.migrate import (
     split_sql_statements,
 )
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_TABLES = {
     "schema_migrations",
@@ -91,7 +90,6 @@ def test_database_identifier_is_strictly_validated():
 
 
 def test_schema_ddl_exists_only_in_numbered_sql_migrations():
-    init_source = (PROJECT_ROOT / "init_db.py").read_text(encoding="utf-8").upper()
     python_schema_sources = []
     for path in PROJECT_ROOT.rglob("*.py"):
         if any(part in {".git", "tests"} or part.startswith(".venv") for part in path.parts):
@@ -100,7 +98,7 @@ def test_schema_ddl_exists_only_in_numbered_sql_migrations():
         if "CREATE TABLE" in source or "ALTER TABLE" in source:
             python_schema_sources.append(path.relative_to(PROJECT_ROOT).as_posix())
 
-    assert "CREATE TABLE" not in init_source
-    assert "ALTER TABLE" not in init_source
+    assert not (PROJECT_ROOT / "init_db.py").exists()
+    assert not list((PROJECT_ROOT / "utils").glob("*.py"))
     assert python_schema_sources == []
     assert list(DEFAULT_MIGRATIONS_DIR.rglob("*.py")) == []

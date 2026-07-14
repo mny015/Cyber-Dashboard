@@ -5,17 +5,17 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, render_template, session
 from flask_login import current_user, logout_user
 
-from config import get_config
 from app.extensions import init_extensions, login_manager
 from app.repositories import user_repository
 from app.routes import register_blueprints
-from app.utils.datetime_helpers import format_date
 from app.utils.database import (
     DatabaseConnectionError,
     DatabaseError,
     init_database,
 )
+from app.utils.datetime_helpers import format_date
 from app.utils.security import configure_trusted_proxy
+from config import get_config
 
 
 @login_manager.user_loader

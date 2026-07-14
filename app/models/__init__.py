@@ -13,7 +13,6 @@ from app.models.security import SecurityFinding, ThreatCatalogEntry, Vulnerabili
 from app.models.topic import Topic
 from app.models.user import User
 
-
 MODEL_REGISTRY = {
     model.TABLE_NAME: model
     for model in (

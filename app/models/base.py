@@ -1,7 +1,8 @@
 """Shared row conversion for plain dataclass models."""
 
+from collections.abc import Mapping
 from dataclasses import fields
-from typing import ClassVar, Mapping
+from typing import ClassVar
 
 
 class RowModel:

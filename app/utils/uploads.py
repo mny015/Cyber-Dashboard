@@ -11,7 +11,6 @@ from wtforms.validators import ValidationError
 
 from app.models import ProfileImage
 
-
 ALLOWED_IMAGE_TYPES = {
     "jpeg": {"extensions": {".jpg", ".jpeg"}, "mime": "image/jpeg"},
     "png": {"extensions": {".png"}, "mime": "image/png"},

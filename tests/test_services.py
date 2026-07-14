@@ -7,8 +7,13 @@ from pathlib import Path
 import pytest
 
 from app.models import Note, User
-from app.services import auth_service, export_service, note_service, notification_service
-from app.services import user_management_service
+from app.services import (
+    auth_service,
+    export_service,
+    note_service,
+    notification_service,
+    user_management_service,
+)
 from app.services.audit_service import AuditContext
 from app.services.exceptions import LastAdministratorError
 from app.utils.database.connection import MySQLConnectionPool

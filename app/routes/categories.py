@@ -4,7 +4,6 @@ from flask import Blueprint
 
 from app.controllers import categories_controller
 
-
 categories_bp = Blueprint("categories", __name__, url_prefix="/categories")
 categories_bp.add_url_rule(
     "/", endpoint="index", view_func=categories_controller.index, methods=["GET"]

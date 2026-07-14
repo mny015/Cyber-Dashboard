@@ -1,7 +1,6 @@
 """Compatibility adapter for the centralized upload validation policy."""
 
 from app.utils.uploads import (
-    ALLOWED_IMAGE_TYPES,
     UploadValidationError,
     detect_image_type,
     validate_profile_image,

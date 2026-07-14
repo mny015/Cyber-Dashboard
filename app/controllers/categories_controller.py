@@ -7,8 +7,8 @@ from app.controllers.form_helpers import validate_action
 from app.forms.categories import CategoryForm
 from app.models.category import Category
 from app.repositories import category_repository
-from app.utils.database import DatabaseIntegrityError
 from app.utils.audit import log_audit
+from app.utils.database import DatabaseIntegrityError
 from app.utils.decorators import require_owned_record
 
 

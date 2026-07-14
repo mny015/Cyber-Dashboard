@@ -7,9 +7,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from utils.db import get_connection
-from utils.security_catalog import APP_VULNERABILITIES, THREAT_TACTICS
-
+from app import create_app
+from app.utils.database import DatabaseError, transaction
+from app.utils.security_catalog import APP_VULNERABILITIES, THREAT_TACTICS
 
 LAB_PLATFORMS = (
     ("picoCTF", "picoctf"),
@@ -20,10 +20,10 @@ LAB_PLATFORMS = (
 )
 
 
-def seed_database(output=print):
-    connection = get_connection()
-    try:
-        with connection.cursor() as cursor:
+def seed_database(output=print, application=None):
+    application = application or create_app()
+    with application.app_context():
+        with transaction() as cursor:
             for name, slug in LAB_PLATFORMS:
                 cursor.execute(
                     """
@@ -69,19 +69,13 @@ def seed_database(output=print):
                     """,
                     (code, name, level, f"MITRE ATT&CK Enterprise tactic {code}."),
                 )
-        connection.commit()
-    except Exception:
-        connection.rollback()
-        raise
-    finally:
-        connection.close()
     output("Seed data is current.")
 
 
 def main():
     try:
         seed_database()
-    except Exception as exc:
+    except (DatabaseError, RuntimeError) as exc:
         print(f"[FAIL] Seed data was not applied: {exc}", file=sys.stderr)
         return 1
     return 0

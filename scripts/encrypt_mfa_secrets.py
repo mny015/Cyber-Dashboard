@@ -3,7 +3,6 @@
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -26,10 +25,10 @@ def rotate_legacy_mfa_secrets():
         return 0
 
     with transaction() as cursor:
+        database = db.using(cursor)
         for row in legacy_rows:
-            cursor.execute(
-                "UPDATE users SET mfa_secret = %s, updated_at = NOW() WHERE id = %s",
-                (encrypt_mfa_secret(row["mfa_secret"]), int(row["id"])),
+            database.table(User.TABLE_NAME).where("id", "=", int(row["id"])).update(
+                {"mfa_secret": encrypt_mfa_secret(row["mfa_secret"])}
             )
     return len(legacy_rows)
 

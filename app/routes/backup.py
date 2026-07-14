@@ -4,7 +4,6 @@ from flask import Blueprint
 
 from app.controllers import backup_controller
 
-
 backup_bp = Blueprint("backup", __name__, url_prefix="/backup")
 backup_bp.add_url_rule("/", endpoint="index", view_func=backup_controller.index, methods=["GET"])
 backup_bp.add_url_rule(

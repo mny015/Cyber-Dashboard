@@ -1,16 +1,15 @@
 """Readable synchronous query builder for parameterized application SQL."""
 
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from math import ceil
-from typing import Mapping
 
 from app.models import MODEL_REGISTRY
 from app.utils.database.connection import connection
 from app.utils.database.exceptions import NamedQueryError
 from app.utils.database.named_queries import load_named_query, prepare_named_parameters
 from app.utils.database.transaction import transaction
-
 
 IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 WHERE_OPERATORS = {"=", "!=", "<>", "<", "<=", ">", ">=", "LIKE", "NOT LIKE"}
@@ -242,7 +241,7 @@ class QueryBuilder:
         inner_sql, params = self._compile_select(
             trusted_select_sql="1", include_order=False, include_pagination=False
         )
-        sql = f"SELECT COUNT(*) AS `aggregate` FROM ({inner_sql}) AS `count_query`"
+        sql = f"SELECT COUNT(*) AS `aggregate` FROM ({inner_sql}) AS `count_query`"  # nosec B608
         row = self._database._fetch_one(sql, params)
         return int(row["aggregate"] if row else 0)
 
@@ -261,7 +260,10 @@ class QueryBuilder:
         columns, row_values = self._validate_values(values)
         column_sql = ", ".join(self._quote_column(column) for column in columns)
         placeholders = ", ".join("%s" for _column in columns)
-        sql = f"INSERT INTO {quote_table(self._table)} ({column_sql}) VALUES ({placeholders})"
+        # Table and column identifiers have passed the model registry whitelist.
+        sql = (
+            f"INSERT INTO {quote_table(self._table)} ({column_sql}) VALUES ({placeholders})"  # nosec B608
+        )
         return self._database._execute(sql, tuple(row_values))
 
     def insert_many(self, rows):
@@ -279,7 +281,10 @@ class QueryBuilder:
 
         column_sql = ", ".join(self._quote_column(column) for column in columns)
         placeholders = ", ".join("%s" for _column in columns)
-        sql = f"INSERT INTO {quote_table(self._table)} ({column_sql}) VALUES ({placeholders})"
+        # Table and column identifiers have passed the model registry whitelist.
+        sql = (
+            f"INSERT INTO {quote_table(self._table)} ({column_sql}) VALUES ({placeholders})"  # nosec B608
+        )
         return self._database._executemany(sql, tuple(parameter_rows))
 
     def update(self, values):
@@ -289,7 +294,10 @@ class QueryBuilder:
         columns, row_values = self._validate_values(values)
         assignments = ", ".join(f"{self._quote_column(column)} = %s" for column in columns)
         where_sql, where_params = self._compile_predicates(self._predicates)
-        sql = f"UPDATE {quote_table(self._table)} SET {assignments} WHERE {where_sql}"
+        # Every identifier and predicate is validated internally.
+        sql = (
+            f"UPDATE {quote_table(self._table)} SET {assignments} WHERE {where_sql}"  # nosec B608
+        )
         return self._database._execute(sql, (*row_values, *where_params))
 
     def delete(self):
@@ -297,7 +305,10 @@ class QueryBuilder:
             raise UnsafeQueryError("DELETE requires at least one WHERE condition.")
         self._ensure_simple_write_shape()
         where_sql, params = self._compile_predicates(self._predicates)
-        sql = f"DELETE FROM {quote_table(self._table)} WHERE {where_sql}"
+        # The table and WHERE columns are registry validated.
+        sql = (
+            f"DELETE FROM {quote_table(self._table)} WHERE {where_sql}"  # nosec B608
+        )
         return self._database._execute(sql, params)
 
     def paginate(self, page=1, per_page=20):
@@ -336,7 +347,10 @@ class QueryBuilder:
         select_sql = trusted_select_sql or ", ".join(
             self._quote_column(column, allow_wildcard=True) for column in self._select_columns
         )
-        parts = [f"SELECT {select_sql} FROM {quote_table(self._table)}"]
+        # SELECT and table identifiers are generated from whitelisted metadata.
+        parts = [
+            f"SELECT {select_sql} FROM {quote_table(self._table)}"  # nosec B608
+        ]
 
         for clause in self._joins:
             parts.append(

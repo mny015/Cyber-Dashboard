@@ -35,7 +35,7 @@ def create():
     _apply_form(contact, form)
     contact_repository.create(contact)
     log_audit("contact_created", f"Created contact {contact.id}")
-    flash("Contact created successfully.", "success")
+    flash("Contact added.", "success")
     return redirect(url_for("contacts.index"))
 
 
@@ -49,7 +49,7 @@ def edit(contact_id):
     _apply_form(contact, form)
     contact_repository.update_owned(contact, current_user.id)
     log_audit("contact_updated", f"Updated contact {contact.id}")
-    flash("Contact updated successfully.", "success")
+    flash("Contact changes saved.", "success")
     return redirect(url_for("contacts.index"))
 
 
@@ -60,7 +60,7 @@ def delete(contact_id):
     contact = _get_contact_or_404(contact_id)
     contact_repository.delete_owned(contact.id, current_user.id)
     log_audit("contact_deleted", f"Deleted contact {contact.id}")
-    flash("Contact deleted successfully.", "info")
+    flash("Contact deleted.", "info")
     return redirect(url_for("contacts.index"))
 
 

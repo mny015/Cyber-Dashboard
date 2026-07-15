@@ -4,9 +4,24 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 
 class RegisterForm(FlaskForm):
-    display_name = StringField("Display name", validators=[DataRequired(), Length(min=2, max=120)])
-    email = EmailField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired(), Length(min=12, max=128)])
+    display_name = StringField(
+        "Display name",
+        validators=[
+            DataRequired(message="Enter a display name."),
+            Length(min=2, max=120, message="Use between 2 and 120 characters."),
+        ],
+    )
+    email = EmailField(
+        "Email address",
+        validators=[DataRequired(message="Enter your email address."), Email(message="Enter a valid email address.")],
+    )
+    password = PasswordField(
+        "Password",
+        validators=[
+            DataRequired(message="Enter a password."),
+            Length(min=12, max=128, message="Use between 12 and 128 characters."),
+        ],
+    )
     confirm_password = PasswordField(
         "Confirm password",
         validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
@@ -15,18 +30,33 @@ class RegisterForm(FlaskForm):
 
 
 class LoginForm(FlaskForm):
-    email = EmailField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
-    submit = SubmitField("Login")
+    email = EmailField(
+        "Email address",
+        validators=[DataRequired(message="Enter your email address."), Email(message="Enter a valid email address.")],
+    )
+    password = PasswordField("Password", validators=[DataRequired(message="Enter your password.")])
+    submit = SubmitField("Log in")
 
 
 class MfaTokenForm(FlaskForm):
-    token = StringField("MFA code", validators=[DataRequired(), Length(min=6, max=6)])
+    token = StringField(
+        "6-digit MFA code",
+        validators=[
+            DataRequired(message="Enter your MFA code."),
+            Length(min=6, max=6, message="Enter the 6-digit code from your authenticator app."),
+        ],
+    )
     submit = SubmitField("Verify code")
 
 
 class MfaSetupForm(FlaskForm):
-    token = StringField("MFA code", validators=[DataRequired(), Length(min=6, max=6)])
+    token = StringField(
+        "6-digit MFA code",
+        validators=[
+            DataRequired(message="Enter your MFA code."),
+            Length(min=6, max=6, message="Enter the 6-digit code from your authenticator app."),
+        ],
+    )
     submit = SubmitField("Enable MFA")
 
 
@@ -45,7 +75,10 @@ class ChangePasswordForm(FlaskForm):
 
 class ReconfirmationForm(FlaskForm):
     current_password = PasswordField("Current password", validators=[Optional()])
-    mfa_token = StringField("MFA code", validators=[Optional(), Length(min=6, max=6)])
+    mfa_token = StringField(
+        "6-digit MFA code",
+        validators=[Optional(), Length(min=6, max=6, message="Enter a 6-digit MFA code.")],
+    )
     submit = SubmitField("Confirm identity")
 
     def validate(self, extra_validators=None):

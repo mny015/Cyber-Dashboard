@@ -34,7 +34,7 @@ def index():
     except ValidationError as exc:
         flash(str(exc), "danger")
         return _render_index(form)
-    flash("Scheduled task created.", "success")
+    flash("Task added to your schedule.", "success")
     return redirect(url_for("tasks.index"))
 
 
@@ -43,7 +43,7 @@ def complete(task_id):
     if not validate_action():
         return redirect(url_for("tasks.index"))
     _change_status(task_id, "completed")
-    flash("Task marked complete.", "success")
+    flash("Task marked as complete.", "success")
     return redirect(url_for("tasks.index"))
 
 
@@ -52,7 +52,7 @@ def cancel(task_id):
     if not validate_action():
         return redirect(url_for("tasks.index"))
     _change_status(task_id, "cancelled")
-    flash("Task cancelled.", "info")
+    flash("Task removed from the schedule.", "info")
     return redirect(url_for("tasks.index"))
 
 

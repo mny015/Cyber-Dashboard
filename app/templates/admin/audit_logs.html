@@ -3,15 +3,15 @@
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 {% from "macros/tables.html" import data_table, pagination with context %}
 
-{% block title %}Audit Logs - Cyber Dashboard{% endblock %}
+{% block title %}Audit logs | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{% call page_heading("Audit Logs", "Security and admin actions recorded by the app.") %}
-    {{ action_link(url_for('admin.users'), "Users") }}
+{% call page_heading("Audit logs", "Review security-sensitive and administrative actions recorded by the application.") %}
+    {{ action_link(url_for('admin.users'), "User administration") }}
 {% endcall %}
 
 {% if logs.items %}
-    {% call data_table(["Time", "Action", "User", "IP", "Details"]) %}
+    {% call data_table(["Date and time", "Action", "Account", "IP address", "Details"], caption="Application audit log entries") %}
                 {% for log in logs.items %}
                     <tr>
                         <td>{{ log.created_at|format_date }}</td>

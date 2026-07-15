@@ -50,7 +50,7 @@ def register():
     except ConflictError as exc:
         flash(str(exc), "danger")
         return render_template("auth/register.html", form=form)
-    flash("Account created successfully. Please log in.", "success")
+    flash("Account created. Log in to continue.", "success")
     return redirect(url_for("auth.login"))
 
 
@@ -112,7 +112,7 @@ def logout():
     log_audit("logout", "User logged out")
     logout_user()
     session.clear()
-    flash("Logged out successfully.", "info")
+    flash("You have been logged out.", "info")
     return redirect(url_for("auth.login"))
 
 
@@ -166,7 +166,7 @@ def setup_mfa():
             password_form=password_form,
             provisioning_uri=provisioning_uri,
         )
-    flash("MFA enabled successfully.", "success")
+    flash("Multi-factor authentication is now enabled.", "success")
     return redirect(url_for("dashboard.dashboard"))
 
 
@@ -243,7 +243,7 @@ def _complete_login(user, used_mfa=False):
     session["auth_version"] = user.auth_version
     mark_reauthenticated(user)
     auth_service.record_login(user, get_audit_context(user), used_mfa=used_mfa)
-    flash("Logged in successfully.", "success")
+    flash("Welcome back. You are now logged in.", "success")
     endpoint = (
         "dashboard.admin_dashboard" if user.is_admin else "dashboard.user_dashboard"
     )

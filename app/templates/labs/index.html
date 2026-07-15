@@ -2,21 +2,22 @@
 {% from "macros/forms.html" import action_form, action_link with context %}
 {% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
-{% block title %}Labs - Cyber Dashboard{% endblock %}
+{% block title %}Labs | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% call page_heading("Labs", "Track practice labs from picoCTF, TryHackMe, Hack The Box, and more.") %}
     {{ action_link(url_for('labs.create'), "Add lab") }}
 {% endcall %}
 
-<form class="filters" method="get">
-    <select name="platform_id">
+<form class="filters" method="get" aria-label="Filter labs">
+    <label for="lab-platform-filter">Platform</label>
+    <select id="lab-platform-filter" name="platform_id">
         <option value="">All platforms</option>
         {% for platform in platforms %}
             <option value="{{ platform.id }}" {% if selected_platform_id == platform.id %}selected{% endif %}>{{ platform.name }}</option>
         {% endfor %}
     </select>
-    <button type="submit">Filter</button>
+    <button type="submit">Apply filter</button>
 </form>
 
 {% if labs %}
@@ -34,20 +35,20 @@
                 </p>
                 <p>{{ lab.notes[:140] }}{% if lab.notes|length > 140 %}...{% endif %}</p>
                 <div class="actions">
-                    <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer">Open lab</a>
+                    <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open {{ lab.name }} on {{ lab.platform_name }} in a new tab">Open lab</a>
                     {% if lab.is_completed %}
-                        {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark incomplete") }}
+                        {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark as incomplete", aria_label="Mark " ~ lab.name ~ " as incomplete") }}
                     {% else %}
-                        {{ action_form(url_for('labs.complete', lab_id=lab.id), "Mark complete") }}
+                        {{ action_form(url_for('labs.complete', lab_id=lab.id), "Mark as complete", aria_label="Mark " ~ lab.name ~ " as complete") }}
                     {% endif %}
                     {% if lab.owner_id == current_user.id %}
-                        <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}">Edit</a>
+                        <a class="button" href="{{ url_for('labs.edit', lab_id=lab.id) }}" aria-label="Edit lab {{ lab.name }}">Edit</a>
                     {% endif %}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    {{ empty_state("No labs found", "Add a personal lab or wait for an admin to share one.") }}
+    {{ empty_state("No labs match this filter", "Choose another platform or add a personal lab.") }}
 {% endif %}
 {% endblock %}

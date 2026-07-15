@@ -63,8 +63,12 @@
                             {% endif %}
                             {% if item.status == "upcoming" %}
                                 <div class="actions">
-                                    {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
-                                    {{ confirmation_form(url_for('tasks.cancel', task_id=item.id), "Cancel", "Cancel this scheduled task?") }}
+                                    {{ action_form(url_for('tasks.complete', task_id=item.id), "Mark complete", aria_label="Mark task " ~ item.title ~ " complete") }}
+                                    {{ confirmation_form(
+                                        url_for('tasks.cancel', task_id=item.id),
+                                        "Cancel task",
+                                        "Cancel scheduled task '" ~ item.title ~ "'? It will be removed from your schedule."
+                                    ) }}
                                 </div>
                             {% endif %}
                         </div>

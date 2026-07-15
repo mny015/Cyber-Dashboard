@@ -7,7 +7,7 @@
 <div class="dashboard-shell dashboard-shell-admin">
     <section class="dashboard-hero">
         <div class="dashboard-hero-copy">
-            <span class="dashboard-badge">Admin Control Center</span>
+            <span class="dashboard-badge">Admin control center</span>
             <h1>Cyber Dashboard Admin</h1>
             <p>Manage users, shared labs, notes, categories, requests, and system activity</p>
         </div>
@@ -66,55 +66,55 @@
         <a href="{{ url_for('admin.category_summaries') }}">Categories</a>
         <a href="{{ url_for('labs.index') }}">Labs</a>
         <a href="{{ url_for('admin.note_requests') }}">Requests</a>
-        <a href="{{ url_for('admin.audit_logs') }}">Audit Logs</a>
-        <a href="{{ url_for('profile.edit') }}">Settings</a>
+        <a href="{{ url_for('admin.audit_logs') }}">Audit logs</a>
+        <a href="{{ url_for('profile.edit') }}">Profile settings</a>
     </nav>
 
     <section class="dashboard-grid dashboard-metrics dashboard-metrics-admin" aria-label="Admin dashboard metrics">
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.users') }}">
-            <span class="dashboard-card-icon">US</span>
+            <span class="dashboard-card-icon" aria-hidden="true">US</span>
             <span>Users</span>
             <strong>{{ stats.total_users }}</strong>
             <small>{{ stats.active_users }} active &middot; {{ stats.banned_users }} banned &middot; {{ stats.admin_users }} admin</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.topic_summaries') }}">
-            <span class="dashboard-card-icon">TP</span>
+            <span class="dashboard-card-icon" aria-hidden="true">TP</span>
             <span>Topics</span>
             <strong>{{ stats.total_topics }}</strong>
             <small>Total topics</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.note_requests') }}">
-            <span class="dashboard-card-icon">NT</span>
+            <span class="dashboard-card-icon" aria-hidden="true">NT</span>
             <span>Notes</span>
             <strong>{{ stats.total_notes }}</strong>
             <small>Access-controlled</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.category_summaries') }}">
-            <span class="dashboard-card-icon">CT</span>
+            <span class="dashboard-card-icon" aria-hidden="true">CT</span>
             <span>Categories</span>
             <strong>{{ stats.total_categories }}</strong>
             <small>Total categories</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('labs.index') }}">
-            <span class="dashboard-card-icon">LB</span>
+            <span class="dashboard-card-icon" aria-hidden="true">LB</span>
             <span>Labs / Rooms</span>
             <strong>{{ stats.total_labs }}</strong>
             <small>{{ stats.shared_labs }} shared with all users</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.note_requests') }}">
-            <span class="dashboard-card-icon">RQ</span>
+            <span class="dashboard-card-icon" aria-hidden="true">RQ</span>
             <span>Requests</span>
             <strong>{{ stats.pending_requests }}</strong>
             <small>Pending note access requests</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('admin.audit_logs') }}">
-            <span class="dashboard-card-icon">AL</span>
+            <span class="dashboard-card-icon" aria-hidden="true">AL</span>
             <span>Audit Logs</span>
             <strong>{{ stats.audit_events_week }}</strong>
             <small>Recent audit events from last 7 days</small>
         </a>
         <a class="dashboard-card dashboard-metric" href="{{ url_for('backup.index') }}">
-            <span class="dashboard-card-icon">EX</span>
+            <span class="dashboard-card-icon" aria-hidden="true">EX</span>
             <span>Backups / Exports</span>
             <strong>{{ stats.backup_exports_week }}</strong>
             <small>Recent backup/export count</small>
@@ -229,14 +229,14 @@
                                         {% if item.detail %} &middot; {{ item.detail }}{% endif %}
                                     </small>
                                     {% if item.id %}
-                                        {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
+                                        {{ action_form(url_for('tasks.complete', task_id=item.id), "Mark complete", aria_label="Mark task " ~ item.title ~ " complete") }}
                                     {% endif %}
                                 </div>
                             </article>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="dashboard-empty">No upcoming items</div>
+                    <div class="dashboard-empty">No scheduled admin work.</div>
                 {% endif %}
             </section>
 
@@ -260,7 +260,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="dashboard-empty">No recent completed actions</div>
+                    <div class="dashboard-empty">No completed admin activity yet.</div>
                 {% endif %}
             </section>
 

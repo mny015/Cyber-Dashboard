@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/forms.html" import csrf_form, form_field with context %}
 
-{% block title %}Verify MFA - Cyber Dashboard{% endblock %}
+{% block title %}Verify MFA | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="auth-shell">
@@ -11,7 +11,7 @@
             <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
         </a>
         <p class="eyebrow">Account check</p>
-        <h1>Verify MFA</h1>
+        <h1>Verify your MFA code</h1>
         <p class="meta">Enter the 6-digit code from your authenticator app.</p>
 
         {% call csrf_form(form) %}

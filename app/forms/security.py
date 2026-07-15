@@ -17,7 +17,7 @@ def labeled_choices(values):
 
 class SecurityFindingForm(FlaskForm):
     title = StringField(
-        "Title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Finding title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
     activity_type = SelectField(
         "Activity type",
@@ -54,7 +54,7 @@ class SecurityFindingForm(FlaskForm):
 
 class VulnerabilitySuggestionForm(FlaskForm):
     name = StringField(
-        "Name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Vulnerability name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
     category = StringField(
         "Category",
@@ -65,7 +65,7 @@ class VulnerabilitySuggestionForm(FlaskForm):
     default_severity = SelectField(
         "Default severity", choices=labeled_choices(SEVERITY_CHOICES), validators=[DataRequired()]
     )
-    description = TextAreaField("Notes", filters=[clean_text], validators=[Optional()])
+    description = TextAreaField("Reason for suggestion", filters=[clean_text], validators=[Optional()])
     submit = SubmitField("Submit for review")
 
 
@@ -74,7 +74,7 @@ class AdminVulnerabilityForm(FlaskForm):
         "Code", filters=[clean_text], validators=[Optional(), Length(max=40)]
     )
     name = StringField(
-        "Name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Vulnerability name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
     category = StringField(
         "Category",

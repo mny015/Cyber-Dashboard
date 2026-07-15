@@ -8,13 +8,13 @@ from app.utils.validation import clean_text
 
 class TopicForm(FlaskForm):
     title = StringField(
-        "Title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Topic title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
     category_id = SelectField(
-        "Category", coerce=optional_int, validators=[Optional()], choices=[]
+        "Category (optional)", coerce=optional_int, validators=[Optional()], choices=[]
     )
     status = SelectField(
-        "Status",
+        "Learning status",
         default="planned",
         choices=[
             ("planned", "Planned"),
@@ -32,5 +32,5 @@ class TopicForm(FlaskForm):
         validators=[DataRequired()],
     )
     description = TextAreaField("Description", filters=[clean_text], validators=[Optional()])
-    notes = TextAreaField("Notes", filters=[clean_text], validators=[Optional()])
+    notes = TextAreaField("Topic summary notes", filters=[clean_text], validators=[Optional()])
     submit = SubmitField("Save topic")

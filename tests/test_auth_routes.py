@@ -95,7 +95,7 @@ def test_login_page_renders_without_database(fake_auth_client):
     response = fake_auth_client.get("/login", follow_redirects=True)
 
     assert response.status_code == 200
-    assert b"Login" in response.data
+    assert b"Log in" in response.data
     assert b"name@example.com" in response.data
 
 

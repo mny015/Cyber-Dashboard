@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/forms.html" import csrf_form, form_field with context %}
 
-{% block title %}Login - Cyber Dashboard{% endblock %}
+{% block title %}Log in | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="auth-shell">
@@ -11,7 +11,7 @@
             <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
         </a>
         <p class="eyebrow">Welcome back</p>
-        <h1>Login</h1>
+        <h1>Log in</h1>
         <p class="meta">Access your topics, notes, labs, requests, and scheduled tasks.</p>
 
         {% call csrf_form(form) %}

@@ -2,11 +2,11 @@
 {% from "macros/forms.html" import action_link, delete_form with context %}
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 
-{% block title %}Categories - Cyber Dashboard{% endblock %}
+{% block title %}Categories | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% call page_heading("Categories", "Group topics by learning area, certification path, or practice focus.") %}
-    {{ action_link(url_for('categories.create'), "New category") }}
+    {{ action_link(url_for('categories.create'), "Add category") }}
 {% endcall %}
 
 {% if categories %}
@@ -17,13 +17,17 @@
                 <p>{{ category.description or "No description yet." }}</p>
                 <p class="meta">Color: <span style="color: {{ category.color }}">{{ category.color }}</span></p>
                 <div class="actions">
-                    {{ action_link(url_for('categories.edit', category_id=category.id), "Edit") }}
-                    {{ delete_form(url_for('categories.delete', category_id=category.id), "Delete this category? Topics will keep their records.") }}
+                    {{ action_link(url_for('categories.edit', category_id=category.id), "Edit", aria_label="Edit category " ~ category.name) }}
+                    {{ delete_form(
+                        url_for('categories.delete', category_id=category.id),
+                        "Delete category '" ~ category.name ~ "'? Topics assigned to it will remain available without a category.",
+                        label="Delete category"
+                    ) }}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    {{ empty_state("No categories yet", "Create your first category to organize topics.") }}
+    {{ empty_state("No categories yet", "Add a category to organize related learning topics.") }}
 {% endif %}
 {% endblock %}

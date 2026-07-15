@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Forbidden - Cyber Dashboard{% endblock %}
+{% block title %}Access denied | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="error-card card">
     <p class="eyebrow">Access control</p>
-    <h1>403 - Forbidden</h1>
-    <p class="meta">You do not have permission to access this page.</p>
+    <h1>Access denied</h1>
+    <p class="meta">Your account does not have permission to open this page.</p>
     <a class="button" href="{{ url_for('dashboard.dashboard') }}">Back to dashboard</a>
 </section>
 {% endblock %}

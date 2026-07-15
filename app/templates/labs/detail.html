@@ -2,7 +2,7 @@
 {% from "macros/forms.html" import action_form, action_link, delete_form with context %}
 {% from "macros/layout.html" import page_heading with context %}
 
-{% block title %}{{ lab.name }} - Cyber Dashboard{% endblock %}
+{% block title %}{{ lab.name }} | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% set lab_meta %}{{ lab.platform_name }} &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}{% if lab.topic_title %} &middot; Topic: {{ lab.topic_title }}{% endif %}{% endset %}
@@ -10,8 +10,12 @@
     <div class="actions">
         {{ action_link(lab.url, "Open lab", target="_blank", rel="noopener noreferrer") }}
         {% if lab.owner_id == current_user.id %}
-            {{ action_link(url_for('labs.edit', lab_id=lab.id), "Edit") }}
-            {{ delete_form(url_for('labs.delete', lab_id=lab.id), "Delete this lab?") }}
+            {{ action_link(url_for('labs.edit', lab_id=lab.id), "Edit lab") }}
+            {{ delete_form(
+                url_for('labs.delete', lab_id=lab.id),
+                "Delete lab '" ~ lab.name ~ "'? Completion records for this lab will also be removed.",
+                label="Delete lab"
+            ) }}
         {% endif %}
     </div>
 {% endcall %}
@@ -22,9 +26,9 @@
     <p class="meta">Added by {{ lab.owner_name }} &middot; Updated {{ lab.updated_at|format_date }}</p>
 
     {% if lab.is_completed %}
-        {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark incomplete", form_class="") }}
+        {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark as incomplete", form_class="") }}
     {% else %}
-        {{ action_form(url_for('labs.complete', lab_id=lab.id), "Mark complete", form_class="") }}
+        {{ action_form(url_for('labs.complete', lab_id=lab.id), "Mark as complete", form_class="") }}
     {% endif %}
 </section>
 {% endblock %}

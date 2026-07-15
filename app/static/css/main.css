@@ -3423,3 +3423,52 @@ th {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Final usability details: keyboard access, announcements, and compact mobile actions. */
+.skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 1000;
+    padding: 10px 14px;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 700;
+    transform: translateY(-150%);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+.form-errors {
+    margin-top: 6px;
+}
+
+[aria-invalid="true"] {
+    border-color: var(--danger);
+}
+
+@media (max-width: 520px) {
+    .page-header > *,
+    .page-heading > *,
+    .heading-actions,
+    .actions,
+    .form-actions,
+    .profile-security-actions {
+        min-width: 0;
+    }
+
+    .heading-actions > .button,
+    .notes-hero-actions > .button,
+    .form-actions > .button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .alert-stack {
+        margin-top: 10px;
+    }
+}

@@ -13,8 +13,12 @@
         </div>
         <div class="heading-actions">
             {{ action_link(url_for('notes.index'), "All notes", "button button-secondary") }}
-            {{ action_link(url_for('notes.edit', note_id=note.id), "Edit") }}
-            {{ delete_form(url_for('notes.delete', note_id=note.id), "Delete this note?") }}
+            {{ action_link(url_for('notes.edit', note_id=note.id), "Edit note") }}
+            {{ delete_form(
+                url_for('notes.delete', note_id=note.id),
+                "Delete note '" ~ note.title ~ "'? This cannot be undone.",
+                label="Delete note"
+            ) }}
         </div>
     </header>
 

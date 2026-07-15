@@ -2,11 +2,11 @@
 {% from "macros/forms.html" import action_link, delete_form with context %}
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 
-{% block title %}Contacts - Cyber Dashboard{% endblock %}
+{% block title %}Contacts | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{% call page_heading("Contacts", "Practice CRUD with a simple contact manager.") %}
-    {{ action_link(url_for('contacts.create'), "New contact") }}
+{% call page_heading("Contacts", "Keep useful professional and learning contacts in one place.") %}
+    {{ action_link(url_for('contacts.create'), "Add contact") }}
 {% endcall %}
 
 {% if contacts %}
@@ -16,15 +16,19 @@
                 <h2>{{ contact.name }}</h2>
                 <p>{{ contact.email }}</p>
                 <p>{{ contact.phone }}</p>
-                <p>{{ contact.notes or "No notes." }}</p>
+                <p>{{ contact.notes or "No contact notes added." }}</p>
                 <div class="actions">
-                    {{ action_link(url_for('contacts.edit', contact_id=contact.id), "Edit") }}
-                    {{ delete_form(url_for('contacts.delete', contact_id=contact.id), "Delete this contact?") }}
+                    {{ action_link(url_for('contacts.edit', contact_id=contact.id), "Edit", aria_label="Edit contact " ~ contact.name) }}
+                    {{ delete_form(
+                        url_for('contacts.delete', contact_id=contact.id),
+                        "Delete contact '" ~ contact.name ~ "'? This cannot be undone.",
+                        label="Delete contact"
+                    ) }}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    {{ empty_state("No contacts yet", "Add a contact to begin practicing this CRUD workflow.") }}
+    {{ empty_state("No contacts yet", "Add a contact to keep their details close at hand.") }}
 {% endif %}
 {% endblock %}

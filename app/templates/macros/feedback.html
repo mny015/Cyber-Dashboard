@@ -1,9 +1,9 @@
 {% macro flash_messages() -%}
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="alert-stack" aria-live="polite">
+        <div class="alert-stack" aria-label="System messages">
             {% for category, message in messages %}
-                <p class="alert {{ category }}" role="status">{{ message }}</p>
+                <p class="alert {{ category }}" role="{{ 'alert' if category in ('danger', 'error') else 'status' }}" aria-live="{{ 'assertive' if category in ('danger', 'error') else 'polite' }}">{{ message }}</p>
             {% endfor %}
         </div>
     {% endif %}

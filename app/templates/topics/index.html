@@ -2,21 +2,22 @@
 {% from "macros/forms.html" import action_link, delete_form with context %}
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 
-{% block title %}Topics - Cyber Dashboard{% endblock %}
+{% block title %}Topics | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% call page_heading("Topics", "Track the cyber topics you are learning, practicing, and reviewing.") %}
-    {{ action_link(url_for('topics.create'), "New topic") }}
+    {{ action_link(url_for('topics.create'), "Add topic") }}
 {% endcall %}
 
-<form class="filters" method="get">
-    <select name="category_id">
+<form class="filters" method="get" aria-label="Filter topics">
+    <label for="topic-category-filter">Category</label>
+    <select id="topic-category-filter" name="category_id">
         <option value="">All categories</option>
         {% for category in categories %}
             <option value="{{ category.id }}" {% if selected_category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
         {% endfor %}
     </select>
-    <button type="submit">Filter</button>
+    <button type="submit">Apply filter</button>
 </form>
 
 {% if topics %}
@@ -30,13 +31,17 @@
                     {% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}
                 </p>
                 <div class="actions">
-                    {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit") }}
-                    {{ delete_form(url_for('topics.delete', topic_id=topic.id), "Delete this topic?") }}
+                    {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit", aria_label="Edit topic " ~ topic.title) }}
+                    {{ delete_form(
+                        url_for('topics.delete', topic_id=topic.id),
+                        "Delete topic '" ~ topic.title ~ "'? Its linked notes will remain available without this topic.",
+                        label="Delete topic"
+                    ) }}
                 </div>
             </section>
         {% endfor %}
     </div>
 {% else %}
-    {{ empty_state("No topics found", "Add a topic to begin tracking your learning.") }}
+    {{ empty_state("No topics match this filter", "Choose another category or add a new topic.") }}
 {% endif %}
 {% endblock %}

@@ -59,7 +59,7 @@ def create():
         return render_template("notes/form.html", note=None, topics=topics, form=form)
     except PermissionDeniedError:
         abort(403)
-    flash("Note created successfully.", "success")
+    flash("Note created.", "success")
     return redirect(url_for("notes.detail", note_id=note.id))
 
 
@@ -91,7 +91,7 @@ def edit(note_id):
         abort(403)
     except NotFoundError:
         abort(404)
-    flash("Note updated successfully.", "success")
+    flash("Note changes saved.", "success")
     return redirect(url_for("notes.detail", note_id=note_id))
 
 
@@ -103,7 +103,7 @@ def delete(note_id):
         note_service.delete_note(note_id, current_user.id, get_audit_context())
     except NotFoundError:
         abort(404)
-    flash("Note deleted successfully.", "info")
+    flash("Note deleted.", "info")
     return redirect(url_for("notes.index"))
 
 

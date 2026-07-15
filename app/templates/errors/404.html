@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Not Found - Cyber Dashboard{% endblock %}
+{% block title %}Page not found | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="error-card card">
     <p class="eyebrow">Missing page</p>
-    <h1>404 - Page not found</h1>
-    <p class="meta">The page you requested could not be found.</p>
+    <h1>Page not found</h1>
+    <p class="meta">The page may have moved, or the address may be incorrect.</p>
     <a class="button" href="{{ url_for('dashboard.index') }}">Go home</a>
 </section>
 {% endblock %}

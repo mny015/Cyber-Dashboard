@@ -85,7 +85,7 @@ def suggest_vulnerability():
     except ValidationError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("security.index"))
-    flash("Suggestion submitted for admin review.", "success")
+    flash("Vulnerability suggestion submitted for administrator review.", "success")
     return redirect(url_for("security.index"))
 
 

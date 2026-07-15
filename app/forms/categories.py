@@ -7,11 +7,11 @@ from app.utils.validation import clean_text
 
 class CategoryForm(FlaskForm):
     name = StringField(
-        "Name", filters=[clean_text], validators=[DataRequired(), Length(max=120)]
+        "Category name", filters=[clean_text], validators=[DataRequired(), Length(max=120)]
     )
     description = TextAreaField("Description", filters=[clean_text], validators=[Optional()])
     color = StringField(
-        "Color",
+        "Category color",
         default="#2563eb",
         filters=[clean_text],
         validators=[

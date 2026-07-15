@@ -1,6 +1,6 @@
-{% macro field_errors(field) -%}
+{% macro field_errors(field, field_id=None) -%}
     {% if field.errors %}
-        <ul class="form-errors" id="{{ field.id }}-errors" role="alert">
+        <ul class="form-errors" id="{{ field_id or field.id }}-errors" role="alert" aria-live="assertive">
             {% for error in field.errors %}
                 <li>{{ error }}</li>
             {% endfor %}
@@ -10,21 +10,32 @@
 
 {% macro validation_errors(form) -%}
     {% if form.form_errors %}
-        <div class="alert danger" role="alert">
+        <div class="alert danger" role="alert" aria-live="assertive">
+            <p class="visually-hidden">Please correct the following errors:</p>
             {% for error in form.form_errors %}<p>{{ error }}</p>{% endfor %}
         </div>
     {% endif %}
 {%- endmacro %}
 
 {% macro form_field(field, label_text=None, label_for=None, help_text=None) -%}
+    {% set input_id = kwargs.get("id", field.id) %}
     {% if label_for %}
         {{ field.label(label_text, for=label_for) }}
     {% else %}
         {{ field.label(label_text) }}
     {% endif %}
-    {{ field(**kwargs) }}
-    {{ field_errors(field) }}
-    {% if help_text %}<p class="meta">{{ help_text }}</p>{% endif %}
+    {% set help_id = input_id ~ "-help" %}
+    {% if field.errors and help_text %}
+        {{ field(aria_invalid="true", aria_describedby=input_id ~ "-errors " ~ help_id, **kwargs) }}
+    {% elif field.errors %}
+        {{ field(aria_invalid="true", aria_describedby=input_id ~ "-errors", **kwargs) }}
+    {% elif help_text %}
+        {{ field(aria_describedby=help_id, **kwargs) }}
+    {% else %}
+        {{ field(**kwargs) }}
+    {% endif %}
+    {{ field_errors(field, input_id) }}
+    {% if help_text %}<p class="meta" id="{{ help_id }}">{{ help_text }}</p>{% endif %}
 {%- endmacro %}
 
 {% macro csrf_form(form=None, action=None, form_class=None, confirm=None, enctype=None, autocomplete=None) -%}
@@ -39,24 +50,24 @@
 </form>
 {%- endmacro %}
 
-{% macro action_link(url, label, class_name="button") -%}
-<a class="{{ class_name }}" href="{{ url }}"{{ kwargs|xmlattr }}>{{ label }}</a>
+{% macro action_link(url, label, class_name="button", aria_label=None) -%}
+<a class="{{ class_name }}" href="{{ url }}"{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{{ kwargs|xmlattr }}>{{ label }}</a>
 {%- endmacro %}
 
-{% macro action_button(label, class_name=None, button_type="submit") -%}
-<button type="{{ button_type }}"{% if class_name %} class="{{ class_name }}"{% endif %}{{ kwargs|xmlattr }}>{{ label }}</button>
+{% macro action_button(label, class_name=None, button_type="submit", aria_label=None) -%}
+<button type="{{ button_type }}"{% if class_name %} class="{{ class_name }}"{% endif %}{% if aria_label %} aria-label="{{ aria_label }}"{% endif %}{{ kwargs|xmlattr }}>{{ label }}</button>
 {%- endmacro %}
 
-{% macro action_form(action, label, form_class="inline-form", button_class="", confirm=None) -%}
+{% macro action_form(action, label, form_class="inline-form", button_class="", confirm=None, aria_label=None) -%}
 {% call csrf_form(None, action=action, form_class=form_class, confirm=confirm) %}
-    {{ action_button(label, class_name=button_class or None) }}
+    {{ action_button(label, class_name=button_class or None, aria_label=aria_label, **kwargs) }}
 {% endcall %}
 {%- endmacro %}
 
-{% macro confirmation_form(action, label, message, form_class="inline-form", button_class="button-secondary") -%}
-{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message) }}
+{% macro confirmation_form(action, label, message, form_class="inline-form", button_class="button-secondary", aria_label=None) -%}
+{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message, aria_label=aria_label, **kwargs) }}
 {%- endmacro %}
 
-{% macro delete_form(action, message, label="Delete", form_class="inline-form", button_class="danger") -%}
-{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message) }}
+{% macro delete_form(action, message, label="Delete", form_class="inline-form", button_class="danger", aria_label=None) -%}
+{{ action_form(action, label, form_class=form_class, button_class=button_class, confirm=message, aria_label=aria_label, **kwargs) }}
 {%- endmacro %}

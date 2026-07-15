@@ -38,16 +38,62 @@ document.addEventListener("click", (event) => {
     const wrapper = toggle.closest("[data-profile-picture]");
     const menu = wrapper.querySelector("[data-profile-picture-menu]");
     menu.hidden = !menu.hidden;
+    toggle.setAttribute("aria-expanded", String(!menu.hidden));
+});
+
+document.querySelectorAll("[data-profile-picture]").forEach((wrapper) => {
+    const toggle = wrapper.querySelector("[data-profile-picture-toggle]");
+    const menu = wrapper.querySelector("[data-profile-picture-menu]");
+    const uploadButton = wrapper.querySelector("[data-profile-picture-upload]");
+    const fileInput = document.querySelector("#profile_image");
+    const filename = wrapper.querySelector("[data-profile-picture-filename]");
+
+    if (uploadButton && fileInput) {
+        uploadButton.addEventListener("click", () => fileInput.click());
+        fileInput.addEventListener("change", () => {
+            if (filename) {
+                filename.textContent = fileInput.files.length
+                    ? `Selected: ${fileInput.files[0].name}`
+                    : "No new picture selected.";
+            }
+        });
+    }
+
+    wrapper.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && menu && !menu.hidden) {
+            menu.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.focus();
+        }
+    });
 });
 
 const navToggle = document.querySelector(".nav-toggle");
 const navigation = document.querySelector(".nav-links");
 
 if (navToggle && navigation) {
+    const setNavigationOpen = (isOpen) => {
+        navToggle.setAttribute("aria-expanded", String(isOpen));
+        navToggle.setAttribute("aria-label", `${isOpen ? "Close" : "Open"} main navigation`);
+        navigation.classList.toggle("is-open", isOpen);
+    };
+
     navToggle.addEventListener("click", () => {
         const isOpen = navToggle.getAttribute("aria-expanded") === "true";
-        navToggle.setAttribute("aria-expanded", String(!isOpen));
-        navigation.classList.toggle("is-open", !isOpen);
+        setNavigationOpen(!isOpen);
+    });
+
+    navigation.addEventListener("click", (event) => {
+        if (event.target.closest("a") && window.matchMedia("(max-width: 960px)").matches) {
+            setNavigationOpen(false);
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && navToggle.getAttribute("aria-expanded") === "true") {
+            setNavigationOpen(false);
+            navToggle.focus();
+        }
     });
 }
 

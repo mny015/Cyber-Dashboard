@@ -34,8 +34,14 @@
                             {% if vuln.description %}<p>{{ vuln.description }}</p>{% endif %}
                         </div>
                         <div class="finding-actions">
-                            {{ action_form(url_for('security.approve_vulnerability', vulnerability_id=vuln.id), "Approve") }}
-                            {{ action_form(url_for('security.reject_vulnerability', vulnerability_id=vuln.id), "Reject", button_class="danger") }}
+                            {{ action_form(url_for('security.approve_vulnerability', vulnerability_id=vuln.id), "Approve suggestion", aria_label="Approve vulnerability suggestion " ~ vuln.name) }}
+                            {{ action_form(
+                                url_for('security.reject_vulnerability', vulnerability_id=vuln.id),
+                                "Reject suggestion",
+                                button_class="danger",
+                                confirm="Reject vulnerability suggestion '" ~ vuln.name ~ "'?",
+                                aria_label="Reject vulnerability suggestion " ~ vuln.name
+                            ) }}
                         </div>
                     </article>
                 {% endfor %}
@@ -70,7 +76,7 @@
             <h2>Approved and reviewed entries</h2>
         </div>
     </div>
-    {% call data_table(["Code", "Name", "Category", "Severity", "Status", "Source"]) %}
+    {% call data_table(["Code", "Vulnerability", "Category", "Default severity", "Review status", "Source"], caption="Shared vulnerability catalog entries") %}
                 {% for vuln in vulnerabilities %}
                     <tr>
                         <td>{{ vuln.code }}</td>

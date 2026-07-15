@@ -1,7 +1,7 @@
 {% macro data_table(headers, wrap_class="table-wrap", table_class=None, caption=None) -%}
 <div class="{{ wrap_class }}">
     <table{% if table_class %} class="{{ table_class }}"{% endif %}>
-        {% if caption %}<caption>{{ caption }}</caption>{% endif %}
+        {% if caption %}<caption class="visually-hidden">{{ caption }}</caption>{% endif %}
         <thead>
             <tr>
                 {% for header in headers %}<th scope="col">{{ header }}</th>{% endfor %}
@@ -16,8 +16,8 @@
 
 {% macro pagination(page, pages, has_previous=False, previous_url=None, has_next=False, next_url=None) -%}
 <nav class="actions" aria-label="Pagination">
-    {% if has_previous and previous_url %}<a class="button" href="{{ previous_url }}">Previous</a>{% endif %}
-    <span class="meta">Page {{ page }} of {{ pages }}</span>
-    {% if has_next and next_url %}<a class="button" href="{{ next_url }}">Next</a>{% endif %}
+    {% if has_previous and previous_url %}<a class="button" href="{{ previous_url }}" rel="prev">Previous page</a>{% endif %}
+    <span class="meta" aria-current="page">Page {{ page }} of {{ pages }}</span>
+    {% if has_next and next_url %}<a class="button" href="{{ next_url }}" rel="next">Next page</a>{% endif %}
 </nav>
 {%- endmacro %}

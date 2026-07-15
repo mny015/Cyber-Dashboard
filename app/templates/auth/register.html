@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "macros/forms.html" import csrf_form, form_field with context %}
 
-{% block title %}Register - Cyber Dashboard{% endblock %}
+{% block title %}Create account | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="auth-shell">
@@ -17,7 +17,7 @@
         {% call csrf_form(form) %}
             {{ form_field(form.display_name, placeholder="Display name", autocomplete="name") }}
             {{ form_field(form.email, placeholder="name@example.com", autocomplete="email") }}
-            {{ form_field(form.password, placeholder="At least 12 characters", autocomplete="new-password") }}
+            {{ form_field(form.password, placeholder="At least 12 characters", autocomplete="new-password", help_text="Use 12 to 128 characters and avoid reusing a password from another account.") }}
             {{ form_field(form.confirm_password, placeholder="Repeat password", autocomplete="new-password") }}
             {{ form.submit() }}
         {% endcall %}

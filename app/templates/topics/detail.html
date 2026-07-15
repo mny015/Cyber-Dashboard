@@ -2,15 +2,19 @@
 {% from "macros/forms.html" import action_link, delete_form with context %}
 {% from "macros/layout.html" import page_heading with context %}
 
-{% block title %}{{ topic.title }} - Cyber Dashboard{% endblock %}
+{% block title %}{{ topic.title }} | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% set topic_meta %}{{ topic.status|title }} &middot; {{ topic.priority|title }}{% if topic.category_name %} &middot; {{ topic.category_name }}{% endif %}{% endset %}
 {% call page_heading(topic.title, topic_meta) %}
     <div class="actions">
-        {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit") }}
+        {{ action_link(url_for('topics.edit', topic_id=topic.id), "Edit topic") }}
         {{ action_link(url_for('notes.create', topic_id=topic.id), "Add note") }}
-        {{ delete_form(url_for('topics.delete', topic_id=topic.id), "Delete this topic?") }}
+        {{ delete_form(
+            url_for('topics.delete', topic_id=topic.id),
+            "Delete topic '" ~ topic.title ~ "'? Its linked notes will remain available without this topic.",
+            label="Delete topic"
+        ) }}
     </div>
 {% endcall %}
 
@@ -20,7 +24,7 @@
     <h2>Topic summary notes</h2>
     <p>{{ topic.notes or "No topic summary notes yet." }}</p>
     <p>
-        <a class="button" href="{{ url_for('notes.index', topic_id=topic.id) }}">View dedicated notes</a>
+        <a class="button" href="{{ url_for('notes.index', topic_id=topic.id) }}">View topic notes</a>
     </p>
     <p class="meta">Created {{ topic.created_at|format_date }} &middot; Updated {{ topic.updated_at|format_date }}</p>
 </section>

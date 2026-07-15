@@ -3,11 +3,11 @@
 {% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = lab and lab.id %}
-{% block title %}{{ "Edit" if editing else "Add" }} Lab - Cyber Dashboard{% endblock %}
+{% block title %}{{ "Edit" if editing else "Add" }} lab | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% call page_heading(
-    ("Edit" if editing else "Add") ~ " Lab",
+    ("Edit" if editing else "Add") ~ " lab",
     "Track practice rooms from platforms like picoCTF, TryHackMe, and Hack The Box.",
     "Update room" if editing else "New room"
 ) %}

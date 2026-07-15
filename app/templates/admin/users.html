@@ -3,15 +3,15 @@
 {% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 {% from "macros/tables.html" import data_table with context %}
 
-{% block title %}Users - Cyber Dashboard{% endblock %}
+{% block title %}User administration | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{% call page_heading("Users", "Manage account access, roles, password resets, and account status.") %}
+{% call page_heading("User administration", "Manage account roles, password resets, and access status.") %}
     {{ action_link(url_for('admin.audit_logs'), "Audit logs") }}
 {% endcall %}
 
 {% if users %}
-    {% call data_table(["Account", "Access", "Status", "Actions"], wrap_class="table-wrap admin-users-table") %}
+    {% call data_table(["Account", "Role", "Status", "Account actions"], wrap_class="table-wrap admin-users-table", caption="Registered user accounts and administrative actions") %}
                 {% for user in users %}
                     <tr class="admin-user-row">
                         <td>
@@ -26,12 +26,12 @@
                         </td>
                         <td>
                             {% call csrf_form(None, action=url_for('admin.update_role', user_id=user.id), form_class="compact-form") %}
-                                <label class="visually-hidden" for="role-{{ user.id }}">Role</label>
+                                <label class="visually-hidden" for="role-{{ user.id }}">Role for {{ user.display_name }}</label>
                                 <select id="role-{{ user.id }}" name="role">
                                     <option value="user" {% if user.role == "user" %}selected{% endif %}>User</option>
                                     <option value="admin" {% if user.role == "admin" %}selected{% endif %}>Admin</option>
                                 </select>
-                                <button class="button-secondary" type="submit">Save role</button>
+                                <button class="button-secondary" type="submit" aria-label="Save role for {{ user.display_name }}">Save role</button>
                             {% endcall %}
                         </td>
                         <td>
@@ -45,23 +45,34 @@
                         <td>
                             <div class="admin-user-actions">
                                 <details class="admin-action-panel">
-                                    <summary>Reset password</summary>
+                                    <summary>Reset password for {{ user.display_name }}</summary>
                                     {% call csrf_form(None, action=url_for('admin.reset_user_password', user_id=user.id), form_class="mini-form", autocomplete="off") %}
-                                        <label for="password-{{ user.id }}">New password</label>
-                                        <input id="password-{{ user.id }}" type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password">
+                                        <label for="password-{{ user.id }}">New password for {{ user.display_name }}</label>
+                                        <input id="password-{{ user.id }}" type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password" aria-describedby="password-help-{{ user.id }}">
                                         <label for="confirm-password-{{ user.id }}">Confirm password</label>
                                         <input id="confirm-password-{{ user.id }}" type="password" name="confirm_password" minlength="12" maxlength="128" required autocomplete="new-password">
-                                        <button type="submit">Change password</button>
+                                        <p class="meta" id="password-help-{{ user.id }}">Use between 12 and 128 characters.</p>
+                                        <button type="submit" aria-label="Set a new password for {{ user.display_name }}">Set new password</button>
                                     {% endcall %}
                                 </details>
 
                                 <div class="user-action-row">
                                     {% if user.is_banned %}
-                                        {{ action_form(url_for('admin.unban_user', user_id=user.id), "Unban", button_class="button-secondary") }}
+                                        {{ action_form(url_for('admin.unban_user', user_id=user.id), "Restore access", button_class="button-secondary", aria_label="Restore account access for " ~ user.display_name) }}
                                     {% else %}
-                                        {{ confirmation_form(url_for('admin.ban_user', user_id=user.id), "Ban", "Ban this user?") }}
+                                        {{ confirmation_form(
+                                            url_for('admin.ban_user', user_id=user.id),
+                                            "Suspend access",
+                                            "Suspend account access for '" ~ user.display_name ~ "'? They will be unable to sign in until an administrator restores access.",
+                                            aria_label="Suspend account access for " ~ user.display_name
+                                        ) }}
                                     {% endif %}
-                                    {{ delete_form(url_for('admin.delete_user', user_id=user.id), "Delete this user and their personal records? This cannot be undone.") }}
+                                    {{ delete_form(
+                                        url_for('admin.delete_user', user_id=user.id),
+                                        "Permanently delete user '" ~ user.display_name ~ "' and their personal records? This cannot be undone.",
+                                        label="Delete user",
+                                        aria_label="Permanently delete user " ~ user.display_name
+                                    ) }}
                                 </div>
                             </div>
                         </td>

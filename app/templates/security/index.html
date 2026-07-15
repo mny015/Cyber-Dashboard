@@ -65,8 +65,13 @@
                         </div>
                         <div class="finding-actions">
                             {{ status_badge(finding.status|title) }}
-                            <a class="text-link" href="{{ url_for('security.edit', finding_id=finding.id) }}">Edit</a>
-                            {{ delete_form(url_for('security.delete', finding_id=finding.id), "Delete this finding?", button_class="link-danger") }}
+                            <a class="text-link" href="{{ url_for('security.edit', finding_id=finding.id) }}" aria-label="Edit security finding {{ finding.title }}">Edit</a>
+                            {{ delete_form(
+                                url_for('security.delete', finding_id=finding.id),
+                                "Delete security finding '" ~ finding.title ~ "'? This cannot be undone.",
+                                label="Delete finding",
+                                button_class="link-danger"
+                            ) }}
                         </div>
                     </article>
                 {% endfor %}

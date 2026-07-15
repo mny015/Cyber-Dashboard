@@ -71,6 +71,6 @@ def test_mark_scheduled_task_completed(authenticated_client, test_user, database
     response = authenticated_client.post(f"/scheduled-tasks/{task_id}/complete", follow_redirects=True)
 
     assert response.status_code == 200
-    assert b"Task marked complete." in response.data
+    assert b"Task marked as complete." in response.data
     task = database.fetch_one("SELECT status FROM scheduled_tasks WHERE id = %s", (task_id,))
     assert task["status"] == "completed"

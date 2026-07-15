@@ -67,7 +67,7 @@ def approve(request_id):
     except PermissionDeniedError as exc:
         flash(str(exc), "danger")
         return redirect(url_for("notifications.index"))
-    flash("Note access approved.", "success")
+    flash("Access to the selected note was approved.", "success")
     return redirect(url_for("notifications.index"))
 
 
@@ -82,5 +82,5 @@ def deny(request_id):
         )
     except NotFoundError:
         abort(404)
-    flash("Note access denied.", "info")
+    flash("Note access request denied.", "info")
     return redirect(url_for("notifications.index"))

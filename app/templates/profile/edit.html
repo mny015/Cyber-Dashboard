@@ -1,16 +1,16 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_link, csrf_form, form_field with context %}
+{% from "macros/forms.html" import action_link, csrf_form, field_errors, form_field with context %}
 {% from "macros/layout.html" import page_heading, status_badge with context %}
 
-{% block title %}Profile - Cyber Dashboard{% endblock %}
+{% block title %}Profile settings | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{{ page_heading("Profile", "Keep your account identity, profile picture, and personal details current.") }}
+{{ page_heading("Profile settings", "Keep your account identity, profile picture, and personal details current.") }}
 
 <div class="profile-layout">
     <section class="card profile-preview profile-card" data-profile-picture>
         <div class="profile-picture-wrap">
-            <button class="avatar-button" type="button" data-profile-picture-toggle aria-label="Open profile picture options">
+            <button class="avatar-button" type="button" data-profile-picture-toggle aria-label="Open profile picture options" aria-expanded="false" aria-controls="profile-picture-actions">
                 {% if current_user.profile_image %}
                     <img class="avatar" src="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" alt="Profile picture">
                 {% else %}
@@ -18,11 +18,12 @@
                 {% endif %}
                 <span class="avatar-edit-label">Change</span>
             </button>
-            <div class="picture-actions" data-profile-picture-menu hidden>
+            <div class="picture-actions" id="profile-picture-actions" data-profile-picture-menu hidden>
                 {% if current_user.profile_image %}
                     <a class="button button-secondary" href="{{ url_for('profile.picture', image_hash=current_user.profile_image) }}" target="_blank" rel="noopener">View picture</a>
                 {% endif %}
-                <label class="button" for="profile_image">Upload new</label>
+                <button class="button" type="button" data-profile-picture-upload>Choose new picture</button>
+                <p class="meta" data-profile-picture-filename aria-live="polite">No new picture selected.</p>
                 <p class="meta">JPG, PNG, GIF, or WEBP. Images are validated and stored in the database.</p>
             </div>
         </div>
@@ -58,7 +59,7 @@
         {% call csrf_form(form, form_class="form-card profile-form-card", enctype="multipart/form-data") %}
             <div class="form-section-heading">
                 <div>
-                    <h2>Account Details</h2>
+                    <h2>Account details</h2>
                     <p class="meta">These details are shown inside your dashboard and activity records.</p>
                 </div>
             </div>
@@ -67,9 +68,18 @@
             {{ form_field(form.email, autocomplete="email") }}
             {{ form_field(form.profile_bio, rows="7", placeholder="Example: Junior security learner focused on web exploitation, GRC notes, and weekly lab practice.") }}
 
-            <div class="visually-hidden">
-                {{ form_field(form.profile_image) }}
-            </div>
+            {% if form.profile_image.errors %}
+                {{ form.profile_image(
+                    class_="visually-hidden",
+                    tabindex="-1",
+                    aria_label="Profile picture file",
+                    aria_invalid="true",
+                    aria_describedby="profile_image-errors"
+                ) }}
+            {% else %}
+                {{ form.profile_image(class_="visually-hidden", tabindex="-1", aria_label="Profile picture file") }}
+            {% endif %}
+            {{ field_errors(form.profile_image) }}
 
             <div class="form-actions">
                 {{ form.submit(class_="button") }}
@@ -78,8 +88,8 @@
 
         <section class="card profile-security-panel">
             <div>
-                <p class="eyebrow">Privacy and Security</p>
-                <h2>Protect Your Account</h2>
+                <p class="eyebrow">Privacy and security</p>
+                <h2>Protect your account</h2>
                 <p class="meta">Password changes and MFA setup stay in the dedicated security page so sensitive actions remain separated from profile edits.</p>
             </div>
             <div class="profile-security-actions">

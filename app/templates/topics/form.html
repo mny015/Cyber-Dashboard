@@ -3,11 +3,11 @@
 {% from "macros/layout.html" import page_heading with context %}
 
 {% set editing = topic and topic.id %}
-{% block title %}{{ "Edit" if editing else "New" }} Topic - Cyber Dashboard{% endblock %}
+{% block title %}{{ "Edit" if editing else "Add" }} topic | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {% call page_heading(
-    ("Edit" if editing else "New") ~ " Topic",
+    ("Edit" if editing else "Add") ~ " topic",
     "Plan learning goals, status, priority, and topic notes.",
     "Update" if editing else "Create"
 ) %}

@@ -48,7 +48,7 @@ def create():
         )
 
     log_audit("topic_created", f"Created topic {topic.title}")
-    flash("Topic created successfully.", "success")
+    flash("Topic added.", "success")
     return redirect(url_for("topics.detail", topic_id=topic.id))
 
 
@@ -74,7 +74,7 @@ def edit(topic_id):
         )
 
     log_audit("topic_updated", f"Updated topic {topic.title}")
-    flash("Topic updated successfully.", "success")
+    flash("Topic changes saved.", "success")
     return redirect(url_for("topics.detail", topic_id=topic.id))
 
 
@@ -85,7 +85,7 @@ def delete(topic_id):
     topic = _get_topic_or_404(topic_id)
     topic_repository.delete_owned(topic.id, current_user.id)
     log_audit("topic_deleted", f"Deleted topic {topic.title}")
-    flash("Topic deleted successfully.", "info")
+    flash("Topic deleted. Linked notes were kept.", "info")
     return redirect(url_for("topics.index"))
 
 

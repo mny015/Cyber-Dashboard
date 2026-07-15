@@ -2,10 +2,10 @@
 {% from "macros/forms.html" import action_form, csrf_form, form_field with context %}
 {% from "macros/layout.html" import empty_state, page_heading, status_badge with context %}
 
-{% block title %}Notifications - Cyber Dashboard{% endblock %}
+{% block title %}Notifications | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{{ page_heading("Notifications", "Approve or deny admin requests for specific note access.") }}
+{{ page_heading("Notifications", "Review administrator requests for access to a specific note.") }}
 
 {% if requests %}
     <div class="grid">
@@ -32,7 +32,12 @@
                     {% else %}
                         <p>No notes exist for this topic yet.</p>
                     {% endif %}
-                    {{ action_form(url_for('notifications.deny', request_id=item.id), "Deny", button_class="danger") }}
+                    {{ action_form(
+                        url_for('notifications.deny', request_id=item.id),
+                        "Deny request",
+                        button_class="danger",
+                        confirm="Deny " ~ item.admin_name ~ " access to notes under topic '" ~ item.topic_title ~ "'?"
+                    ) }}
                 {% elif item.status == "approved" %}
                     <p class="success-inline">You approved one specific note for this request.</p>
                 {% else %}
@@ -42,6 +47,6 @@
         {% endfor %}
     </div>
 {% else %}
-    {{ empty_state("No notifications yet", "Note-access requests will appear here.") }}
+    {{ empty_state("No notifications", "New note access requests will appear here.") }}
 {% endif %}
 {% endblock %}

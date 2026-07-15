@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% from "macros/forms.html" import action_form, action_link with context %}
+{% from "macros/forms.html" import action_link, confirmation_form with context %}
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 {% from "macros/tables.html" import data_table with context %}
 
-{% block title %}Topic Summaries - Cyber Dashboard{% endblock %}
+{% block title %}Topic summaries | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{% call page_heading("Topic Summaries", "Admin overview without private descriptions or notes.") %}
+{% call page_heading("Topic summaries", "Review topic metadata without opening private descriptions or notes.") %}
     {{ action_link(url_for('admin.category_summaries'), "Category summaries") }}
 {% endcall %}
 
 {% if topics %}
-    {% call data_table(["Topic", "Owner", "Category", "Status", "Priority", "Updated", "Note access"]) %}
+    {% call data_table(["Topic", "Owner", "Category", "Status", "Priority", "Last updated", "Note access"], caption="User-owned topic summaries") %}
                 {% for topic in topics %}
                     <tr>
                         <td>{{ topic.title }}</td>
@@ -21,7 +21,13 @@
                         <td>{{ topic.priority|title }}</td>
                         <td>{{ topic.updated_at|format_date }}</td>
                         <td>
-                            {{ action_form(url_for('admin.request_topic_notes', topic_id=topic.id), "Request notes", form_class="") }}
+                            {{ confirmation_form(
+                                url_for('admin.request_topic_notes', topic_id=topic.id),
+                                "Request note access",
+                                "Request access to a note under topic '" ~ topic.title ~ "' from " ~ topic.owner_name ~ "? The owner must approve a specific note before you can view it.",
+                                form_class="",
+                                button_class="button-secondary"
+                            ) }}
                         </td>
                     </tr>
                 {% endfor %}

@@ -44,7 +44,7 @@ def create():
         return render_template("categories/form.html", category=category, form=form)
 
     log_audit("category_created", f"Created category {category.name}")
-    flash("Category created successfully.", "success")
+    flash("Category added.", "success")
     return redirect(url_for("categories.index"))
 
 
@@ -66,7 +66,7 @@ def edit(category_id):
         return render_template("categories/form.html", category=category, form=form)
 
     log_audit("category_updated", f"Updated category {category.name}")
-    flash("Category updated successfully.", "success")
+    flash("Category changes saved.", "success")
     return redirect(url_for("categories.index"))
 
 
@@ -77,5 +77,5 @@ def delete(category_id):
     category = _get_category_or_404(category_id)
     category_repository.delete_owned(category.id, current_user.id)
     log_audit("category_deleted", f"Deleted category {category.name}")
-    flash("Category deleted successfully.", "info")
+    flash("Category deleted. Assigned topics were kept.", "info")
     return redirect(url_for("categories.index"))

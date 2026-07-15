@@ -16,7 +16,7 @@ def valid_http_url(_form, field):
 
 class LabForm(FlaskForm):
     name = StringField(
-        "Lab or box name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Lab name", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
     platform_id = SelectField(
         "Platform", coerce=int, validators=[DataRequired()], choices=[]
@@ -27,7 +27,7 @@ class LabForm(FlaskForm):
         validators=[DataRequired(), Length(max=255), valid_http_url],
     )
     topic_id = SelectField(
-        "Related topic", coerce=optional_int, validators=[Optional()], choices=[]
+        "Related topic (optional)", coerce=optional_int, validators=[Optional()], choices=[]
     )
     visibility = SelectField(
         "Visibility", default="personal", validators=[DataRequired()], choices=[]

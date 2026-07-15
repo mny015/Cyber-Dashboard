@@ -406,7 +406,8 @@ def test_crud_list_renders_shared_delete_form_with_csrf(
 
     assert response.status_code == 200
     assert '<header class="page-header">' in markup
-    assert 'data-confirm="Delete this category?' in markup
+    assert 'data-confirm="Delete category' in markup
+    assert "Web Security" in markup
     assert post_forms
     assert all('name="csrf_token"' in form_markup for form_markup in post_forms)
 

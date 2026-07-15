@@ -56,7 +56,7 @@ def request_topic_notes(topic_id):
     except ConflictError as exc:
         flash(str(exc), "warning")
         return redirect(url_for("admin.note_requests"))
-    flash("Note access request sent to the user.", "success")
+    flash("Note access request sent to the topic owner.", "success")
     return redirect(url_for("admin.note_requests"))
 
 
@@ -106,7 +106,7 @@ def update_role(user_id):
     except (PermissionDeniedError, LastAdministratorError) as exc:
         flash(str(exc), "danger")
         return redirect(url_for("admin.users"))
-    flash("User role updated.", "success")
+    flash("Account role updated.", "success")
     return redirect(url_for("admin.users"))
 
 
@@ -196,5 +196,8 @@ def _set_banned(user_id, banned):
     except (PermissionDeniedError, LastAdministratorError) as exc:
         flash(str(exc), "danger")
         return redirect(url_for("admin.users"))
-    flash("User banned." if banned else "User unbanned.", "info" if banned else "success")
+    flash(
+        "Account access suspended." if banned else "Account access restored.",
+        "info" if banned else "success",
+    )
     return redirect(url_for("admin.users"))

@@ -2,32 +2,32 @@
 {% from "macros/forms.html" import action_form with context %}
 {% from "macros/layout.html" import page_heading with context %}
 
-{% block title %}Backup and Export{% endblock %}
+{% block title %}Export and backup | Cyber Dashboard{% endblock %}
 
 {% block content %}
 {{ page_heading(
-    "Backup and Export",
+    "Export and backup",
     "Download a portable copy of data you are allowed to access.",
     class_name="page-heading"
 ) }}
 
 <div class="grid">
     <section class="card">
-        <h2>Personal Data</h2>
+        <h2>Personal data</h2>
         <p>Your account details, categories, topics, notes, contacts, labs, completions, and note-access requests.</p>
         <div class="actions">
-            {{ action_form(url_for('backup.personal_json'), "Download JSON") }}
-            {{ action_form(url_for('backup.personal_csv'), "Download CSV ZIP") }}
+            {{ action_form(url_for('backup.personal_json'), "Export personal JSON") }}
+            {{ action_form(url_for('backup.personal_csv'), "Export personal CSV archive") }}
         </div>
     </section>
 
     {% if current_user.is_admin %}
     <section class="card">
-        <h2>Admin Data</h2>
+        <h2>Administrative data</h2>
         <p>System users, topic and category summaries, shared labs, audit events, and notes with approved access.</p>
         <div class="actions">
-            {{ action_form(url_for('backup.admin_json'), "Download JSON") }}
-            {{ action_form(url_for('backup.admin_csv'), "Download CSV ZIP") }}
+            {{ action_form(url_for('backup.admin_json'), "Export admin JSON") }}
+            {{ action_form(url_for('backup.admin_csv'), "Export admin CSV archive") }}
         </div>
     </section>
     {% endif %}

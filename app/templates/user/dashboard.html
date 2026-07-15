@@ -160,7 +160,7 @@
                                         {{ item.scope|title }}
                                         {% if item.due_at %} · Due {{ item.due_at|format_date }}{% endif %}
                                     </small>
-                                    {{ action_form(url_for('tasks.complete', task_id=item.id), "Complete") }}
+                                    {{ action_form(url_for('tasks.complete', task_id=item.id), "Mark complete", aria_label="Mark task " ~ item.title ~ " complete") }}
                                 </div>
                             </article>
                         {% endfor %}
@@ -195,7 +195,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="dashboard-empty">No upcoming rooms</div>
+                    <div class="dashboard-empty">No labs are waiting for completion.</div>
                 {% endif %}
             </section>
 
@@ -219,7 +219,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <div class="dashboard-empty">No recent completed actions</div>
+                    <div class="dashboard-empty">No completed activity yet.</div>
                 {% endif %}
             </section>
         </aside>

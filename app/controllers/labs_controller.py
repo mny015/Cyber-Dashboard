@@ -29,7 +29,7 @@ def create():
         return _render_form(None, form, topics, platforms)
     lab = lab_repository.create(_lab_model(form))
     log_audit("lab_created", f"Created lab {form.name.data}")
-    flash("Lab added successfully.", "success")
+    flash("Lab added.", "success")
     return redirect(url_for("labs.detail", lab_id=lab.id))
 
 
@@ -46,7 +46,7 @@ def edit(lab_id):
         return _render_form(existing, form, topics, platforms)
     lab_repository.update_owned(_lab_model(form, lab_id=lab_id), current_user.id)
     log_audit("lab_updated", f"Updated lab {form.name.data}")
-    flash("Lab updated successfully.", "success")
+    flash("Lab changes saved.", "success")
     return redirect(url_for("labs.detail", lab_id=lab_id))
 
 
@@ -57,7 +57,7 @@ def delete(lab_id):
     lab = _owned_lab_or_404(lab_id)
     lab_repository.delete_owned(lab_id, current_user.id)
     log_audit("lab_deleted", f"Deleted lab {lab.name}")
-    flash("Lab deleted successfully.", "info")
+    flash("Lab deleted.", "info")
     return redirect(url_for("labs.index"))
 
 
@@ -68,7 +68,7 @@ def complete(lab_id):
     _visible_lab_or_404(lab_id)
     lab_repository.mark_completed_if_visible(lab_id, current_user.id)
     log_audit("lab_completed", f"Completed lab {lab_id}")
-    flash("Lab marked complete.", "success")
+    flash("Lab marked as complete.", "success")
     return redirect(url_for("labs.detail", lab_id=lab_id))
 
 
@@ -78,7 +78,7 @@ def incomplete(lab_id):
         return redirect(url_for("labs.detail", lab_id=lab_id))
     _visible_lab_or_404(lab_id)
     lab_repository.mark_incomplete(lab_id, current_user.id)
-    flash("Lab marked incomplete.", "info")
+    flash("Lab marked as incomplete.", "info")
     return redirect(url_for("labs.detail", lab_id=lab_id))
 
 

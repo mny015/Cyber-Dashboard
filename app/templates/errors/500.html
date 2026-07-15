@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Server Error - Cyber Dashboard{% endblock %}
+{% block title %}Server error | Cyber Dashboard{% endblock %}
 
 {% block content %}
 <section class="error-card card">
     <p class="eyebrow">Server error</p>
-    <h1>500 - Server error</h1>
-    <p class="meta">Something went wrong while processing your request.</p>
+    <h1>Something went wrong</h1>
+    <p class="meta">The request could not be completed. Try again in a moment.</p>
     <a class="button" href="{{ url_for('dashboard.index') }}">Go home</a>
 </section>
 {% endblock %}

@@ -11,13 +11,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body data-theme="light">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="app-shell">
     <header class="site-header">
         <a class="brand-link" href="{{ url_for('dashboard.dashboard') }}" aria-label="Cyber Dashboard">
             <img class="brand-logo brand-logo-light" src="{{ url_for('static', filename='image/logo-light.png') }}" alt="Cyber Dashboard">
             <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
         </a>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation" aria-label="Open main navigation">
             Menu
         </button>
         <nav class="nav-links" id="main-navigation" aria-label="Main navigation">
@@ -26,28 +27,28 @@
                 <a href="{{ url_for('topics.index') }}" {% if request.blueprint == 'topics' %}aria-current="page"{% endif %}>Topics</a>
                 <a href="{{ url_for('notes.index') }}" {% if request.blueprint == 'notes' %}aria-current="page"{% endif %}>Notes</a>
                 <a href="{{ url_for('labs.index') }}" {% if request.blueprint == 'labs' %}aria-current="page"{% endif %}>Labs</a>
-                <a href="{{ url_for('tasks.index') }}" {% if request.blueprint == 'tasks' %}aria-current="page"{% endif %}>Tasks</a>
-                <a href="{{ url_for('security.index') }}" {% if request.blueprint == 'security' %}aria-current="page"{% endif %}>Findings</a>
+                <a href="{{ url_for('tasks.index') }}" {% if request.blueprint == 'tasks' %}aria-current="page"{% endif %}>Schedule</a>
+                <a href="{{ url_for('security.index') }}" {% if request.blueprint == 'security' %}aria-current="page"{% endif %}>Security findings</a>
                 <a href="{{ url_for('categories.index') }}" {% if request.blueprint == 'categories' %}aria-current="page"{% endif %}>Categories</a>
                 {% if current_user.is_admin %}
-                    <a href="{{ url_for('admin.users') }}" {% if request.blueprint == 'admin' %}aria-current="page"{% endif %}>Admin</a>
+                    <a href="{{ url_for('admin.users') }}" {% if request.blueprint == 'admin' %}aria-current="page"{% endif %}>User admin</a>
                 {% endif %}
-                <a href="{{ url_for('notifications.index') }}" {% if request.blueprint == 'notifications' %}aria-current="page"{% endif %}>Alerts</a>
+                <a href="{{ url_for('notifications.index') }}" {% if request.blueprint == 'notifications' %}aria-current="page"{% endif %}>Notifications</a>
                 <details class="account-menu">
-                    <summary>{{ current_user.display_name }}</summary>
+                    <summary>{{ current_user.display_name }}<span class="visually-hidden"> account menu</span></summary>
                     <div class="account-dropdown">
-                        <a href="{{ url_for('profile.edit') }}">Profile</a>
+                        <a href="{{ url_for('profile.edit') }}">Profile settings</a>
                         <a href="{{ url_for('contacts.index') }}">Contacts</a>
-                        <a href="{{ url_for('backup.index') }}">Backup</a>
+                        <a href="{{ url_for('backup.index') }}">Export and backup</a>
                         {% if current_user.is_admin %}
                             <a href="{{ url_for('security.admin_vulnerabilities') }}">Vulnerability catalog</a>
                         {% endif %}
-                        <a href="{{ url_for('auth.setup_mfa') }}">Security</a>
-                        {{ action_form(url_for('auth.logout'), "Logout", form_class="account-logout-form", button_class="account-menu-action") }}
+                        <a href="{{ url_for('auth.setup_mfa') }}">Privacy and security</a>
+                        {{ action_form(url_for('auth.logout'), "Log out", form_class="account-logout-form", button_class="account-menu-action") }}
                     </div>
                 </details>
             {% else %}
-                <a href="{{ url_for('auth.login') }}">Login</a>
+                <a href="{{ url_for('auth.login') }}">Log in</a>
                 <a class="nav-cta" href="{{ url_for('auth.register') }}">Create account</a>
             {% endif %}
             <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch theme">
@@ -58,7 +59,7 @@
 
     {{ flash_messages() }}
 
-    <main class="page-shell content-shell">
+    <main class="page-shell content-shell" id="main-content" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

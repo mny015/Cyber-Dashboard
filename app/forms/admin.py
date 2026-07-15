@@ -4,8 +4,8 @@ from wtforms.validators import DataRequired, EqualTo, Length
 
 
 class RoleForm(FlaskForm):
-    role = SelectField("Role", choices=[("user", "User"), ("admin", "Admin")], validators=[DataRequired()])
-    submit = SubmitField("Update role")
+    role = SelectField("Account role", choices=[("user", "User"), ("admin", "Admin")], validators=[DataRequired()])
+    submit = SubmitField("Save role")
 
 
 class AdminPasswordResetForm(FlaskForm):
@@ -14,4 +14,4 @@ class AdminPasswordResetForm(FlaskForm):
         "Confirm password",
         validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
     )
-    submit = SubmitField("Change password")
+    submit = SubmitField("Set new password")

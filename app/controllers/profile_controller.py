@@ -35,7 +35,7 @@ def edit():
         image=image,
     )
     log_audit("profile_updated", "User updated profile information")
-    flash("Profile updated successfully.", "success")
+    flash("Profile changes saved.", "success")
     return redirect(url_for("profile.edit"))
 
 

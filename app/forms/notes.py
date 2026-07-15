@@ -8,8 +8,8 @@ from app.utils.validation import clean_text
 
 class NoteForm(FlaskForm):
     title = StringField(
-        "Title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
+        "Note title", filters=[clean_text], validators=[DataRequired(), Length(max=200)]
     )
-    topic_id = SelectField("Topic", coerce=optional_int, validators=[Optional()], choices=[])
-    body = TextAreaField("Note body", filters=[clean_text], validators=[DataRequired()])
+    topic_id = SelectField("Related topic (optional)", coerce=optional_int, validators=[Optional()], choices=[])
+    body = TextAreaField("Note content", filters=[clean_text], validators=[DataRequired()])
     submit = SubmitField("Save note")

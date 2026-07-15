@@ -48,7 +48,7 @@ def test_requests_page_loads_for_admin(admin_client):
     response = admin_client.get("/admin/note-requests")
 
     assert response.status_code == 200
-    assert b"Note Requests" in response.data
+    assert b"Note access requests" in response.data
 
 
 def test_audit_logs_rejects_normal_user(authenticated_client):
@@ -67,5 +67,5 @@ def test_profile_page_loads_with_professional_sections(authenticated_client):
     response = authenticated_client.get("/profile/")
 
     assert response.status_code == 200
-    assert b"Account Details" in response.data
-    assert b"Privacy and Security" in response.data
+    assert b"Account details" in response.data
+    assert b"Privacy and security" in response.data

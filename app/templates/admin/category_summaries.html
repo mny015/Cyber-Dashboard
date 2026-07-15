@@ -3,15 +3,15 @@
 {% from "macros/layout.html" import empty_state, page_heading with context %}
 {% from "macros/tables.html" import data_table with context %}
 
-{% block title %}Category Summaries - Cyber Dashboard{% endblock %}
+{% block title %}Category summaries | Cyber Dashboard{% endblock %}
 
 {% block content %}
-{% call page_heading("Category Summaries", "Admin overview of category ownership and topic counts.") %}
+{% call page_heading("Category summaries", "Review category ownership and topic counts without opening private user content.") %}
     {{ action_link(url_for('admin.topic_summaries'), "Topic summaries") }}
 {% endcall %}
 
 {% if categories %}
-    {% call data_table(["Category", "Owner", "Topics", "Updated"]) %}
+    {% call data_table(["Category", "Owner", "Topic count", "Last updated"], caption="User-owned category summaries") %}
                 {% for category in categories %}
                     <tr>
                         <td>{{ category.name }}<br><span class="meta">{{ category.color }}</span></td>

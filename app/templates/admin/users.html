@@ -48,10 +48,10 @@
                                     <summary>Reset password for {{ user.display_name }}</summary>
                                     {% call csrf_form(None, action=url_for('admin.reset_user_password', user_id=user.id), form_class="mini-form", autocomplete="off") %}
                                         <label for="password-{{ user.id }}">New password for {{ user.display_name }}</label>
-                                        <input id="password-{{ user.id }}" type="password" name="password" minlength="12" maxlength="128" required autocomplete="new-password" aria-describedby="password-help-{{ user.id }}">
+                                        <input id="password-{{ user.id }}" type="password" name="password" minlength="8" maxlength="128" required autocomplete="new-password" aria-describedby="password-help-{{ user.id }}">
                                         <label for="confirm-password-{{ user.id }}">Confirm password</label>
-                                        <input id="confirm-password-{{ user.id }}" type="password" name="confirm_password" minlength="12" maxlength="128" required autocomplete="new-password">
-                                        <p class="meta" id="password-help-{{ user.id }}">Use between 12 and 128 characters.</p>
+                                        <input id="confirm-password-{{ user.id }}" type="password" name="confirm_password" minlength="8" maxlength="128" required autocomplete="new-password">
+                                        <p class="meta" id="password-help-{{ user.id }}">Use between 8 and 128 characters.</p>
                                         <button type="submit" aria-label="Set a new password for {{ user.display_name }}">Set new password</button>
                                     {% endcall %}
                                 </details>

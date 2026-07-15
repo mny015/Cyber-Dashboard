@@ -2,6 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import EmailField, PasswordField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
+from app.utils.validation import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
+
 
 class RegisterForm(FlaskForm):
     display_name = StringField(
@@ -19,7 +21,14 @@ class RegisterForm(FlaskForm):
         "Password",
         validators=[
             DataRequired(message="Enter a password."),
-            Length(min=12, max=128, message="Use between 12 and 128 characters."),
+            Length(
+                min=PASSWORD_MIN_LENGTH,
+                max=PASSWORD_MAX_LENGTH,
+                message=(
+                    f"Use between {PASSWORD_MIN_LENGTH} and "
+                    f"{PASSWORD_MAX_LENGTH} characters."
+                ),
+            ),
         ],
     )
     confirm_password = PasswordField(
@@ -64,7 +73,10 @@ class ChangePasswordForm(FlaskForm):
     current_password = PasswordField("Current password", validators=[DataRequired()])
     new_password = PasswordField(
         "New password",
-        validators=[DataRequired(), Length(min=12, max=128)],
+        validators=[
+            DataRequired(),
+            Length(min=PASSWORD_MIN_LENGTH, max=PASSWORD_MAX_LENGTH),
+        ],
     )
     confirm_password = PasswordField(
         "Confirm new password",

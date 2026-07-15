@@ -3,7 +3,7 @@
 from werkzeug.datastructures import MultiDict
 
 from app.forms.admin import AdminPasswordResetForm, RoleForm
-from app.forms.auth import MfaTokenForm, RegisterForm
+from app.forms.auth import ChangePasswordForm, MfaTokenForm, RegisterForm
 from app.forms.categories import CategoryForm
 from app.forms.contacts import ContactForm
 from app.forms.labs import LabForm
@@ -31,6 +31,49 @@ def test_registration_requires_valid_email_and_matching_strong_password(app):
     assert form.email.errors
     assert form.password.errors
     assert form.confirm_password.errors
+
+
+def test_password_forms_accept_eight_characters_and_reject_seven(app):
+    accepted_registration = build_form(
+        app,
+        RegisterForm,
+        {
+            "display_name": "Student",
+            "email": "student@example.com",
+            "password": "Eight123",
+            "confirm_password": "Eight123",
+        },
+    )
+    rejected_registration = build_form(
+        app,
+        RegisterForm,
+        {
+            "display_name": "Student",
+            "email": "student@example.com",
+            "password": "Seven12",
+            "confirm_password": "Seven12",
+        },
+    )
+    accepted_change = build_form(
+        app,
+        ChangePasswordForm,
+        {
+            "current_password": "Current1",
+            "new_password": "Eight123",
+            "confirm_password": "Eight123",
+        },
+    )
+    accepted_admin_reset = build_form(
+        app,
+        AdminPasswordResetForm,
+        {"password": "Eight123", "confirm_password": "Eight123"},
+    )
+
+    assert accepted_registration.validate()
+    assert not rejected_registration.validate()
+    assert rejected_registration.password.errors
+    assert accepted_change.validate()
+    assert accepted_admin_reset.validate()
 
 
 def test_category_and_contact_validation_rejects_malformed_values(app):

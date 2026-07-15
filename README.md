@@ -1,395 +1,288 @@
 # Cyber Dashboard
 
-Cyber Dashboard is a Flask, Jinja, and MySQL web app for tracking cybersecurity learning work, lab practice, notes, findings, admin activity, and secure account management.
+Cyber Dashboard is a Flask, Jinja, and MySQL application for organizing cybersecurity learning, lab practice, notes, findings, scheduled work, and privacy-aware administration.
 
-Repository: https://github.com/mny015/Cyber-Dashboard
+Repository: [github.com/mny015/Cyber-Dashboard](https://github.com/mny015/Cyber-Dashboard)
 
-## Overview
+## Project Overview
 
-The app is built as a local coursework and portfolio project. It gives normal users a private workspace for topics, notes, labs, contacts, scheduled tasks, and security findings. Admin users get oversight tools for users, shared labs, requests, audit logs, platform metrics, and backup/export activity.
+The application gives each user a private workspace for tracking topics, categories, notes, contacts, labs, tasks, and security findings. Administrators can manage accounts, publish shared labs, review vulnerability suggestions, inspect audit evidence, and request access to a specific private note. A note remains private until its owner explicitly approves that request.
 
-The project focuses on:
+The backend is intentionally synchronous and coursework-friendly. It uses Flask Blueprints, plain controller functions, plain Python dataclasses, repositories, focused workflow services, a safe query builder, named SQL for reports, numbered SQL migrations, and parameterized PyMySQL calls. No ORM is used.
 
-- Clear Flask app structure with blueprints.
-- MySQL-backed CRUD features.
-- Auth, roles, MFA, CSRF, rate limiting, and session hardening.
-- Privacy-aware admin access.
-- Audit evidence for important account, admin, lab, and CRUD actions.
-- A responsive light/dark UI with theme-aware logos and favicons.
+## Features
 
-## Current Features
+- Registration, login, POST-only logout, password changes, session invalidation, and account lockout controls.
+- Administrator user management: roles, ban/unban, password reset, and deletion.
+- TOTP MFA setup and verification, with encrypted secrets at rest.
+- Per-user topic, category, contact, note, lab, task, and finding management.
+- Markdown note editing, search, topic links, soft deletion, and owner-scoped access.
+- Admin note-access requests with user notifications and explicit approval or denial.
+- Lab references for picoCTF, TryHackMe, Hack The Box, and other platforms.
+- Admin-owned public labs and per-user completion tracking.
+- Vulnerability and threat catalogs, user findings, suggestions, and admin review.
+- User and administrator dashboards with relevant activity, work, and platform metrics.
+- JSON and CSV/ZIP exports protected by short-lived download tickets.
+- Database-backed, signature-checked profile images.
+- Audit logs for authentication, administration, exports, labs, tasks, findings, and core CRUD actions.
+- Responsive light and dark themes with theme-aware logos and favicons.
 
-- User registration, login, logout, password changes, and protected routes.
-- Admin role support with user management, ban/unban, delete, role updates, and password reset.
-- MFA setup with TOTP and QR code generation.
-- Topic management with categories, filters, detail pages, soft delete, and audit logs.
-- Category CRUD with per-user ownership and audit logs.
-- Contact CRUD with validation and audit logs.
-- Private note editor with markdown-style preview, topic linking, soft delete, search, and audit logs.
-- Admin note-access request workflow with user approval before private notes are visible.
-- Lab reference manager for picoCTF, TryHackMe, Hack The Box, and other practice platforms.
-- Shared admin labs that are visible to all users.
-- Lab completion tracking.
-- Scheduled task planner for users and admins.
-- Security findings tracker with vulnerability and threat catalog support.
-- Admin review for user-suggested vulnerabilities.
-- Profile editing with validated database-backed profile images.
-- Backup/export features for user and admin data.
-- User dashboard with recent changes, room progress, scheduled work, and last-done activity.
-- Admin dashboard with platform metrics, users, requests, audit logs, shared labs, and scheduled admin work.
-- Light/dark theme toggle with saved browser preference.
-- Theme-aware logo and favicon switching.
-- Pytest test suite with fixtures for users, admins, auth, dashboards, CRUD audit logs, notes, labs, scheduled tasks, and security routes.
+## Screenshots
 
-## Brand Assets
+Screenshot binaries are not currently committed. The recommended documentation location is `docs/screenshots/`; useful captures are the login page, user dashboard, admin dashboard, notes, labs, and scheduled tasks in both themes. Keeping this section explicit avoids broken image links while the final portfolio captures are prepared.
 
-Logo and favicon files live in:
-
-```text
-app/static/image/
-```
-
-Current files:
+Brand assets used by the application are stored in `app/static/image/`:
 
 - `logo-light.png`
 - `logo-dark.png`
 - `favicon-light.png`
 - `favicon-dark.png`
 
-The navbar and auth pages render both logo variants. CSS shows the light logo in light mode and the dark logo in dark mode. The favicon is linked in `app/templates/base.html` and switched by the existing theme JavaScript.
+## Technology
 
-The old `image1.jpg` file was removed because it was not used by the app.
+- Python 3.13 (the version used by CI)
+- Flask 3, Jinja2, Flask-Login, Flask-WTF, and WTForms
+- MySQL 8 and synchronous PyMySQL
+- Flask-Limiter and Flask-Talisman
+- Werkzeug password hashing, PyOTP, qrcode, and Fernet encryption
+- Plain CSS and vanilla JavaScript
+- pytest, Ruff, Bandit, and Radon
 
-## Screenshots
-
-No screenshot files are currently required for the app to run. If screenshots are added later, a suggested location is:
-
-```text
-docs/screenshots/
-```
-
-Suggested future screenshots:
-
-- `login-light.png`
-- `login-dark.png`
-- `user-dashboard.png`
-- `admin-dashboard.png`
-- `notes.png`
-- `labs.png`
-- `scheduled-tasks.png`
-
-## Tech Stack
-
-- Python 3.13 or newer
-- Flask 3
-- Jinja2
-- MySQL 8
-- PyMySQL
-- Flask-Login
-- Flask-WTF and WTForms
-- Werkzeug password hashing
-- PyOTP and qrcode
-- Flask-Talisman
-- Flask-Limiter
-- Plain CSS
-- Vanilla JavaScript
-- pytest and pytest-flask
-
-## Project Structure
+## Final Folder Structure
 
 ```text
 Cyber Dashboard/
 |-- app/
-|   |-- __init__.py              # Flask app factory
-|   |-- forms/                   # WTForms classes
-|   |-- models/                  # User model and extension objects
-|   |-- routes/                  # Blueprint route modules
-|   |-- static/
-|   |   |-- css/main.css
-|   |   |-- js/main.js
-|   |   |-- js/theme.js
-|   |   `-- image/               # Logos and favicons
-|   `-- templates/               # Jinja templates
+|   |-- controllers/             # HTTP request and response handling
+|   |-- database/queries/        # Complex runtime reports and exports
+|   |-- forms/                   # Flask-WTF forms and action forms
+|   |-- models/                  # Plain slotted dataclasses
+|   |-- repositories/            # Parameterized persistence and ownership rules
+|   |-- routes/                  # Blueprint and add_url_rule mappings only
+|   |-- services/                # Multi-step business workflows
+|   |-- static/                  # CSS, JavaScript, logos, and favicons
+|   |-- templates/               # Jinja pages, macros, and partials
+|   |-- utils/
+|   |   `-- database/            # Pool, transactions, query builder, named SQL
+|   |-- extensions.py            # Shared Flask extension instances
+|   `-- __init__.py              # Application factory
+|-- docs/                        # Architecture and relationship documentation
 |-- migrations/                  # Authoritative numbered SQL schema history
-|-- scripts/
-|   |-- migrate.py               # Plain-SQL migration runner
-|   `-- seed.py                  # Reference catalog seed command
-|-- tests/                       # pytest suite
-|-- utils/                       # DB, audit, decorators, helpers, exports
-|-- config.py                    # Environment-driven config
-|-- create_admin.py              # Admin account helper
-|-- init_db.py                   # Deprecated migrate-and-seed compatibility command
-|-- run.py                       # Development server entry point
-|-- test_db.py                   # DB connection smoke test
-`-- requirements.txt
+|-- scripts/                     # Migration, seed, admin, and maintenance commands
+|-- tests/                       # Unit, contract, integration, and security tests
+|-- config.py                    # Environment-driven runtime configurations
+|-- run.py                       # Local development entry point
+|-- wsgi.py                      # Production WSGI entry point
+|-- requirements.txt             # Runtime dependencies
+`-- requirements-dev.txt         # Runtime plus development dependencies
 ```
+
+## Architecture
+
+The project uses a practical Model-View-Controller interpretation:
+
+- **Model:** plain dataclasses represent application data; repositories load and persist it.
+- **View:** Jinja templates and reusable macros render HTML.
+- **Controller:** plain functions process HTTP input, validate forms, call repositories or services, and return templates, redirects, downloads, or errors.
+- **Routes:** Blueprint modules only declare URL paths, methods, endpoint names, and direct controller mappings with `add_url_rule()`.
+
+```mermaid
+flowchart LR
+    B[Browser] --> R[Blueprint routes]
+    R --> C[Controller]
+    C --> F[Flask-WTF validation]
+    F --> S[Service when a workflow is required]
+    F --> P[Repository for simple operations]
+    S --> P
+    P --> Q[Query builder or named SQL]
+    Q --> D[Pooled PyMySQL and transactions]
+    D --> M[(MySQL)]
+    M --> O[Plain dataclass models]
+    O --> C
+    C --> J[Jinja template or HTTP response]
+    J --> B
+```
+
+### Route And Controller Separation
+
+All 14 Blueprints and 72 application routes are registered centrally by `app/routes/__init__.py`. Route files contain no form processing, rendering, business workflows, or SQL. Authentication and authorization decorators are applied to controller functions. The complete function-level mapping is documented in [`docs/CONTROLLER_MAP.md`](docs/CONTROLLER_MAP.md).
+
+### Request Lifecycle
+
+1. A Blueprint route maps the URL and method directly to a controller function.
+2. The controller authenticates and authorizes the request through shared decorators.
+3. Flask-WTF validates state-changing input and CSRF tokens.
+4. Simple reads call a repository; multi-step rules call a service.
+5. The repository uses the query builder or a named SQL report through the pooled database layer.
+6. Explicit transactions commit complete workflows or roll them back on failure.
+7. Rows become plain dataclass models where an entity model improves clarity.
+8. The controller returns a Jinja page, redirect, download, JSON response, or safe HTTP error.
+
+### Query Builder
+
+`app/utils/database/query_builder.py` handles normal CRUD, filtering, joins, ordering, and pagination. It validates table and column identifiers against model metadata, whitelists operators and sort directions, parameterizes every data value, and prevents `UPDATE` or `DELETE` without a `WHERE` clause by default.
+
+### Named SQL
+
+`app/database/queries/` contains named `.sql` files for dashboard metrics, aggregate reports, exports, and multi-table ownership or visibility projections. The loader accepts validated query names, blocks traversal, verifies named parameters, and caches file contents. Simple writes and single-table CRUD do not belong in this directory.
+
+### No ORM
+
+The application does not use SQLAlchemy, Flask-SQLAlchemy, Alembic, Peewee, Django ORM, active-record persistence, lazy loading, or asynchronous database drivers. Models are passive dataclasses. Repositories execute parameterized SQL through synchronous PyMySQL.
 
 ## Setup On Windows
 
-Use PowerShell from the project root.
-
-1. Clone the repository.
+Run these commands from PowerShell in the project root.
 
 ```powershell
 git clone https://github.com/mny015/Cyber-Dashboard.git
 cd "Cyber-Dashboard"
-```
-
-2. Create and activate a virtual environment.
-
-```powershell
 py -3.13 -m venv .venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 .\.venv\Scripts\Activate.ps1
-```
-
-3. Install dependencies.
-
-```powershell
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-```
-
-Use `requirements.txt`. Do not run `pip install -r requirements` because that file does not exist.
-
-4. Create `.env`.
-
-```powershell
 Copy-Item .env.example .env
 ```
 
-Edit `.env` with your local values:
+Use `requirements.txt`, including the `.txt` extension.
 
-```env
-SECRET_KEY=replace-with-a-long-random-secret-key
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_USER=cyber_dashboard_user
-DB_PASSWORD=replace-with-a-strong-database-password
-DB_NAME=cyber_dashboard
-DB_CHARSET=utf8mb4
-DB_POOL_SIZE=5
-DB_POOL_TIMEOUT=5
-SESSION_COOKIE_SECURE=false
-RATELIMIT_STORAGE_URI=memory://
-LOG_FILE=instance/cyber_dashboard.log
+## Environment Variables
+
+Edit the local `.env` copied from `.env.example`. Do not commit `.env`.
+
+| Variable | Purpose |
+|---|---|
+| `APP_ENV` | `development`, `testing`, or `production` |
+| `SECRET_KEY` | Flask session and CSRF signing secret |
+| `DB_HOST`, `DB_PORT` | MySQL server address |
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME` | MySQL credentials and database |
+| `DB_CHARSET` | Connection charset; normally `utf8mb4` |
+| `DB_POOL_SIZE`, `DB_POOL_TIMEOUT` | Synchronous connection-pool settings |
+| `MFA_ENCRYPTION_KEY` | Fernet key used to encrypt TOTP secrets |
+| `REAUTHENTICATION_MAX_AGE` | Maximum sensitive-action reconfirmation age |
+| `TRUSTED_PROXY_HOPS` | Explicit trusted proxy depth for client addresses |
+| `PROFILE_IMAGE_MAX_BYTES` | Profile-image size limit |
+| `SESSION_COOKIE_SECURE` | Secure-cookie switch for local or TLS environments |
+| `RATELIMIT_STORAGE_URI` | Limiter storage; use shared storage in production |
+| `LOG_FILE` | Application log path |
+| `FLASK_HOST`, `FLASK_PORT` | Local development bind address and port |
+
+Generate the MFA encryption key with:
+
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-The app intentionally requires environment variables. It does not use a fallback secret key or committed database password.
+Production configuration rejects missing or placeholder credentials, a short `SECRET_KEY`, an invalid MFA encryption key, and in-memory rate-limit storage.
 
-## Database Setup
+## Database Migrations
 
-Make sure MySQL is running, then apply the numbered schema migrations:
+Numbered files in `migrations/` are the single authoritative schema history. Schema creation and compatibility changes do not run during web requests, and there is no competing Alembic migration system.
 
 ```powershell
 python scripts/migrate.py
-```
-
-Apply reference seed data separately:
-
-```powershell
 python scripts/seed.py
+python scripts/check_database.py
+python scripts/create_admin.py
 ```
 
-`migrations/*.sql` is the single source of truth for schema history. The runner:
+The migration runner creates the configured database and `schema_migrations` ledger when needed, executes unapplied files in filename order, records checksums, and never reruns an applied migration. Seed data is deliberately separate. Never edit an applied migration; add the next numbered `.sql` file.
 
-- Creates the configured database and `schema_migrations` ledger when missing.
-- Applies SQL files once in filename order.
-- Verifies SHA-256 checksums for already applied files.
-- Upgrades clean databases and older project databases without deleting records.
-- Normalizes known legacy columns and relationships through guarded SQL.
-- Imports legacy profile image bytes before obsolete image columns are removed.
+The final schema contains 19 application tables plus the `schema_migrations` ledger. Foreign-key deletion and index decisions are documented in [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md).
 
-The application does not run migrations during requests. Alembic and ORM-based
-migrations are not used. `init_db.py` is retained only as a compatibility command
-that runs both the migration and seed steps:
-
-```powershell
-python init_db.py
-```
-
-Never edit a migration that has already been applied. Add the next numbered SQL
-file instead. MySQL DDL can commit implicitly, so failed migrations are written
-to be safely rerunnable after the reported data or permission issue is fixed.
-
-Important tables include:
-
-- `users`
-- `profile_images`
-- `topics`
-- `categories`
-- `contacts`
-- `notes`
-- `note_access_requests`
-- `lab_platforms`
-- `lab_references`
-- `lab_completions`
-- `scheduled_tasks`
-- `security_findings`
-- `vulnerability_catalog`
-- `threat_catalog`
-- `audit_logs`
-- `work_logs`
-- `roadmap_items`
-- `progress_reflections`
-- `activity_events`
-
-The final schema contains 19 application tables plus the `schema_migrations`
-ledger. The last four tables are retained from the existing database so older
-coursework data remains available even though current routes do not use them.
-
-Create or update an admin account:
-
-```powershell
-python create_admin.py
-```
-
-Check the database connection:
-
-```powershell
-python test_db.py
-```
-
-## Run The App
-
-Activate the virtual environment first, then run:
+## Run Locally
 
 ```powershell
 python run.py
 ```
 
-Open:
+Open `http://127.0.0.1:5000`. On Windows, use the active virtual environment's `python`; `python3` may resolve to a different installation.
 
-```text
-http://127.0.0.1:5000
+## Production Startup
+
+Set `APP_ENV=production`, supply every required production environment variable, apply migrations as a deployment step, and serve `wsgi:app` with a production WSGI server behind TLS. The WSGI server is deployment-specific and is not pinned by this coursework repository.
+
+Linux example after installing Gunicorn in the deployment environment:
+
+```bash
+gunicorn --bind 127.0.0.1:8000 wsgi:app
 ```
 
-On Windows, prefer `python run.py` inside the active virtual environment. Avoid `python3 run.py` if it points to a different Python install.
-
-## Test Commands
-
-Run the full test suite:
+Windows example after installing Waitress in the deployment environment:
 
 ```powershell
+waitress-serve --host=127.0.0.1 --port=8000 wsgi:app
+```
+
+Terminate TLS at a trusted reverse proxy, configure shared rate-limit storage such as Redis, set proxy trust deliberately, and never use `python run.py` as the public production server.
+
+## Tests And Quality Checks
+
+Install development tools and run the same gates used by CI:
+
+```powershell
+python -m pip install -r requirements-dev.txt
+python -m compileall -q app scripts tests config.py run.py wsgi.py
+python -m ruff check app scripts tests config.py run.py wsgi.py
+python -m bandit -r app scripts config.py run.py wsgi.py -c pyproject.toml
+python -m radon cc app scripts -s -a
+python -m flask --app run routes
 python -m pytest tests -v
 ```
 
-Run focused tests:
+Database tests require an explicitly named test database. Migration integration tests reject unsafe names and only create or remove databases containing `migration_test`:
 
 ```powershell
-python -m pytest tests/test_auth_routes.py -v
-python -m pytest tests/test_dashboard_routes.py -v
-python -m pytest tests/test_page_rendering.py -v
-python -m pytest tests/test_crud_audit_logs.py -v
-python -m pytest tests/test_notes_routes.py -v
-python -m pytest tests/test_lab_visibility.py -v
-python -m pytest tests/test_scheduled_tasks.py -v
-python -m pytest tests/test_security_routes.py -v
-python -m pytest tests/test_migrations.py -v
-```
-
-Migration integration tests are destructive only to database names containing
-`migration_test`. They load local credentials from `.env`, create isolated clean
-and existing-copy databases, and remove those test databases afterward:
-
-```powershell
+$env:TEST_DB_NAME="cyber_dashboard_test"
 $env:MIGRATION_TEST_DB_NAME="cyber_dashboard_migration_test"
 $env:MIGRATION_EXISTING_SOURCE_DB_NAME="cyber_dashboard"
 python -m pytest tests/test_migrations_integration.py -v -m integration
 ```
 
-## Architecture Notes
+Never point destructive test fixtures at a development or production database.
 
-- `app/__init__.py` creates the Flask app, loads config, initializes extensions, and registers routes.
-- `app/routes/__init__.py` registers blueprints.
-- Route modules own feature workflows.
-- `utils/db.py` provides PyMySQL connection helpers and parameterized query execution.
-- `app/utils/database/` provides pooled `connection()` and atomic `transaction()` context managers for repositories.
-- `app/utils/database/query_builder.py` handles parameterized normal CRUD and filtering through strict identifier whitelists.
-- `app/database/queries/` contains named `.sql` files only for complex runtime metrics, reports, and exports; `db.named_query()` loads them by validated name.
-- `migrations/` remains the only location for numbered schema-changing SQL.
-- `app/models/` contains slotted plain-Python dataclasses with `from_row()` conversion; these models have no persistence or Flask request behavior.
-- `utils/audit.py` records audit log rows.
-- `utils/decorators.py` contains role and login protection helpers.
-- `utils/helpers.py` contains small formatting, slug, and validation helpers.
-- `docs/DATABASE_RELATIONSHIPS.md` records the frozen foreign-key deletion and indexing policy.
-- Templates extend `base.html`.
-- Static CSS and JS are served locally from `app/static`.
-- Tests use fixtures to create users, authenticate clients, and clean database records.
+## Security Features
 
-## Security Notes
+- Flask-Login protects private pages; admin controllers require role authorization.
+- Repository predicates enforce ownership for user-owned records.
+- Flask-WTF and CSRF protect every state-changing form.
+- State changes use POST and POST/Redirect/GET where appropriate.
+- Passwords use Werkzeug hashes; MFA secrets use environment-keyed Fernet encryption.
+- Sensitive exports and administrator account actions require recent identity reconfirmation.
+- Login and registration limits use centralized per-IP and per-account policies.
+- Production cookies are `HttpOnly`, `SameSite=Lax`, and secure over HTTPS.
+- Flask-Talisman provides CSP, HSTS, frame, and related response protections.
+- Uploads are checked by extension, MIME type, image signature, and size before database storage.
+- Parameterized SQL, strict identifier validation, and guarded writes reduce injection risk.
+- Audit records survive account deletion through `ON DELETE SET NULL` relationships.
+- Production debug mode is disabled and configuration is validated before startup.
 
-- Passwords are stored with Werkzeug password hashes.
-- Login uses Flask-Login.
-- Sensitive forms use CSRF protection.
-- Auth routes are rate limited.
-- MFA uses TOTP.
-- Session state includes `auth_version` so stale sessions can be invalidated after sensitive changes.
-- SQL uses parameterized queries.
-- Profile images are validated and stored in the database instead of being served from user-controlled static paths.
-- Normal users can only manage their own topics, categories, notes, contacts, labs, tasks, and findings.
-- Admins can see topic/category summaries and aggregate platform activity.
-- Admins cannot read private note bodies unless the user approves a note-access request.
-- Audit logs capture auth, admin, lab, scheduled task, backup/export, security finding, and core CRUD actions.
+These controls reduce risk but do not replace dependency maintenance, secure host configuration, backups, monitoring, or an independent penetration test.
 
-## Theme And Logo Behavior
+## Theme And Accessibility
 
-- The default favicon is linked in `app/templates/base.html`.
-- `app/static/js/theme.js` applies the stored or preferred theme early.
-- `app/static/js/main.js` handles the theme toggle.
-- `updateFavicon(theme)` switches between:
-  - `/static/image/favicon-light.png`
-  - `/static/image/favicon-dark.png`
-- CSS switches between:
-  - `logo-light.png`
-  - `logo-dark.png`
+The main page background is a plain theme variable. Meaningful surfaces use restrained borders and spacing, while light/dark logos and favicons switch with the saved theme. Templates preserve explicit labels, focus indicators, keyboard navigation, semantic landmarks, error announcements, and reduced-motion support.
 
-Manual check:
+## Documentation
 
-1. Start the app with `python run.py`.
-2. Open `/auth/login`.
-3. Confirm the logo appears in the navbar and auth card.
-4. Toggle light/dark mode.
-5. Confirm the logo changes.
-6. Check the browser tab favicon. Hard refresh if the browser cached the old icon.
-
-## Development Workflow
-
-Useful local workflow:
-
-```powershell
-git status
-python scripts/migrate.py
-python scripts/seed.py
-python -m pytest tests -v
-python run.py
-```
-
-Before committing:
-
-```powershell
-git status
-git diff --check
-python -m pytest tests -v
-```
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): layer responsibilities and request flow
+- [`docs/ARCHITECTURE_FREEZE.md`](docs/ARCHITECTURE_FREEZE.md): frozen backend contracts and quality baseline
+- [`docs/CONTROLLER_MAP.md`](docs/CONTROLLER_MAP.md): all controller functions and dependencies
+- [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md): foreign keys, deletion rules, and indexes
+- [`docs/MIGRATION_STATUS.md`](docs/MIGRATION_STATUS.md): completed migration status
+- [`docs/FINAL_PROJECT_AUDIT.md`](docs/FINAL_PROJECT_AUDIT.md): final audit evidence and deployment checklist
 
 ## Known Limitations
 
-- Scheduled tasks are lightweight and do not yet support recurrence.
+- Scheduled tasks do not support recurrence or a background reminder worker.
 - Notifications currently focus on note-access requests.
-- The roadmap feature is represented through existing topic, lab, task, and dashboard workflows.
-- Screenshots and demo media are not committed yet.
-
-## Future Improvements
-
-- Add recurring scheduled tasks.
-- Add a dedicated roadmap and milestone module.
-- Add audit-log filters.
-- Add dashboard screenshots and a short demo video under `docs/`.
-- Add richer export/import restore flows.
+- The API surface is intentionally limited to a health-style ping endpoint.
+- Historical `work_logs`, `roadmap_items`, `progress_reflections`, and `activity_events` remain preserved in the schema but have no dedicated current UI.
+- Export is implemented; import/restore is not.
+- Portfolio screenshots and demo media are not committed yet.
+- A production WSGI server, reverse proxy, Redis service, monitoring, and backup retention policy remain deployment responsibilities.
 
 ## Repository
 
-GitHub:
-
-https://github.com/mny015/Cyber-Dashboard
+[https://github.com/mny015/Cyber-Dashboard](https://github.com/mny015/Cyber-Dashboard)

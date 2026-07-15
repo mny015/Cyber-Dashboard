@@ -14,7 +14,7 @@
     <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="app-shell">
     <header class="site-header">
-        <a class="brand-link" href="{{ url_for('dashboard.dashboard') }}" aria-label="Cyber Dashboard">
+        <a class="brand-link" href="{{ url_for('dashboard.dashboard') if current_user.is_authenticated else url_for('dashboard.index') }}" aria-label="Cyber Dashboard">
             <img class="brand-logo brand-logo-light" src="{{ url_for('static', filename='image/logo-light.png') }}" alt="Cyber Dashboard">
             <img class="brand-logo brand-logo-dark" src="{{ url_for('static', filename='image/logo-dark.png') }}" alt="Cyber Dashboard">
         </a>
@@ -22,8 +22,8 @@
             Menu
         </button>
         <nav class="nav-links" id="main-navigation" aria-label="Main navigation">
-            <a href="{{ url_for('dashboard.dashboard') }}" {% if request.endpoint and request.endpoint.startswith('dashboard.') %}aria-current="page"{% endif %}>Dashboard</a>
             {% if current_user.is_authenticated %}
+                <a href="{{ url_for('dashboard.dashboard') }}" {% if request.endpoint and request.endpoint.startswith('dashboard.') %}aria-current="page"{% endif %}>Dashboard</a>
                 <a href="{{ url_for('topics.index') }}" {% if request.blueprint == 'topics' %}aria-current="page"{% endif %}>Topics</a>
                 <a href="{{ url_for('notes.index') }}" {% if request.blueprint == 'notes' %}aria-current="page"{% endif %}>Notes</a>
                 <a href="{{ url_for('labs.index') }}" {% if request.blueprint == 'labs' %}aria-current="page"{% endif %}>Labs</a>

@@ -91,6 +91,16 @@ def test_home_page_renders_without_database(fake_auth_client):
     assert b"Cyber Dashboard" in response.data
 
 
+def test_public_home_hides_dashboard_entry_points(fake_auth_client):
+    response = fake_auth_client.get("/")
+
+    assert response.status_code == 200
+    assert b'href="/dashboard"' not in response.data
+    assert b"Open dashboard" not in response.data
+    assert b'href="/auth/login"' in response.data
+    assert b"Create account" in response.data
+
+
 def test_login_page_renders_without_database(fake_auth_client):
     response = fake_auth_client.get("/login", follow_redirects=True)
 

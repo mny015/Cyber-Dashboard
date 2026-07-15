@@ -7,15 +7,23 @@ from app import create_app
 from app.models import User
 from app.repositories import user_repository
 from app.utils.database import DatabaseError, db, transaction
-from app.utils.validation import is_valid_email, normalize_email
+from app.utils.validation import (
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
+    is_valid_email,
+    normalize_email,
+)
 
 
 def create_or_update_admin(email, display_name, password):
     normalized_email = normalize_email(email)
     if not is_valid_email(normalized_email):
         raise ValueError("Enter a valid email address.")
-    if len(password) < 12:
-        raise ValueError("Password must be at least 12 characters.")
+    if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
+        raise ValueError(
+            f"Password must contain between {PASSWORD_MIN_LENGTH} and "
+            f"{PASSWORD_MAX_LENGTH} characters."
+        )
 
     existing = user_repository.find_by_email(normalized_email)
     if existing:

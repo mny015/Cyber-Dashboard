@@ -21,6 +21,8 @@ though they are not currently accessed by Flask routes.
 Foreign-key deletion behavior is frozen by migration `026`; relationship and
 index decisions are documented in `docs/DATABASE_RELATIONSHIPS.md`. Migration
 `027` adds the composite indexes used by dashboard and list query paths.
+Migration `028` expands `users.mfa_secret` so encrypted TOTP secrets fit
+without truncation.
 
 ## Commands
 

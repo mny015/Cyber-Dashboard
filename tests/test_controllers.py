@@ -8,7 +8,7 @@ import pytest
 from flask import Flask
 
 from app.extensions import csrf, login_manager
-from app.models import User
+from app.models import ProfileImage, User
 from app.routes import register_blueprints
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -193,3 +193,57 @@ def test_note_controller_rejects_invalid_form_before_service_call(
     assert b'role="alert"' in response.data
     assert b'id="title-errors"' in response.data
     assert writes == []
+
+
+def test_normal_user_cannot_read_another_profile_picture(
+    monkeypatch, authenticated_controller_client
+):
+    admin_image_reads = []
+    monkeypatch.setattr(
+        "app.controllers.profile_controller.user_repository.find_profile_image",
+        lambda image_hash: admin_image_reads.append(image_hash),
+    )
+
+    response = authenticated_controller_client.get(
+        f"/profile/picture/{'a' * 64}"
+    )
+
+    assert response.status_code == 404
+    assert admin_image_reads == []
+
+
+def test_admin_can_render_a_users_stored_profile_picture(
+    monkeypatch, controller_app
+):
+    monkeypatch.setattr(
+        login_manager,
+        "_user_callback",
+        lambda user_id: User(
+            id=int(user_id),
+            email="admin@example.com",
+            display_name="Administrator",
+            role="admin",
+        ),
+    )
+    image_hash = "b" * 64
+    image_data = b"\x89PNG\r\n\x1a\n"
+    monkeypatch.setattr(
+        "app.controllers.profile_controller.user_repository.find_profile_image",
+        lambda requested_hash: ProfileImage(
+            image_hash=requested_hash,
+            image_data=image_data,
+            mime_type="image/png",
+            byte_size=len(image_data),
+        ),
+    )
+    client = controller_app.test_client()
+    with client.session_transaction() as session:
+        session["_user_id"] = "3"
+        session["_fresh"] = True
+        session["auth_version"] = 0
+
+    response = client.get(f"/profile/picture/{image_hash}")
+
+    assert response.status_code == 200
+    assert response.mimetype == "image/png"
+    assert response.data == image_data

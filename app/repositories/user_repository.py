@@ -197,6 +197,17 @@ def find_owned_profile_image(user_id, image_hash):
     return ProfileImage.from_row(row)
 
 
+def find_profile_image(image_hash, database=None):
+    """Return one stored profile image for an authorized administrative view."""
+    database = database or db
+    row = (
+        database.table(ProfileImage.TABLE_NAME)
+        .where("image_hash", "=", image_hash)
+        .first()
+    )
+    return ProfileImage.from_row(row)
+
+
 def update_profile(user_id, display_name, email, profile_bio, image=None):
     if image is None:
         return _update_user(

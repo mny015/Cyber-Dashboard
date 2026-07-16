@@ -1,0 +1,14 @@
+{% macro sidebar_link(endpoint, label, icon, icon_key, is_current=False) -%}
+<a class="sidebar-link"
+   href="{{ url_for(endpoint) }}"
+   data-label="{{ label }}"
+   title="{{ label }}"
+   {% if is_current %}aria-current="page"{% endif %}>
+    <span class="sidebar-icon sidebar-icon-{{ icon_key }}" aria-hidden="true">
+        <img class="sidebar-icon-image"
+             src="{{ url_for('static', filename='image/' ~ icon) }}"
+             alt="">
+    </span>
+    <span class="sidebar-label">{{ label }}</span>
+</a>
+{%- endmacro %}

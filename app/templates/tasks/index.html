@@ -62,7 +62,7 @@
                                 <p class="meta">{{ item.description }}</p>
                             {% endif %}
                             {% if item.status == "upcoming" %}
-                                <div class="actions">
+                                <div class="actions task-item-actions">
                                     {{ action_form(url_for('tasks.complete', task_id=item.id), "Mark complete", aria_label="Mark task " ~ item.title ~ " complete") }}
                                     {{ confirmation_form(
                                         url_for('tasks.cancel', task_id=item.id),

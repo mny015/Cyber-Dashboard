@@ -4,15 +4,13 @@ __pycache__/
 *.pyo
 *.pyd
 *.so
-.pytest_cache/
+
 .mypy_cache/
 .ruff_cache/
 .coverage
 coverage.xml
 htmlcov/
 __pycache__/
-.pytest_cache/
-.coverage
 htmlcov/
 .venv/
 .env

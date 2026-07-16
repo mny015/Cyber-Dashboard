@@ -315,6 +315,32 @@ def test_invalid_mfa_token_is_audited_without_logging_user_in(
     assert "mfa_failed" in audit_actions
 
 
+def test_mfa_qr_uses_dependency_free_svg_and_is_not_cached(
+    monkeypatch, fake_auth_client
+):
+    user_row = make_user_row()
+    user_row["mfa_secret"] = pyotp.random_base32()
+    user = User.from_row(user_row)
+    monkeypatch.setattr(
+        "app.repositories.user_repository.find_by_id", lambda _user_id: user
+    )
+
+    with fake_auth_client.session_transaction() as session:
+        session["_user_id"] = str(user.id)
+        session["_fresh"] = True
+        session["auth_version"] = user.auth_version
+        session["reauthenticated_at"] = int(datetime.now().timestamp())
+        session["reauthenticated_auth_version"] = user.auth_version
+
+    response = fake_auth_client.get("/auth/profile/mfa/qr")
+
+    assert response.status_code == 200
+    assert response.mimetype == "image/svg+xml"
+    assert response.data.startswith(b"<?xml")
+    assert response.headers["Cache-Control"] == "no-store, private"
+    assert response.headers["Pragma"] == "no-cache"
+
+
 def test_logout_rejects_get_requests(fake_auth_client):
     response = fake_auth_client.get("/auth/logout")
 

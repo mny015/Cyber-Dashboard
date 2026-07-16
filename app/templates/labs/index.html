@@ -21,10 +21,10 @@
 </form>
 
 {% if labs %}
-    <div class="grid">
+    <div class="grid lab-grid">
         {% for lab in labs %}
-            <section class="card">
-                <div class="page-header">
+            <section class="card lab-card">
+                <div class="page-header lab-card-header">
                     <h2><a href="{{ url_for('labs.detail', lab_id=lab.id) }}">{{ lab.name }}</a></h2>
                     {{ status_badge("Complete" if lab.is_completed else "Open", "success" if lab.is_completed else None) }}
                 </div>
@@ -33,8 +33,8 @@
                     &middot; {{ "Shared by admin" if lab.visibility == "public" else "Personal" }}
                     {% if lab.topic_title %}&middot; {{ lab.topic_title }}{% endif %}
                 </p>
-                <p>{{ lab.notes[:140] }}{% if lab.notes|length > 140 %}...{% endif %}</p>
-                <div class="actions">
+                <p class="lab-card-summary">{{ lab.notes[:140] }}{% if lab.notes|length > 140 %}...{% endif %}</p>
+                <div class="actions lab-card-actions">
                     <a class="button" href="{{ lab.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open {{ lab.name }} on {{ lab.platform_name }} in a new tab">Open lab</a>
                     {% if lab.is_completed %}
                         {{ action_form(url_for('labs.incomplete', lab_id=lab.id), "Mark as incomplete", aria_label="Mark " ~ lab.name ~ " as incomplete") }}

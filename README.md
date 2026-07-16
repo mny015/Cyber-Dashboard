@@ -25,7 +25,7 @@ The backend is intentionally synchronous and coursework-friendly. It uses Flask 
 - JSON and CSV/ZIP exports protected by short-lived download tickets.
 - Database-backed, signature-checked profile images.
 - Audit logs for authentication, administration, exports, labs, tasks, findings, and core CRUD actions.
-- Responsive light and dark themes with theme-aware logos and favicons.
+- Responsive light and dark themes with consistent high-contrast branding.
 
 ## Screenshots
 
@@ -33,10 +33,23 @@ Screenshot binaries are not currently committed. The recommended documentation l
 
 Brand assets used by the application are stored in `app/static/image/`:
 
-- `logo-light.png`
 - `logo-dark.png`
-- `favicon-light.png`
-- `favicon-dark.png`
+- `Favicon.png`
+- High-contrast `*-dark.png` sidebar navigation icons
+
+## Manual Test Data
+
+A guarded test-data injector is available at `docs/inject_test_data.py`. It creates
+correlated demo users, categories, topics, notes, labs, findings, tasks, activity,
+and note-access requests without changing the schema.
+
+```powershell
+python docs/inject_test_data.py --confirm-db cyber_dashboard
+```
+
+Use `--dry-run` to validate it without writing, or `--replace` to refresh only its
+fixed demo accounts. See [docs/TEST_DATA_INJECTOR.md](docs/TEST_DATA_INJECTOR.md)
+for the generated accounts, safety checks, and full usage instructions.
 
 ## Technology
 

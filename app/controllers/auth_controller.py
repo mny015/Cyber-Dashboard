@@ -6,6 +6,7 @@ import pyotp
 import qrcode
 from flask import abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
+from qrcode.image.svg import SvgPathImage
 
 from app.controllers.form_helpers import validate_action
 from app.forms.auth import (
@@ -181,11 +182,19 @@ def mfa_qr():
     uri = pyotp.TOTP(current_user.mfa_secret).provisioning_uri(
         name=current_user.email, issuer_name="Cyber Dashboard"
     )
-    image = qrcode.make(uri)
+    image = qrcode.make(uri, image_factory=SvgPathImage)
     buffer = BytesIO()
-    image.save(buffer, format="PNG")
+    image.save(buffer)
     buffer.seek(0)
-    return send_file(buffer, mimetype="image/png")
+    response = send_file(
+        buffer,
+        mimetype="image/svg+xml",
+        download_name="cyber-dashboard-mfa.svg",
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 @login_required

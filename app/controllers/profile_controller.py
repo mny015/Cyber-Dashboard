@@ -41,9 +41,13 @@ def edit():
 
 @login_required
 def picture(image_hash):
-    if image_hash != current_user.profile_image:
+    if current_user.is_admin:
+        image = user_repository.find_profile_image(image_hash)
+    elif image_hash == current_user.profile_image:
+        image = user_repository.find_owned_profile_image(current_user.id, image_hash)
+    else:
         abort(404)
-    image = user_repository.find_owned_profile_image(current_user.id, image_hash)
+
     if not image or not image.image_data:
         abort(404)
     return Response(

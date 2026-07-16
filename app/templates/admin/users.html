@@ -16,8 +16,18 @@
                     <tr class="admin-user-row">
                         <td>
                             <div class="user-identity">
-                                <span class="user-avatar-small">{{ user.display_name[:1]|upper }}</span>
-                                <div>
+                                {% if user.profile_image %}
+                                    <img
+                                        class="user-avatar-small user-avatar-image"
+                                        src="{{ url_for('profile.picture', image_hash=user.profile_image) }}"
+                                        alt="{{ user.display_name }} profile picture"
+                                    >
+                                {% else %}
+                                    <span class="user-avatar-small user-avatar-fallback" aria-hidden="true">
+                                        {{ user.display_name[:1]|upper }}
+                                    </span>
+                                {% endif %}
+                                <div class="user-identity-copy">
                                     <strong>{{ user.display_name }}</strong>
                                     <span>{{ user.email }}</span>
                                     <small>Joined {{ user.created_at or "Not recorded" }}</small>

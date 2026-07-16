@@ -13,6 +13,7 @@ from scripts.migrate import run_migrations
 
 CONTRACT_PATH = Path(__file__).parent / "contracts" / "schema_contract.json"
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+MIGRATIONS_DIR = PROJECT_ROOT / "migrations"
 SAFE_TEST_NAME = re.compile(r"^[A-Za-z0-9_]*migration_test[A-Za-z0-9_]*$", re.IGNORECASE)
 
 
@@ -337,6 +338,7 @@ def test_migrations_build_clean_database_and_never_rerun():
     base_name = os.getenv("MIGRATION_TEST_DB_NAME", "").strip()
     if not base_name:
         pytest.skip("Set MIGRATION_TEST_DB_NAME to run destructive migration integration tests.")
+    migration_count = len(list(MIGRATIONS_DIR.glob("*.sql")))
     config = migration_config(f"{base_name}_clean")
     require_test_name(config.DB_NAME)
     drop_test_database(config)
@@ -344,10 +346,10 @@ def test_migrations_build_clean_database_and_never_rerun():
         first_result = run_migrations(config=config, output=lambda _message: None)
         second_result = run_migrations(config=config, output=lambda _message: None)
 
-        assert len(first_result.applied) == 27
+        assert len(first_result.applied) == migration_count
         assert first_result.skipped == ()
         assert second_result.applied == ()
-        assert len(second_result.skipped) == 27
+        assert len(second_result.skipped) == migration_count
         assert "schema_migrations" in fetch_table_names(config)
         assert_schema_contract(config)
     finally:

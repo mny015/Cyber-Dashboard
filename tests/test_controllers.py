@@ -215,35 +215,36 @@ def test_normal_user_cannot_read_another_profile_picture(
 def test_admin_can_render_a_users_stored_profile_picture(
     monkeypatch, controller_app
 ):
-    monkeypatch.setattr(
-        login_manager,
-        "_user_callback",
-        lambda user_id: User(
-            id=int(user_id),
-            email="admin@example.com",
-            display_name="Administrator",
-            role="admin",
-        ),
-    )
-    image_hash = "b" * 64
-    image_data = b"\x89PNG\r\n\x1a\n"
-    monkeypatch.setattr(
-        "app.controllers.profile_controller.user_repository.find_profile_image",
-        lambda requested_hash: ProfileImage(
-            image_hash=requested_hash,
-            image_data=image_data,
-            mime_type="image/png",
-            byte_size=len(image_data),
-        ),
-    )
-    client = controller_app.test_client()
-    with client.session_transaction() as session:
-        session["_user_id"] = "3"
-        session["_fresh"] = True
-        session["auth_version"] = 0
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            login_manager,
+            "_user_callback",
+            lambda user_id: User(
+                id=int(user_id),
+                email="admin@example.com",
+                display_name="Administrator",
+                role="admin",
+            ),
+        )
+        image_hash = "b" * 64
+        image_data = b"\x89PNG\r\n\x1a\n"
+        patch.setattr(
+            "app.controllers.profile_controller.user_repository.find_profile_image",
+            lambda requested_hash: ProfileImage(
+                image_hash=requested_hash,
+                image_data=image_data,
+                mime_type="image/png",
+                byte_size=len(image_data),
+            ),
+        )
+        client = controller_app.test_client()
+        with client.session_transaction() as session:
+            session["_user_id"] = "3"
+            session["_fresh"] = True
+            session["auth_version"] = 0
 
-    response = client.get(f"/profile/picture/{image_hash}")
+        response = client.get(f"/profile/picture/{image_hash}")
 
-    assert response.status_code == 200
-    assert response.mimetype == "image/png"
-    assert response.data == image_data
+        assert response.status_code == 200
+        assert response.mimetype == "image/png"
+        assert response.data == image_data

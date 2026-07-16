@@ -1,22 +1,14 @@
-# Python bytecode and caches
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python bytecode and native artifacts
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
 *.pyd
 *.so
-
-.mypy_cache/
-.ruff_cache/
-.coverage
-coverage.xml
-htmlcov/
-__pycache__/
-htmlcov/
-.venv/
-.env
-*.pyc
-.gitignore
-
 
 # Virtual environments
 .venv/
@@ -25,31 +17,46 @@ venv/
 env/
 ENV/
 
-# Flask / app runtime files
-instance/*.log
-instance/*.sqlite3
-instance/*.db
-instance/.env
-instance/config.py
+# Tests, coverage, and analysis
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+bandit-report.*
 
-# Environment files
-.env
-.env.*
-!.env.example
-
-# Packaging / build outputs
+# Packaging and build output
 build/
 dist/
 *.egg-info/
 .eggs/
 
-# Tooling / editor files
+# Flask runtime and local application state
+instance/
+logs/
+*.log
+*.pid
+tmp/
+temp/
+
+# Local exports, backups, and database scratch files
+exports/
+backups/local/
+*.sql.gz
+*.dump
+*.sqlite3
+*.db
+
+# Editor and operating-system files
 .vscode/
 .idea/
 *.swp
 *.swo
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Local agent workspace metadata
 .agent
@@ -57,12 +64,3 @@ Thumbs.db
 .agents
 .agents/
 .codex/
-
-# Migration / database scratch files
-migrations/__pycache__/
-*.sqlite3
-*.db
-
-
-
-pytest.ini

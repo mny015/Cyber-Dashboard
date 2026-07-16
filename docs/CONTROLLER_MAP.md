@@ -20,7 +20,7 @@ All 72 application routes map directly to these plain controller functions. Rout
 | `verify_mfa` | `MfaTokenForm`, `user_repository.find_by_id`, `auth_service.verify_mfa_token` | `auth/verify_mfa.html`, `auth.login`, or a role dashboard |
 | `logout` | `log_audit`, Flask-Login/session cleanup | `auth.login` |
 | `setup_mfa` | `MfaSetupForm`, `ChangePasswordForm`, MFA service functions | `auth/setup_mfa.html` or `dashboard.dashboard` |
-| `mfa_qr` | `pyotp`, `qrcode` | PNG response, `auth.setup_mfa`, or 404 |
+| `mfa_qr` | `pyotp`, `qrcode` | Non-cacheable SVG response, `auth.setup_mfa`, or 404 |
 | `change_password` | `ChangePasswordForm`, `auth_service.change_password` | `auth.setup_mfa` or `auth.login` |
 | `reconfirm` | `ReconfirmationForm`, `auth_service.reconfirm_identity` | `auth/reconfirm.html` or the saved same-origin return page |
 

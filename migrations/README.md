@@ -31,8 +31,8 @@ python scripts/migrate.py
 python scripts/seed.py
 ```
 
-`python init_db.py` remains as a deprecated compatibility command that runs both
-steps. New setup and deployment instructions should use the explicit commands.
+The removed `init_db.py` compatibility path is not used. Setup and deployment
+must run the migration and seed commands explicitly.
 
 ## Existing Databases
 

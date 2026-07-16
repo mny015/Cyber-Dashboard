@@ -29,7 +29,9 @@ The backend is intentionally synchronous and coursework-friendly. It uses Flask 
 
 ## Screenshots
 
-Screenshot binaries are not currently committed. The recommended documentation location is `docs/screenshots/`; useful captures are the login page, user dashboard, admin dashboard, notes, labs, and scheduled tasks in both themes. Keeping this section explicit avoids broken image links while the final portfolio captures are prepared.
+Screenshots are the only remaining submission artifact. Add the final portfolio
+captures under `docs/screenshots/`, then link the login page, user dashboard,
+admin dashboard, notes, labs, and scheduled tasks here in both themes.
 
 Brand assets used by the application are stored in `app/static/image/`:
 
@@ -275,16 +277,22 @@ These controls reduce risk but do not replace dependency maintenance, secure hos
 
 ## Theme And Accessibility
 
-The main page background is a plain theme variable. Meaningful surfaces use restrained borders and spacing, while light/dark logos and favicons switch with the saved theme. Templates preserve explicit labels, focus indicators, keyboard navigation, semantic landmarks, error announcements, and reduced-motion support.
+The main page background is a plain theme variable. Meaningful surfaces use
+restrained borders and spacing, while the shared high-contrast logo, favicon,
+and navigation icons remain visible in both themes. Templates preserve explicit
+labels, focus indicators, keyboard navigation, semantic landmarks, error
+announcements, and reduced-motion support.
 
 ## Documentation
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): layer responsibilities and request flow
-- [`docs/ARCHITECTURE_FREEZE.md`](docs/ARCHITECTURE_FREEZE.md): frozen backend contracts and quality baseline
-- [`docs/CONTROLLER_MAP.md`](docs/CONTROLLER_MAP.md): all controller functions and dependencies
-- [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md): foreign keys, deletion rules, and indexes
-- [`docs/MIGRATION_STATUS.md`](docs/MIGRATION_STATUS.md): completed migration status
-- [`docs/FINAL_PROJECT_AUDIT.md`](docs/FINAL_PROJECT_AUDIT.md): final audit evidence and deployment checklist
+Each maintained document has one purpose:
+
+- [`README.md`](README.md): authoritative project overview, setup, operation, testing, and deployment guide
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): final layer responsibilities, request flow, and architecture constraints
+- [`docs/CONTROLLER_MAP.md`](docs/CONTROLLER_MAP.md): route-controller dependencies and response destinations
+- [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md): foreign keys, deletion rules, and index policy
+- [`docs/TEST_DATA_INJECTOR.md`](docs/TEST_DATA_INJECTOR.md): guarded manual demonstration-data instructions
+- [`migrations/README.md`](migrations/README.md): numbered migration policy and commands
 
 ## Known Limitations
 
@@ -293,7 +301,7 @@ The main page background is a plain theme variable. Meaningful surfaces use rest
 - The API surface is intentionally limited to a health-style ping endpoint.
 - Historical `work_logs`, `roadmap_items`, `progress_reflections`, and `activity_events` remain preserved in the schema but have no dedicated current UI.
 - Export is implemented; import/restore is not.
-- Portfolio screenshots and demo media are not committed yet.
+- Portfolio screenshots are not committed yet.
 - A production WSGI server, reverse proxy, Redis service, monitoring, and backup retention policy remain deployment responsibilities.
 
 ## Repository

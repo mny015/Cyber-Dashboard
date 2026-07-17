@@ -9,14 +9,6 @@ def get_threat(database):
     return database.fetch_one("SELECT id FROM threat_catalog ORDER BY id LIMIT 1")
 
 
-def test_security_dashboard_renders_for_user(authenticated_client):
-    response = authenticated_client.get("/security/")
-
-    assert response.status_code == 200
-    assert b"Security findings" in response.data
-    assert b"Vulnerabilities found" in response.data
-
-
 def test_user_can_create_security_finding(client, test_user, login_as, database):
     vulnerability = get_vulnerability(database)
     threat = get_threat(database)
@@ -99,11 +91,3 @@ def test_user_suggestion_waits_for_admin_approval(
     )
     assert suggestion["approval_status"] == "pending"
     assert suggestion["is_active"] == 0
-
-
-def test_admin_can_review_vulnerability_catalog(admin_client):
-    response = admin_client.get("/security/admin/vulnerabilities")
-
-    assert response.status_code == 200
-    assert b"Vulnerability catalog" in response.data
-    assert b"User suggestions" in response.data

@@ -1240,7 +1240,6 @@ LAB_COMPLETIONS = (
 NOTE_ACCESS_REQUESTS = (
     {
         "topic": "maya-access-control",
-        "note": "maya-access-control-note",
         "status": "pending",
         "days_ago": 1,
     },
@@ -1331,8 +1330,13 @@ def validate_demo_definition():
             raise DemoDataError("A lab completion references an unknown demo key.")
 
     for request in NOTE_ACCESS_REQUESTS:
-        if request["topic"] not in topic_keys or request["note"] not in note_keys:
+        note_key = request.get("note")
+        if request["topic"] not in topic_keys or (
+            note_key is not None and note_key not in note_keys
+        ):
             raise DemoDataError("A note access request references an unknown demo key.")
+        if request["status"] == "approved" and note_key is None:
+            raise DemoDataError("An approved note access request requires a selected note.")
 
 
 def validate_target(application, confirmed_database):
@@ -1821,19 +1825,27 @@ def _insert_note_access_requests(
             if responded_days_ago is not None
             else None
         )
-        _insert(
+        request_id = _insert(
             database,
             counts,
             "note_access_requests",
             {
                 "topic_id": topic_ids[request["topic"]],
-                "note_id": note_ids[request["note"]],
                 "requester_admin_id": admin_id,
                 "status": request["status"],
                 "requested_at": requested_at,
                 "responded_at": responded_at,
             },
         )
+        if request["status"] == "approved":
+            database.table("note_access_grants").insert(
+                {
+                    "request_id": request_id,
+                    "note_id": note_ids[request["note"]],
+                    "granted_at": responded_at or requested_at,
+                },
+            )
+            counts["note_access_grants"] += 1
 
 
 def _insert_pending_vulnerability(database, counts, creator_id, now):

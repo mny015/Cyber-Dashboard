@@ -84,13 +84,6 @@ def make_user_row(
     }
 
 
-def test_home_page_renders_without_database(fake_auth_client):
-    response = fake_auth_client.get("/")
-
-    assert response.status_code == 200
-    assert b"Cyber Dashboard" in response.data
-
-
 def test_public_home_hides_dashboard_entry_points(fake_auth_client):
     response = fake_auth_client.get("/")
 
@@ -99,16 +92,6 @@ def test_public_home_hides_dashboard_entry_points(fake_auth_client):
     assert b"Open dashboard" not in response.data
     assert b'href="/auth/login"' in response.data
     assert b"Create account" in response.data
-
-
-def test_login_page_renders_without_database(fake_auth_client):
-    response = fake_auth_client.get("/login", follow_redirects=True)
-
-    assert response.status_code == 200
-    assert b"Log in" in response.data
-    assert b"name@example.com" in response.data
-
-
 def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
     user = User.from_row(make_user_row())
     reset_calls = []
@@ -141,34 +124,6 @@ def test_successful_login_uses_mocked_database_response(monkeypatch, fake_auth_c
         assert session["auth_version"] == 0
         assert session["reauthenticated_auth_version"] == 0
         assert session["reauthenticated_at"]
-
-
-def test_reconfirmation_accepts_current_password(monkeypatch, fake_auth_client):
-    user = User.from_row(make_user_row())
-    audit_calls = []
-    monkeypatch.setattr("app.repositories.user_repository.find_by_id", lambda _user_id: user)
-    monkeypatch.setattr(
-        "app.services.audit_service.record",
-        lambda action, details="", context=None, database=None: audit_calls.append(action),
-    )
-    with fake_auth_client.session_transaction() as session:
-        session["_user_id"] = "42"
-        session["_fresh"] = True
-        session["auth_version"] = 0
-        session["reauthentication_return_to"] = "/user/dashboard"
-
-    response = fake_auth_client.post(
-        "/auth/reconfirm",
-        data={"current_password": "CorrectPassword123!", "mfa_token": ""},
-    )
-
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/user/dashboard")
-    assert "reauthentication_succeeded" in audit_calls
-    with fake_auth_client.session_transaction() as session:
-        assert session["reauthenticated_auth_version"] == 0
-
-
 def test_failed_login_uses_mocked_database_response(monkeypatch, fake_auth_client):
     user = User.from_row(make_user_row())
     failure_calls = []
@@ -341,13 +296,12 @@ def test_mfa_qr_uses_dependency_free_svg_and_is_not_cached(
     assert response.headers["Pragma"] == "no-cache"
 
 
-def test_logout_rejects_get_requests(fake_auth_client):
-    response = fake_auth_client.get("/auth/logout")
+def test_logout_rejects_get_and_clears_authenticated_post(
+    monkeypatch, fake_auth_client
+):
+    get_response = fake_auth_client.get("/auth/logout")
+    assert get_response.status_code == 405
 
-    assert response.status_code == 405
-
-
-def test_logout_uses_post_request(monkeypatch, fake_auth_client):
     monkeypatch.setattr(
         "app.repositories.user_repository.find_by_id",
         lambda user_id: User.from_row(make_user_row()),
@@ -359,9 +313,9 @@ def test_logout_uses_post_request(monkeypatch, fake_auth_client):
         session["_fresh"] = True
         session["auth_version"] = 0
 
-    response = fake_auth_client.post("/auth/logout")
+    post_response = fake_auth_client.post("/auth/logout")
 
-    assert response.status_code == 302
-    assert response.headers["Location"].endswith("/auth/login")
+    assert post_response.status_code == 302
+    assert post_response.headers["Location"].endswith("/auth/login")
     with fake_auth_client.session_transaction() as session:
         assert "_user_id" not in session

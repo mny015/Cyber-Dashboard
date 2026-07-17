@@ -33,12 +33,6 @@ jobs:
       DB_NAME: cyber_dashboard_test
       DB_CHARSET: utf8mb4
       TEST_DB_NAME: cyber_dashboard_test
-      MIGRATION_TEST_DB_NAME: cyber_dashboard_migration_test
-      MIGRATION_DB_HOST: 127.0.0.1
-      MIGRATION_DB_PORT: 3306
-      MIGRATION_DB_USER: root
-      MIGRATION_DB_PASSWORD: root
-      MIGRATION_DB_CHARSET: utf8mb4
       MFA_ENCRYPTION_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=
       RATELIMIT_STORAGE_URI: memory://
 

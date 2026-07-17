@@ -9,7 +9,7 @@ from app.models.base import RowModel
 class NoteAccessRequest(RowModel):
     TABLE_NAME: ClassVar[str] = "note_access_requests"
     COLUMNS: ClassVar[tuple[str, ...]] = (
-        "id", "topic_id", "note_id", "requester_admin_id", "status",
+        "id", "topic_id", "requester_admin_id", "status",
         "requested_at", "responded_at",
     )
 
@@ -26,6 +26,18 @@ class NoteAccessRequest(RowModel):
     owner_name: str | None = None
     owner_email: str | None = None
     note_title: str | None = None
+
+
+@dataclass(slots=True)
+class NoteAccessGrant(RowModel):
+    """The note selected when a topic-level access request is approved."""
+
+    TABLE_NAME: ClassVar[str] = "note_access_grants"
+    COLUMNS: ClassVar[tuple[str, ...]] = ("request_id", "note_id", "granted_at")
+
+    request_id: int = 0
+    note_id: int = 0
+    granted_at: datetime | None = None
 
 
 @dataclass(slots=True)

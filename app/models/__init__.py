@@ -6,7 +6,7 @@ from app.models.contact import Contact
 from app.models.lab import LabCompletion, LabPlatform, LabReference
 from app.models.learning import ActivityEvent, ProgressReflection, RoadmapItem, WorkLog
 from app.models.note import Note
-from app.models.note_access_request import NoteAccessRequest, Notification
+from app.models.note_access_request import NoteAccessGrant, NoteAccessRequest, Notification
 from app.models.profile_image import ProfileImage
 from app.models.scheduled_task import ScheduledTask
 from app.models.security import SecurityFinding, ThreatCatalogEntry, VulnerabilityCatalogEntry
@@ -28,6 +28,7 @@ MODEL_REGISTRY = {
         AuditLog,
         Note,
         NoteAccessRequest,
+        NoteAccessGrant,
         LabReference,
         LabCompletion,
         ScheduledTask,
@@ -49,6 +50,7 @@ __all__ = [
     "LabReference",
     "MODEL_REGISTRY",
     "Note",
+    "NoteAccessGrant",
     "NoteAccessRequest",
     "Notification",
     "ProfileImage",

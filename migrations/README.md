@@ -4,7 +4,7 @@ This directory is the single authoritative schema history for Cyber Dashboard.
 The application uses PyMySQL and plain SQL; Alembic, SQLAlchemy, and other ORMs
 are not part of the migration path.
 
-The history creates 19 application tables and the `schema_migrations` ledger.
+The history creates 20 application tables and the `schema_migrations` ledger.
 Four historical data tables found in the existing database are retained even
 though they are not currently accessed by Flask routes.
 
@@ -22,7 +22,8 @@ Foreign-key deletion behavior is frozen by migration `026`; relationship and
 index decisions are documented in `docs/DATABASE_RELATIONSHIPS.md`. Migration
 `027` adds the composite indexes used by dashboard and list query paths.
 Migration `028` expands `users.mfa_secret` so encrypted TOTP secrets fit
-without truncation.
+without truncation. Migration `029` stores approved note selections in
+`note_access_grants` instead of repeating that relationship on the request row.
 
 ## Commands
 

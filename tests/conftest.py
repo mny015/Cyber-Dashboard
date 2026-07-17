@@ -17,7 +17,6 @@ os.environ.setdefault("DB_CHARSET", "utf8mb4")
 os.environ.setdefault("RATELIMIT_STORAGE_URI", "memory://")
 
 from app import create_app
-from app.extensions import limiter
 from tests.support.database import TestDatabase
 
 SYSTEM_DATABASES = {"information_schema", "mysql", "performance_schema", "sys"}
@@ -56,50 +55,6 @@ def database(app, dedicated_test_database):
 @pytest.fixture()
 def client(app):
     return app.test_client()
-
-
-@pytest.fixture()
-def runner(app):
-    return app.test_cli_runner()
-
-
-@pytest.fixture()
-def csrf_app():
-    test_app = create_app("testing")
-    test_app.config.update(
-        TESTING=True,
-        WTF_CSRF_ENABLED=True,
-        RATELIMIT_ENABLED=False,
-    )
-    return test_app
-
-
-@pytest.fixture()
-def csrf_enabled_client(csrf_app):
-    return csrf_app.test_client()
-
-
-@pytest.fixture()
-def rate_limited_app():
-    # Flask-Limiter disables itself when TESTING is already true during init.
-    # Bind it under the development profile, then enable test exception handling.
-    test_app = create_app("development")
-    test_app.config.update(
-        TESTING=True,
-        DEBUG=False,
-        WTF_CSRF_ENABLED=False,
-        RATELIMIT_ENABLED=True,
-    )
-    with test_app.app_context():
-        limiter.reset()
-    yield test_app
-    with test_app.app_context():
-        limiter.reset()
-
-
-@pytest.fixture()
-def rate_limited_client(rate_limited_app):
-    return rate_limited_app.test_client()
 
 
 @pytest.fixture()
@@ -149,18 +104,8 @@ def test_user(user_factory):
 
 
 @pytest.fixture()
-def user(test_user):
-    return test_user
-
-
-@pytest.fixture()
 def admin_user(user_factory):
     return user_factory(role="admin", display_name="Admin User")
-
-
-@pytest.fixture()
-def administrator(admin_user):
-    return admin_user
 
 
 @pytest.fixture()
@@ -183,19 +128,9 @@ def authenticated_client(client, test_user, login_as):
 
 
 @pytest.fixture()
-def logged_in_user_client(authenticated_client):
-    return authenticated_client
-
-
-@pytest.fixture()
 def admin_client(client, admin_user, login_as):
     login_as(client, admin_user)
     return client
-
-
-@pytest.fixture()
-def logged_in_admin_client(admin_client):
-    return admin_client
 
 
 def cleanup_user_records(database, user_id):
@@ -228,9 +163,8 @@ def cleanup_user_records(database, user_id):
         DELETE FROM note_access_requests
         WHERE requester_admin_id = %s
            OR topic_id IN (SELECT id FROM topics WHERE owner_id = %s)
-           OR note_id IN (SELECT id FROM notes WHERE owner_id = %s)
         """,
-        (user_id, user_id, user_id),
+        (user_id, user_id),
     )
     database.execute(
         """

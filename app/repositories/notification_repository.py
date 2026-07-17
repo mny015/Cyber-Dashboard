@@ -42,22 +42,40 @@ def approve_owned(request_id, owner_id, note_id, cursor=None):
 
 def _approve(cursor, request_id, owner_id, note_id):
     cursor.execute(
-            """
-            UPDATE note_access_requests AS requests
-            JOIN topics ON topics.id = requests.topic_id
-            JOIN notes
-              ON notes.id = %s
-             AND notes.topic_id = requests.topic_id
-             AND notes.owner_id = topics.owner_id
-             AND notes.is_deleted = 0
-            SET requests.status = 'approved',
-                requests.note_id = notes.id,
-                requests.responded_at = NOW()
-            WHERE requests.id = %s
-              AND requests.status = 'pending'
-              AND topics.owner_id = %s
-            """,
-            (int(note_id), int(request_id), int(owner_id)),
+        """
+        SELECT notes.id
+        FROM note_access_requests AS requests
+        JOIN topics ON topics.id = requests.topic_id
+        JOIN notes
+          ON notes.id = %s
+         AND notes.topic_id = requests.topic_id
+         AND notes.owner_id = topics.owner_id
+         AND notes.is_deleted = 0
+        WHERE requests.id = %s
+          AND requests.status = 'pending'
+          AND topics.owner_id = %s
+        FOR UPDATE
+        """,
+        (int(note_id), int(request_id), int(owner_id)),
+    )
+    selected_note = cursor.fetchone()
+    if not selected_note:
+        return 0
+
+    cursor.execute(
+        """
+        INSERT INTO note_access_grants (request_id, note_id, granted_at)
+        VALUES (%s, %s, NOW())
+        """,
+        (int(request_id), int(selected_note["id"])),
+    )
+    cursor.execute(
+        """
+        UPDATE note_access_requests
+        SET status = 'approved', responded_at = NOW()
+        WHERE id = %s AND status = 'pending'
+        """,
+        (int(request_id),),
     )
     return cursor.rowcount
 
@@ -114,7 +132,6 @@ def create_request(topic_id, admin_id, database=None):
     result = database.table(NoteAccessRequest.TABLE_NAME).insert(
         {
             "topic_id": int(topic_id),
-            "note_id": None,
             "requester_admin_id": int(admin_id),
             "status": "pending",
             "requested_at": datetime.now(),

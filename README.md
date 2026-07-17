@@ -61,6 +61,7 @@ for the generated accounts, safety checks, and full usage instructions.
 - Flask-Limiter and Flask-Talisman
 - Werkzeug password hashing, PyOTP, qrcode, and Fernet encryption
 - Plain CSS and vanilla JavaScript
+- Docker with an Ubuntu/MySQL all-in-one verification image
 - pytest, Ruff, Bandit, and Radon
 
 ## Final Folder Structure
@@ -82,9 +83,12 @@ Cyber Dashboard/
 |   |-- extensions.py            # Shared Flask extension instances
 |   `-- __init__.py              # Application factory
 |-- docs/                        # Architecture and relationship documentation
+|-- docker/                      # All-in-one container startup script
 |-- migrations/                  # Authoritative numbered SQL schema history
 |-- scripts/                     # Migration, seed, admin, and maintenance commands
-|-- tests/                       # Unit, contract, integration, and security tests
+|-- tests/                       # Focused unit and application-flow tests
+|-- .dockerignore                # Excludes local secrets and build noise
+|-- Dockerfile                   # GitHub-sourced Ubuntu/MySQL demo image
 |-- config.py                    # Environment-driven runtime configurations
 |-- run.py                       # Local development entry point
 |-- wsgi.py                      # Production WSGI entry point
@@ -204,7 +208,7 @@ python scripts/create_admin.py
 
 The migration runner creates the configured database and `schema_migrations` ledger when needed, executes unapplied files in filename order, records checksums, and never reruns an applied migration. Seed data is deliberately separate. Never edit an applied migration; add the next numbered `.sql` file.
 
-The final schema contains 19 application tables plus the `schema_migrations` ledger. Foreign-key deletion and index decisions are documented in [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md).
+The final schema contains 20 application tables plus the `schema_migrations` ledger. Foreign-key deletion and index decisions are documented in [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md).
 
 ## Run Locally
 
@@ -213,6 +217,172 @@ python run.py
 ```
 
 Open `http://127.0.0.1:5000`. On Windows, use the active virtual environment's `python`; `python3` may resolve to a different installation.
+
+## Self-Contained Docker Demo
+
+The root [`Dockerfile`](Dockerfile) builds a coursework/demo image containing:
+
+- Ubuntu Linux
+- Python and the runtime packages from `requirements.txt`
+- Gunicorn
+- A local MySQL server available only inside the container
+- Cyber Dashboard cloned from the public
+  [`mny015/Cyber-Dashboard`](https://github.com/mny015/Cyber-Dashboard) repository
+- Automatic numbered migrations, reference-catalog seeding, and realistic demo data
+
+This intentionally runs the application and MySQL in one container so another
+person can verify the project without installing Python or MySQL. It is not the
+recommended architecture for a production deployment.
+
+### 1. Build The Image
+
+Start Docker Desktop, open PowerShell in this repository, and run:
+
+```powershell
+docker build --pull --no-cache `
+  --build-arg CYBER_DASHBOARD_REPOSITORY=https://github.com/mny015/Cyber-Dashboard.git `
+  --build-arg CYBER_DASHBOARD_REF=main `
+  -t cyber-dashboard:demo .
+```
+
+The Dockerfile clones the selected GitHub branch during the build. The local
+application files are not copied into the image. Use `--no-cache` whenever the
+GitHub branch has changed, or set `CYBER_DASHBOARD_REF` to another public branch
+or tag.
+
+### 2. Run At Localhost:8080
+
+For a quick disposable container:
+
+```powershell
+docker run --name cyber-dashboard `
+  -p 127.0.0.1:8080:8080 `
+  cyber-dashboard:demo
+```
+
+Wait until the log says that Cyber Dashboard is starting, then open:
+
+```text
+http://localhost:8080
+```
+
+The first startup creates linked demo users, categories, topics, notes, labs,
+completions, findings, tasks, activity, and note-access records. Sign in with:
+
+```text
+Administrator: admin.demo@demo.cyberdashboard.dev
+Password:      CyberDemo2026!
+```
+
+The other generated account emails are printed in the container log and use
+the same password. Set `LOAD_DEMO_DATA=false` to start with catalogs only, or
+override `DEMO_DATA_PASSWORD` when running the container. Demo records are
+inserted only when the fixed demo administrator is absent, so restarting the
+container does not reset changes made by the tester.
+
+Only port `8080` is published. MySQL remains bound to `127.0.0.1:3306` inside
+the container and cannot be reached directly from the host.
+
+Press `Ctrl+C` to stop an attached container. Start the same container again
+with:
+
+```powershell
+docker start -a cyber-dashboard
+```
+
+### 3. Keep Database Data Across Replacement Containers
+
+Without a volume, data survives `docker stop` and `docker start`, but is deleted
+when the container is removed. For reusable verification data, use a named
+Docker volume:
+
+```powershell
+docker volume create cyber-dashboard-mysql
+
+docker run -d `
+  --name cyber-dashboard `
+  -p 127.0.0.1:8080:8080 `
+  -v cyber-dashboard-mysql:/var/lib/mysql `
+  cyber-dashboard:demo
+```
+
+The volume is local to Docker on the verifier's computer. No remote database is
+used.
+
+### 4. Create An Administrator
+
+After the container is running:
+
+```powershell
+docker exec -it cyber-dashboard python scripts/create_admin.py
+```
+
+Enter a valid email, display name, and password when prompted. Normal users can
+also register through `http://localhost:8080/auth/register`.
+
+### 5. Inspect And Troubleshoot
+
+```powershell
+docker ps
+docker logs -f cyber-dashboard
+docker inspect --format "{{json .State.Health}}" cyber-dashboard
+docker exec `
+  -e MYSQL_PWD=cyber_dashboard_demo `
+  cyber-dashboard mysql `
+  --host=127.0.0.1 `
+  --user=cyber_dashboard_user `
+  --execute="SHOW TABLES;" `
+  cyber_dashboard
+```
+
+The image health check calls `/api/ping`. On every container start, the startup
+script waits for MySQL, safely creates the local database account, applies only
+unapplied migrations, refreshes seed catalogs, loads demo records when needed,
+and then starts Gunicorn.
+
+### 6. Reset The Demo
+
+Remove only the container:
+
+```powershell
+docker rm -f cyber-dashboard
+```
+
+Also remove the optional database volume for a completely fresh database:
+
+```powershell
+docker volume rm cyber-dashboard-mysql
+```
+
+Then run the build and run commands again.
+
+### 7. Share The Built Image
+
+Export the fully built image to a file:
+
+```powershell
+docker save -o cyber-dashboard-demo.tar cyber-dashboard:demo
+```
+
+On another computer with Docker:
+
+```powershell
+docker load -i cyber-dashboard-demo.tar
+docker run --name cyber-dashboard `
+  -p 127.0.0.1:8080:8080 `
+  cyber-dashboard:demo
+```
+
+The recipient does not need Git or internet access at runtime because the
+GitHub source snapshot and dependencies are already inside the built image.
+
+### Demo Security Note
+
+The image contains obvious local-only database and application defaults to make
+coursework verification straightforward. Do not publish this all-in-one image
+as a production service. When sharing outside a trusted verification setting,
+override at least `SECRET_KEY`, `DB_PASSWORD`, and `MFA_ENCRYPTION_KEY` with
+`docker run -e NAME=value ...`, and keep port `3306` unpublished.
 
 ## Production Startup
 
@@ -246,13 +416,15 @@ python -m flask --app run routes
 python -m pytest tests -v
 ```
 
-Database tests require an explicitly named test database. Migration integration tests reject unsafe names and only create or remove databases containing `migration_test`:
+Database-backed application-flow tests require an explicitly named dedicated test
+database. Initialize it before running the suite:
 
 ```powershell
+$env:DB_NAME="cyber_dashboard_test"
 $env:TEST_DB_NAME="cyber_dashboard_test"
-$env:MIGRATION_TEST_DB_NAME="cyber_dashboard_migration_test"
-$env:MIGRATION_EXISTING_SOURCE_DB_NAME="cyber_dashboard"
-python -m pytest tests/test_migrations_integration.py -v -m integration
+python scripts/migrate.py
+python scripts/seed.py
+python -m pytest tests -v
 ```
 
 Never point destructive test fixtures at a development or production database.

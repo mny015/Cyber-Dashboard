@@ -1,8 +1,8 @@
 # Cyber Dashboard Architecture
 
-This document defines the final layered structure. All registered feature routes map directly
-to controller functions, and compatibility contracts protect the public route and database
-surfaces from accidental changes.
+This document defines the final layered structure. All registered feature routes map
+directly to controller functions, while focused unit and application-flow tests protect
+the most important behavior.
 
 ## Request Flow
 
@@ -88,16 +88,16 @@ Numbered plain-SQL schema migrations in `migrations/` are the only authoritative
 migrations. Seed data is handled separately by `scripts/seed.py`. The old `init_db.py` and Alembic
 compatibility path have been removed, and no ORM is used.
 
-## Architecture Freeze Gates
+## Architecture Stability Gates
 
 A feature is migrated only when all of the following remain unchanged:
 
 1. Blueprint name, endpoint name, URL, and HTTP methods.
 2. Authentication, authorization, ownership, CSRF, rate-limit, and audit behavior.
 3. Templates, redirects, flash messages, database behavior, and privacy rules.
-4. `tests/contracts/route_contract.json` and `tests/contracts/schema_contract.json`.
-5. Existing and feature-specific tests.
+4. Focused route, controller, service, repository, model, form, and security tests.
+5. Flask route listing, static analysis, and explicit migration checks.
 
-The route and schema contracts, architecture tests, static analysis, and dedicated MySQL tests are
-required gates. Major backend restructuring is frozen; future changes should be feature work or
-targeted defect fixes within these established boundaries.
+The focused test suite, static analysis, and dedicated MySQL application-flow tests are
+the required gates. Major backend restructuring is frozen; future changes should be
+feature work or targeted defect fixes within these established boundaries.

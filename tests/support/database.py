@@ -1,4 +1,4 @@
-"""Explicit database adapter used only by dedicated integration-test fixtures."""
+"""Database adapter used only by dedicated application-flow test fixtures."""
 
 from contextlib import contextmanager
 

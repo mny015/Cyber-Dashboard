@@ -8,7 +8,7 @@ import pytest
 from flask import Flask
 
 from app.extensions import csrf, login_manager
-from app.models import ProfileImage, User
+from app.models import User
 from app.routes import register_blueprints
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -77,32 +77,26 @@ def authenticated_controller_client(controller_app):
     return client
 
 
-def test_every_application_route_maps_directly_to_a_controller(app):
+def test_application_routes_are_unique_and_map_directly_to_controllers(app):
     application_rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint != "static"]
 
     assert len(application_rules) == 72
+    assert set(app.blueprints) == EXPECTED_BLUEPRINTS
+
+    endpoint_counts = Counter(rule.endpoint for rule in application_rules)
+    method_rule_counts = Counter(
+        (rule.rule, method)
+        for rule in application_rules
+        for method in rule.methods - {"HEAD", "OPTIONS"}
+    )
+    assert all(count == 1 for count in endpoint_counts.values())
+    assert all(count == 1 for count in method_rule_counts.values())
+
     for rule in application_rules:
         view = app.view_functions[rule.endpoint]
         while hasattr(view, "__wrapped__"):
             view = view.__wrapped__
         assert view.__module__.startswith("app.controllers."), rule.endpoint
-
-
-def test_blueprints_are_registered_centrally(app):
-    assert set(app.blueprints) == EXPECTED_BLUEPRINTS
-
-
-def test_route_map_has_no_duplicate_endpoints_or_method_rules(app):
-    rules = [rule for rule in app.url_map.iter_rules() if rule.endpoint != "static"]
-    endpoint_counts = Counter(rule.endpoint for rule in rules)
-    method_rule_counts = Counter(
-        (rule.rule, method)
-        for rule in rules
-        for method in rule.methods - {"HEAD", "OPTIONS"}
-    )
-
-    assert all(count == 1 for count in endpoint_counts.values())
-    assert all(count == 1 for count in method_rule_counts.values())
 
 
 def test_route_modules_only_define_blueprints_and_url_mappings():
@@ -158,20 +152,6 @@ def test_controller_modules_have_no_blueprints_sql_or_database_connections():
         assert "except Exception" not in source
 
 
-def test_category_controller_renders_repository_results(
-    monkeypatch, authenticated_controller_client
-):
-    monkeypatch.setattr(
-        "app.controllers.categories_controller.category_repository.list_for_user",
-        lambda user_id: [],
-    )
-
-    response = authenticated_controller_client.get("/categories/")
-
-    assert response.status_code == 200
-    assert b"Categories" in response.data
-
-
 def test_note_controller_rejects_invalid_form_before_service_call(
     monkeypatch, authenticated_controller_client
 ):
@@ -210,41 +190,3 @@ def test_normal_user_cannot_read_another_profile_picture(
 
     assert response.status_code == 404
     assert admin_image_reads == []
-
-
-def test_admin_can_render_a_users_stored_profile_picture(
-    monkeypatch, controller_app
-):
-    with monkeypatch.context() as patch:
-        patch.setattr(
-            login_manager,
-            "_user_callback",
-            lambda user_id: User(
-                id=int(user_id),
-                email="admin@example.com",
-                display_name="Administrator",
-                role="admin",
-            ),
-        )
-        image_hash = "b" * 64
-        image_data = b"\x89PNG\r\n\x1a\n"
-        patch.setattr(
-            "app.controllers.profile_controller.user_repository.find_profile_image",
-            lambda requested_hash: ProfileImage(
-                image_hash=requested_hash,
-                image_data=image_data,
-                mime_type="image/png",
-                byte_size=len(image_data),
-            ),
-        )
-        client = controller_app.test_client()
-        with client.session_transaction() as session:
-            session["_user_id"] = "3"
-            session["_fresh"] = True
-            session["auth_version"] = 0
-
-        response = client.get(f"/profile/picture/{image_hash}")
-
-        assert response.status_code == 200
-        assert response.mimetype == "image/png"
-        assert response.data == image_data

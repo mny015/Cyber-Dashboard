@@ -3,6 +3,8 @@
 Migration `026_freeze_foreign_key_delete_rules.sql` freezes the deletion policy
 for every application foreign key. `027_add_relationship_query_indexes.sql`
 adds composite indexes for common ownership, status, join, and ordering paths.
+Migration `029_split_note_access_grants.sql` separates a topic-level request
+from the note selected during approval.
 
 ## Foreign Keys
 
@@ -18,7 +20,8 @@ adds composite indexes for common ownership, status, join, and ordering paths.
 | `notes.topic_id` | `topics.id` | SET NULL | A note remains useful without its optional topic. |
 | `note_access_requests.requester_admin_id` | `users.id` | SET NULL | Request history survives administrator deletion. |
 | `note_access_requests.topic_id` | `topics.id` | CASCADE | A request has no purpose without its requested topic. |
-| `note_access_requests.note_id` | `notes.id` | CASCADE | Approval for one note ends when that note is removed. |
+| `note_access_grants.request_id` | `note_access_requests.id` | CASCADE | A selected-note grant has no purpose without its request. |
+| `note_access_grants.note_id` | `notes.id` | CASCADE | Approval for one note ends when that note is removed. |
 | `lab_references.owner_id` | `users.id` | CASCADE | Ownership drives lab privacy and edit authorization. |
 | `lab_references.topic_id` | `topics.id` | SET NULL | A lab remains useful without an optional topic. |
 | `lab_references.platform_id` | `lab_platforms.id` | RESTRICT | Shared platform reference data cannot be removed while used. |
@@ -57,4 +60,4 @@ cover the main query shapes:
   activity events.
 
 This relationship design is frozen. Change it only through a new numbered
-migration that fixes a demonstrated defect and updates the relationship contract.
+migration that fixes a demonstrated defect and updates this relationship documentation.

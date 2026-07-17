@@ -236,13 +236,11 @@ recommended architecture for a production deployment.
 
 ### 1. Build The Image
 
-Start Docker Desktop, open PowerShell in this repository, and run:
+Start Docker Desktop and open a terminal in the project root. This one-line
+command works unchanged in Linux shells, Windows Command Prompt, and PowerShell:
 
-```powershell
-docker build --pull --no-cache `
-  --build-arg CYBER_DASHBOARD_REPOSITORY=https://github.com/mny015/Cyber-Dashboard.git `
-  --build-arg CYBER_DASHBOARD_REF=main `
-  -t cyber-dashboard:demo .
+```text
+docker build --pull --no-cache --build-arg CYBER_DASHBOARD_REPOSITORY=https://github.com/mny015/Cyber-Dashboard.git --build-arg CYBER_DASHBOARD_REF=main -t cyber-dashboard:demo .
 ```
 
 The Dockerfile clones the selected GitHub branch during the build. The local

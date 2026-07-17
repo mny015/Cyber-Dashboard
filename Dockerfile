@@ -49,7 +49,8 @@ RUN useradd \
     && chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 COPY docker/all-in-one-entrypoint.sh /usr/local/bin/cyber-dashboard-entrypoint
-RUN chmod 0755 /usr/local/bin/cyber-dashboard-entrypoint
+RUN sed -i 's/\r$//' /usr/local/bin/cyber-dashboard-entrypoint \
+    && chmod 0755 /usr/local/bin/cyber-dashboard-entrypoint
 
 WORKDIR /opt/cyber-dashboard
 

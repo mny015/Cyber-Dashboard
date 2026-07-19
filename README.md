@@ -29,9 +29,21 @@ The backend is intentionally synchronous and coursework-friendly. It uses Flask 
 
 ## Screenshots
 
-Screenshots are the only remaining submission artifact. Add the final portfolio
-captures under `docs/screenshots/`, then link the login page, user dashboard,
-admin dashboard, notes, labs, and scheduled tasks here in both themes.
+The final application and Docker verification captures are stored under
+`docs/Screenshots/`.
+
+| Public and authentication | Dashboards |
+|---|---|
+| ![Landing page](docs/Screenshots/Landing_Page.png) | ![User dashboard](docs/Screenshots/User_Dashboard.png) |
+| ![Login page](docs/Screenshots/Login_Page.png) | ![Administrator dashboard](docs/Screenshots/Admin_Dashboard.png) |
+| ![Light theme](docs/Screenshots/Light_Mode.png) | ![Administrator profile](docs/Screenshots/Admin_Profile.png) |
+
+| Learning workspace | Administration and verification |
+|---|---|
+| ![Topics](docs/Screenshots/Topic_Page.png) | ![User management](docs/Screenshots/User_Management.png) |
+| ![Categories](docs/Screenshots/Categories.png) | ![Security findings](docs/Screenshots/Log%20Finding%20and%20Security%20Findings.png) |
+| ![Notes](docs/Screenshots/Notes.png) | ![Docker image build](docs/Screenshots/Docker_Image_Build.png) |
+| ![Labs](docs/Screenshots/Labs.png) | ![Disposable container setup](docs/Screenshots/Setting_Up_Disposable_Container.png) |
 
 Brand assets used by the application are stored in `app/static/image/`:
 
@@ -208,6 +220,16 @@ python scripts/create_admin.py
 
 The migration runner creates the configured database and `schema_migrations` ledger when needed, executes unapplied files in filename order, records checksums, and never reruns an applied migration. Seed data is deliberately separate. Never edit an applied migration; add the next numbered `.sql` file.
 
+Run `python scripts/migrate.py` after every pull or branch update and before
+starting the application. Pages backed by newer schema objects, including note
+access notifications, require the current migration set. If a database-backed
+page fails after an update, apply migrations and then verify the connection:
+
+```powershell
+python scripts/migrate.py
+python scripts/check_database.py
+```
+
 The final schema contains 20 application tables plus the `schema_migrations` ledger. Foreign-key deletion and index decisions are documented in [`docs/DATABASE_RELATIONSHIPS.md`](docs/DATABASE_RELATIONSHIPS.md).
 
 ## Run Locally
@@ -252,10 +274,8 @@ or tag.
 
 For a quick disposable container:
 
-```powershell
-docker run --name cyber-dashboard `
-  -p 127.0.0.1:8080:8080 `
-  cyber-dashboard:demo
+```text
+docker run --name cyber-dashboard -p 127.0.0.1:8080:8080 cyber-dashboard:demo
 ```
 
 Wait until the log says that Cyber Dashboard is starting, then open:
@@ -471,7 +491,6 @@ Each maintained document has one purpose:
 - The API surface is intentionally limited to a health-style ping endpoint.
 - Historical `work_logs`, `roadmap_items`, `progress_reflections`, and `activity_events` remain preserved in the schema but have no dedicated current UI.
 - Export is implemented; import/restore is not.
-- Portfolio screenshots are not committed yet.
 - A production WSGI server, reverse proxy, Redis service, monitoring, and backup retention policy remain deployment responsibilities.
 
 ## Repository

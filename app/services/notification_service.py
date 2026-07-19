@@ -44,6 +44,7 @@ def approve_request(request_id, owner_id, note_id, context):
             db.using(cursor),
         )
 
+
 def deny_request(request_id, owner_id, context):
     with transaction() as cursor:
         if not notification_repository.deny_owned(request_id, owner_id, cursor=cursor):

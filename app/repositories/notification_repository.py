@@ -89,15 +89,15 @@ def deny_owned(request_id, owner_id, cursor=None):
 
 def _deny(cursor, request_id, owner_id):
     cursor.execute(
-            """
-            UPDATE note_access_requests AS requests
-            JOIN topics ON topics.id = requests.topic_id
-            SET requests.status = 'denied', requests.responded_at = NOW()
-            WHERE requests.id = %s
-              AND requests.status = 'pending'
-              AND topics.owner_id = %s
-            """,
-            (int(request_id), int(owner_id)),
+        """
+        UPDATE note_access_requests AS requests
+        JOIN topics ON topics.id = requests.topic_id
+        SET requests.status = 'denied', requests.responded_at = NOW()
+        WHERE requests.id = %s
+          AND requests.status = 'pending'
+          AND topics.owner_id = %s
+        """,
+        (int(request_id), int(owner_id)),
     )
     return cursor.rowcount
 
